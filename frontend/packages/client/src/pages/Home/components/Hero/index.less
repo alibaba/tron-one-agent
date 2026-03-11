@@ -1,0 +1,157 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.hero {
+  max-width: 1232px;
+  margin: 0 auto;
+  padding: 20px 0;
+  padding-top: 64px;
+  text-align: center;
+  background-image: url('./header-bg.png');
+  background-size: cover;
+}
+
+.heroContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  padding-top: 64px;
+}
+
+.heroTitle {
+  height: 40px;
+  margin-bottom: 12px;
+  color: #333333;
+  font-size: 32px;
+  font-family: AlibabaPuHuiTiM;
+  line-height: 40px;
+  text-align: center;
+}
+
+.platformName {
+  color: #1890ff;
+  font-weight: 700;
+}
+
+.heroSubtitle {
+  height: 20px;
+  color: #555555;
+  font-weight: 400;
+  font-size: 14px;
+  font-family: PingFangSC;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.expertTabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.expertTab {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 24px;
+  color: #666;
+  font-weight: 500;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.expertTab:hover {
+  color: var(--tab-color);
+  border-color: var(--tab-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.expertTab.active {
+  color: #fff;
+  background: var(--tab-color);
+  border-color: var(--tab-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.expertTab i {
+  font-size: 16px;
+}
+
+.questionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.questionCard {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 20px;
+  color: #333;
+  font-size: 14px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.questionCard:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.questionCard i:first-child {
+  flex-shrink: 0;
+  color: #8b5cf6;
+  font-size: 16px;
+}
+
+.question-card span {
+  flex: 1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.question-card i:last-child {
+  color: #999;
+  font-size: 12px;
+  transform: translateX(-8px);
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.question-card:hover i:last-child {
+  color: #1890ff;
+  transform: translateX(0);
+  opacity: 1;
+}

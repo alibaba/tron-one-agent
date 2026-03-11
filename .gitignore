@@ -1,0 +1,8 @@
+/tron-*.zip
+.version
+
+# Qoder code review reports
+.qoder/reports/
+
+# local-run skill logs
+logs/

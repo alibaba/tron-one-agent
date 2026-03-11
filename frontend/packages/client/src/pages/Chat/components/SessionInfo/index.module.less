@@ -1,0 +1,90 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.sessionInfo {
+  padding: 8px 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sessionHeader {
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.sessionHeader h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #262626;
+}
+
+.sessionDetails {
+  margin-bottom: 24px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detailItem:last-child {
+  border-bottom: none;
+}
+
+.detailItem label {
+  font-size: 0.75rem;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.detailItem span {
+  font-size: 0.875rem;
+  color: #262626;
+  word-wrap: break-word;
+}
+
+.sessionStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.statItem {
+  text-align: center;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #8c8c8c;
+}

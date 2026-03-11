@@ -1,0 +1,110 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.taskContent {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.taskInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.taskTitle {
+  font-weight: 600;
+  color: #262626;
+  font-size: 14px;
+}
+
+.taskTime {
+  font-size: 12px;
+  color: #8c8c8c;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.taskStatusIcon {
+  font-size: 14px;
+}
+
+.expandIcon {
+  font-size: 12px;
+  color: #8c8c8c;
+  transition: transform 0.2s;
+}
+
+.taskDescription {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #595959;
+  background: #f9f9f9;
+  border-bottom: 1px solid #e8e8e8;
+  line-height: 1.5;
+}
+
+.taskContents {
+  padding: 20px;
+}
+
+.taskTextContent {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border-left: 3px solid #1890ff;
+}
+
+.taskContentItem {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.taskResult {
+  padding: 12px 16px;
+  background: #f6ffed;
+  border-top: 1px solid #b7eb8f;
+  font-size: 12px;
+
+  strong {
+    color: #389e0d;
+  }
+}

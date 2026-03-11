@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:tron_agent_java}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false
+    username: ${DB_USER:root}
+    password: ${DB_PASS:}
+  jackson:
+    serialization:
+      # 禁用枚举使用toString序列化，确保使用@JsonValue注解
+      WRITE_ENUMS_USING_TO_STRING: false
+      # 禁用枚举使用索引序列化
+      WRITE_ENUMS_USING_INDEX: false
+agentscope:
+  a2a:
+    server:
+      enabled: false
+
+tron:
+  dashscope:
+    api-key: ${DASHSCOPE_API_KEY:}
+  bailian:
+    rag:
+      access-key-id: ${ALIBABA_CLOUD_ACCESS_KEY_ID:}
+      access-key-secret: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}

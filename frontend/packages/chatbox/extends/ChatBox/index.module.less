@@ -1,0 +1,79 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.chatMain {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  max-height: 100%; // 添加最大高度限制
+
+  .chatHeader {
+    flex-shrink: 0; // 防止header被压缩
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    color: #262626;
+    font-weight: 600;
+    font-size: 16px;
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .chatMessagesWrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .chatInputContainer {
+    flex-shrink: 0; // 防止输入框被压缩
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 1px solid #e8e8e8;
+  }
+}
+
+.backToBottom {
+  position: absolute;
+  left: calc(50% - 18px);
+  bottom: 0px;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  background: #8c6dd4;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #9c85d4;
+    transform: translateY(-2px);
+  }
+
+  i {
+    font-size: 16px;
+  }
+}

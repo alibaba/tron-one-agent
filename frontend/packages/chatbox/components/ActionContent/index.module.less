@@ -1,0 +1,93 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.actionContent {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.actionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9f9f9;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.actionInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionTitle {
+  font-weight: 500;
+  color: #262626;
+  font-size: 14px;
+}
+
+.actionTime {
+  font-size: 12px;
+  color: #8c8c8c;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.actionStatusIcon {
+  font-size: 14px;
+}
+
+.expandIcon {
+  font-size: 12px;
+  color: #8c8c8c;
+  transition: transform 0.2s;
+}
+
+.actionContentDetail {
+  padding: 16px;
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.actionContentText {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #262626;
+  margin: 0;
+  background: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+
+  code {
+    background: #f6f8fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+}

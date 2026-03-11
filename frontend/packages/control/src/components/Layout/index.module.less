@@ -1,0 +1,176 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+.layout {
+  height: 100vh;
+}
+
+.sider {
+  .logo {
+    height: 64px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #001529;
+    
+    .ant-typography-h4 {
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      color: #fff !important;
+      margin: 0;
+    }
+  }
+  
+  // 菜单样式优化 - 使用更具体的选择器
+  :global(.ant-layout-sider-dark) {
+    .ant-menu-dark {
+      .ant-menu-item {
+        font-weight: 500;
+        font-size: 14px;
+        letter-spacing: 0.3px;
+        color: rgba(255, 255, 255, 0.75) !important;
+        
+        .ant-menu-title-content {
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.75) !important;
+        }
+        
+        .anticon {
+          color: rgba(255, 255, 255, 0.75) !important;
+        }
+        
+        // Badge 内的文字也要设置颜色
+        .ant-badge {
+          .ant-badge-count {
+            color: #fff !important;
+          }
+        }
+        
+        &:hover {
+          color: rgba(255, 255, 255, 0.9) !important;
+          
+          .ant-menu-title-content {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9) !important;
+          }
+          
+          .anticon {
+            color: rgba(255, 255, 255, 0.9) !important;
+          }
+        }
+        
+        &.ant-menu-item-selected {
+          background-color: #1890ff !important;
+          color: #fff !important;
+          
+          .ant-menu-title-content {
+            font-weight: 600;
+            color: #fff !important;
+          }
+          
+          .anticon {
+            color: #fff !important;
+          }
+        }
+      }
+      
+      .ant-menu-item-icon {
+        font-size: 16px;
+        margin-right: 12px;
+      }
+      
+      // Badge 样式优化
+      .ant-badge {
+        .ant-badge-count {
+          font-size: 11px;
+          font-weight: 600;
+          min-width: 18px;
+          height: 18px;
+          line-height: 18px;
+          border-radius: 9px;
+          box-shadow: 0 0 0 1px #001529;
+          color: #fff !important;
+        }
+      }
+    }
+  }
+  
+  // 全局菜单样式覆盖
+  :global(.ant-menu-dark .ant-menu-item) {
+    color: rgba(255, 255, 255, 0.75) !important;
+    
+    .ant-menu-title-content {
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+    
+    .anticon {
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+    
+    &:hover {
+      color: rgba(255, 255, 255, 0.9) !important;
+      
+      .ant-menu-title-content {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+      
+      .anticon {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+    }
+    
+    &.ant-menu-item-selected {
+      color: #fff !important;
+      
+      .ant-menu-title-content {
+        color: #fff !important;
+      }
+      
+      .anticon {
+        color: #fff !important;
+      }
+    }
+  }
+}
+
+.header {
+  padding: 0;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  .trigger {
+    font-size: 18px;
+    line-height: 64px;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    
+    &:hover {
+      color: #1890ff;
+      background-color: #f5f5f5;
+    }
+  }
+}
+
+.content {
+  margin: 24px 16px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: auto;
+}

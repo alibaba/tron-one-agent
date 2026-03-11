@@ -1,0 +1,355 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+/* 强制覆盖GitHub样式，确保在聊天环境中正确显示 */
+.textContent.markdownBody {
+  box-sizing: border-box !important;
+  min-width: 200px !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: scroll;
+  color: #24292f !important;
+  font-size: 14px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
+    sans-serif !important;
+  line-height: 1.6 !important;
+  background-color: transparent !important;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+  }
+}
+
+/* 用户消息样式 */
+.textContent.markdownBody.userContent {
+  min-width: unset !important;
+  overflow-x: auto;
+  color: #ffffff !important;
+}
+
+/* 标题样式 - 使用!important确保生效 */
+.textContent.markdownBody h1 {
+  margin: 16px 0 8px 0 !important;
+  padding-bottom: 8px !important;
+  color: #24292f !important;
+  font-weight: 600 !important;
+  font-size: 20px !important;
+  border-bottom: 2px solid #d0d7de !important;
+}
+
+.textContent.markdownBody h2 {
+  margin: 16px 0 8px 0 !important;
+  padding-bottom: 4px !important;
+  color: #24292f !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  border-bottom: 1px solid #d0d7de !important;
+}
+
+.textContent.markdownBody h3 {
+  margin: 14px 0 6px 0 !important;
+  color: #24292f !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+}
+
+.textContent.markdownBody h4 {
+  margin: 12px 0 6px 0 !important;
+  color: #24292f !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.textContent.markdownBody h1:first-child,
+.textContent.markdownBody h2:first-child,
+.textContent.markdownBody h3:first-child,
+.textContent.markdownBody h4:first-child {
+  margin-top: 0 !important;
+}
+
+/* 用户消息的标题颜色 */
+.textContent.markdownBody.userContent h1,
+.textContent.markdownBody.userContent h2,
+.textContent.markdownBody.userContent h3,
+.textContent.markdownBody.userContent h4 {
+  color: #ffffff !important;
+  border-bottom-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 段落样式 */
+.textContent.markdownBody p {
+  margin: 8px 0 !important;
+  line-height: 1.6 !important;
+}
+
+.textContent.markdownBody p:first-child {
+  margin-top: 0 !important;
+}
+
+.textContent.markdownBody p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 列表样式 */
+.textContent.markdownBody ul,
+.textContent.markdownBody ol {
+  margin: 8px 0 !important;
+  padding-left: 20px !important;
+}
+
+.textContent.markdownBody li {
+  margin: 4px 0 !important;
+  line-height: 1.5 !important;
+}
+
+.textContent.markdownBody ul li {
+  list-style-type: disc !important;
+}
+
+.textContent.markdownBody ol li {
+  list-style-type: decimal !important;
+}
+
+.textContent.markdownBody li > p {
+  margin: 4px 0 !important;
+}
+
+/* 嵌套列表 */
+.textContent.markdownBody ul ul,
+.textContent.markdownBody ol ol,
+.textContent.markdownBody ul ol,
+.textContent.markdownBody ol ul {
+  margin: 4px 0 !important;
+}
+
+/* 强调样式 */
+.textContent.markdownBody strong {
+  color: #24292f !important;
+  font-weight: 600 !important;
+}
+
+.textContent.markdownBody.userContent strong {
+  color: #ffffff !important;
+}
+
+.textContent.markdownBody em {
+  font-style: italic !important;
+}
+
+/* 代码样式 */
+.textContent.markdownBody {
+  code {
+    margin: 0 !important;
+    padding: 12px 16px !important;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo,
+      monospace !important;
+    white-space: break-spaces !important;
+    border-radius: 6px !important;
+  }
+
+  pre {
+    margin: 4px 0 !important;
+    padding: 12px !important;
+    overflow: auto !important;
+    line-height: 1.45 !important;
+    border-radius: 6px !important;
+  }
+
+  &.userContent {
+    code {
+      color: #ffffff !important;
+      background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    pre {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
+}
+
+/* 引用样式 */
+.textContent.markdownBody blockquote {
+  margin: 12px 0 !important;
+  padding: 0 1em !important;
+  color: #656d76 !important;
+  background-color: rgba(175, 184, 193, 0.05) !important;
+  border-left: 0.25em solid #d0d7de !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+
+.textContent.markdownBody.userContent blockquote {
+  color: rgba(255, 255, 255, 0.8) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-left-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 表格样式 */
+.textContent.markdownBody table {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 12px 0 !important;
+  overflow: auto !important;
+  font-size: 14px !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.textContent.markdownBody table th,
+.textContent.markdownBody table td {
+  padding: 8px 12px !important;
+  text-align: left !important;
+  border: 1px solid #d0d7de !important;
+}
+
+.textContent.markdownBody table th {
+  font-weight: 600 !important;
+  background-color: #f6f8fa !important;
+}
+
+.textContent.markdownBody.userContent table th {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.textContent.markdownBody.userContent table td {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 分割线样式 */
+.textContent.markdownBody hr {
+  height: 0.25em !important;
+  margin: 20px 0 !important;
+  padding: 0 !important;
+  background-color: #d0d7de !important;
+  border: 0 !important;
+}
+
+.textContent.markdownBody.userContent hr {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 链接样式 */
+.textContent.markdownBody a {
+  color: #0969da !important;
+  text-decoration: none !important;
+}
+
+.textContent.markdownBody a:hover {
+  text-decoration: underline !important;
+}
+
+.textContent.markdownBody.userContent a {
+  color: #87ceeb !important;
+}
+
+/* 自定义标签样式 */
+.customTagPlaceholder {
+  padding: 16px;
+  border-radius: 6px;
+  margin: 8px 0;
+  background-color: #e3f2fd;
+  border: 1px dashed #90caf9;
+  
+  &.customTagSuggestHotel {
+    background-color: #fff3e0;
+    border-color: #ffcc80;
+  }
+  
+  .placeholderContent {
+    font-weight: 500;
+    color: #1976d2;
+    margin-bottom: 12px;
+    
+    &.customTagSuggestHotel {
+      color: #ef6c00;
+    }
+  }
+  
+  .placeholderLoading {
+    display: flex;
+    align-items: center;
+    
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #1976d2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    
+    span {
+      font-size: 13px;
+      color: #666;
+    }
+  }
+}
+
+.customTag {
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  margin: 8px 0;
+  
+  &.customTagSuggestHotel {
+    background-color: #fff8e1;
+    border-color: #ffecb3;
+  }
+  
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background-color: #fff;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    font-size: 13px;
+  }
+}
+
+.parseError {
+  .errorMessage {
+    color: #f44336;
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  
+  .rawContent {
+    font-family: monospace;
+    background-color: #ffebee;
+    padding: 12px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 13px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

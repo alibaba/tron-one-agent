@@ -1,0 +1,25 @@
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+.mvn/
+
+/.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/dist/
+build/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+.skills/
+
+logs/
+*.log

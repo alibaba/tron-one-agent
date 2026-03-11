@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:control": "yarn workspace control dev ",
+    "dev:client": "yarn workspace client dev ",
+    "build:control": "yarn workspace control build",
+    "build:client": "yarn workspace client build"
+  }
+}
