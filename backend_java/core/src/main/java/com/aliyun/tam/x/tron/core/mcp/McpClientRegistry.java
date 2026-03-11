@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
@@ -131,16 +132,16 @@ public class McpClientRegistry {
                     if (McpClientConfig.TRANSPORT_SSE.equalsIgnoreCase(config.getTransport())) {
                         return Optional.of(McpClientBuilder.create(config.getId())
                                 .sseTransport(config.getUrl())
-                                .initializationTimeout(Duration.ofSeconds(config.getTimeout()))
-                                .timeout(Duration.ofSeconds(config.getSseReadTimeout()))
+                                .initializationTimeout(Duration.ofSeconds(config.getInitializeTimeout()))
+                                .timeout(Duration.ofSeconds(config.getTimeout()))
                                 .headers(config.getHeaders())
                                 .buildAsync()
                                 .block());
                     } else if (McpClientConfig.TRANSPORT_HTTP.equalsIgnoreCase(config.getTransport())) {
                         return Optional.of(McpClientBuilder.create(config.getId())
                                 .streamableHttpTransport(config.getUrl())
-                                .initializationTimeout(Duration.ofSeconds(config.getTimeout()))
-                                .timeout(Duration.ofMillis(config.getSseReadTimeout()))
+                                .initializationTimeout(Duration.ofSeconds(config.getInitializeTimeout()))
+                                .timeout(Duration.ofSeconds(config.getTimeout()))
                                 .headers(config.getHeaders())
                                 .buildAsync()
                                 .block());
@@ -155,9 +156,12 @@ public class McpClientRegistry {
                 McpClientWrapper wrapper = client.get();
                 try {
                     if (!wrapper.isInitialized()) {
-                        wrapper.initialize().block();
+                        wrapper.initialize()
+                                .then(Mono.defer(wrapper::listTools))
+                                .block();
+                    } else {
+                        wrapper.listTools().block();
                     }
-                    wrapper.listTools().block();
                 } catch (Exception e) {
                     lastError = e;
                     log.error("failed to check alive of mcp client {}, discard it", config.getId(), e);

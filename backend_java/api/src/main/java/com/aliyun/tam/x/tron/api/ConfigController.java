@@ -238,7 +238,7 @@ public class ConfigController {
             mcpClientConfig.setTimeout(patchMcpClientConfig.getTimeout());
         }
         if (patchMcpClientConfig.getSseReadTimeout() != null) {
-            mcpClientConfig.setSseReadTimeout(patchMcpClientConfig.getSseReadTimeout());
+            mcpClientConfig.setInitializeTimeout(patchMcpClientConfig.getSseReadTimeout());
         }
         if (patchMcpClientConfig.getHeaders() != null) {
             mcpClientConfig.setHeaders(patchMcpClientConfig.getHeaders());

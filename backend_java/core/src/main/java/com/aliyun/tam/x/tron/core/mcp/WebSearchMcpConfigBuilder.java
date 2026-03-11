@@ -42,7 +42,8 @@ public class WebSearchMcpConfigBuilder implements McpConfigBuilder {
                 .id(getId())
                 .name("阿里云百炼_联网搜索")
                 .description("基于通义实验室 Text-Embedding，GTE-reRank，Query 改写，搜索判定等多种检索模型及语义理解，串接专业搜索工程框架及各类型实时信息检索工具，提供实时互联网全栈信息检索，提升 LLM 回答准确性及时效性。")
-                .url("https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/sse")
+                .transport(McpClientConfig.TRANSPORT_HTTP)
+                .url("https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp")
                 .headers(ImmutableMap.of(
                         "Authorization", "Bearer " + apiKey
                 ))

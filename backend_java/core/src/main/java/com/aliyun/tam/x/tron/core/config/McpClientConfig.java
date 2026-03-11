@@ -39,46 +39,47 @@ public class McpClientConfig {
      * MCP client ID
      */
     private String id;
-    
+
     /**
      * MCP client enabled status
      */
     @Builder.Default
     private Boolean enabled = true;
-    
+
     /**
      * MCP client name
      */
     private String name;
-    
+
     /**
      * MCP client description
      */
     private String description;
-    
+
     /**
      * MCP transport protocol: streamable_http or sse
      */
     @Builder.Default
     private String transport = "sse";
-    
+
     /**
      * MCP service URL
      */
     private String url;
-    
+
+    /**
+     * client initialize timeout in seconds
+     */
+    @Builder.Default
+    private Integer initializeTimeout = 10;
+
     /**
      * MCP request timeout in seconds
      */
     @Builder.Default
     private Integer timeout = 30;
-    
-    /**
-     * SSE read timeout in seconds
-     */
-    @Builder.Default
-    private Integer sseReadTimeout = 300;
-    
+
+
     /**
      * MCP request headers
      */
