@@ -19,7 +19,7 @@ build/
 ### Mac OS ###
 .DS_Store
 
-.skills/
+.workspace/
 
 logs/
 *.log
