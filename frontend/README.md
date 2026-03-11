@@ -295,7 +295,3 @@ import { setLocale } from 'chatbox/utils/i18n';
 
 setLocale('zh-CN'); // 或 'en-US'
 ```
-
-## 许可证
-
-MIT License
