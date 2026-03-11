@@ -157,6 +157,7 @@ public class SkillConfigService {
         }
 
         log.info("syncing skill {}", skillConfig.getName());
+
         ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         Path baseDir = Paths.get(skillConfig.getBaseDir());
         try (ZipInputStream zis = new ZipInputStream(fileRepository.download(skillConfig.getFileId()))) {

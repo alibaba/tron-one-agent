@@ -49,7 +49,7 @@ public class TravelAgentBuilder extends BaseAgentBuilder {
                 )
                 .skills(Lists.newArrayList(
                         AgentSkillConfig.builder()
-                                .name("weather_skill")
+                                .name("weather")
                                 .enabled(true)
                                 .build()
                 ))

@@ -66,7 +66,7 @@ import java.util.Objects;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseAgentBuilder implements AgentBuilder {
-    private static final Path BASE_SKILL_WORKDIR = Path.of(".skills");
+    private static final Path WORKSPACE_BASEDIR = Path.of(".workspace");
 
     @Autowired
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
@@ -138,10 +138,17 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
             SkillBox skillBox = buildSkillBox(config, toolkit);
 
+            String systemPrompt = StringUtils.hasText(config.getSystemPrompt()) ? config.getSystemPrompt() : "";
+            if (skillBox != null) {
+                Path workdir = skillBox.getCodeExecutionWorkDir();
+                systemPrompt += "\n\n Your work directory is " + workdir + ", you can read/write files or execute commands in this directory.\n"
+                        + "\nResources and Scripts of a specific skill can be found in " + skillBox.getUploadDir() + " /<skill_id>/ directory\n";
+            }
+
             ReActAgent agent = ReActAgent.builder()
                     .name(config.getName())
                     .model(chatModel)
-                    .sysPrompt(StringUtils.hasText(config.getSystemPrompt()) ? config.getSystemPrompt() : "")
+                    .sysPrompt(systemPrompt)
                     .toolkit(toolkit)
                     .skillBox(skillBox)
                     .memory(new InMemoryMemory())
@@ -159,10 +166,16 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
             SkillBox skillBox = buildSkillBox(config, toolkit);
 
+            String systemPrompt = StringUtils.hasText(config.getSystemPrompt()) ? config.getSystemPrompt() : "";
+            if (skillBox != null) {
+                Path workdir = skillBox.getCodeExecutionWorkDir();
+                systemPrompt += "\n\n Your work directory is " + workdir + ", you can read/write files in this directory";
+            }
+
             ReActAgent.Builder mainAgentBuilder = ReActAgent.builder()
                     .name(config.getName())
                     .model(chatModel)
-                    .sysPrompt(StringUtils.hasText(config.getSystemPrompt()) ? config.getSystemPrompt() : "")
+                    .sysPrompt(systemPrompt)
                     .memory(new InMemoryMemory())
                     .toolkit(toolkit)
                     .skillBox(skillBox)
@@ -338,9 +351,9 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
         if (agentSkills.isEmpty()) {
             return null;
         }
-        Path workdir = BASE_SKILL_WORKDIR.resolve(
+        Path workdir = WORKSPACE_BASEDIR.resolve(
                 Paths.get(agentId, hasher.hash().toString())
-        );
+        ).toAbsolutePath().normalize();
         SkillBox skillBox = new SkillBox(toolkit);
         skillBox.codeExecution()
                 .workDir(workdir.toString())

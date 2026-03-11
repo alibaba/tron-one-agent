@@ -60,7 +60,6 @@ public class RenamingService {
                 .textContent(text)
                 .build();
         String name = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
-                        .thinkingBudget(0)
                         .build())
                 .map(ChatResponse::getContent)
                 .flatMap(Flux::fromIterable)
