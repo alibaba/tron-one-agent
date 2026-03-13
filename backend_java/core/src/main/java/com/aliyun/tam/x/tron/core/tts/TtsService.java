@@ -1,5 +1,9 @@
 package com.aliyun.tam.x.tron.core.tts;
 
 public interface TtsService {
-    TtsSession newSession();
+
+    interface TtsCallback {
+        void onData(String dataBase64);
+    }
+    TtsSession newSession(TtsCallback callback);
 }

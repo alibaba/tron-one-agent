@@ -5,4 +5,6 @@ public interface TtsSession {
     void appendText(String text);
 
     void complete();
+
+    void close();
 }
