@@ -25,6 +25,7 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <guava.version>33.5.0-jre</guava.version>
         <a2a.sdk.version>0.3.2.Final</a2a.sdk.version>
+        <dashscope.version>2.22.11</dashscope.version>
     </properties>
 
     <dependencyManagement>
@@ -133,6 +134,12 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <version>2.3.3</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>dashscope-sdk-java</artifactId>
+                <version>${dashscope.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
