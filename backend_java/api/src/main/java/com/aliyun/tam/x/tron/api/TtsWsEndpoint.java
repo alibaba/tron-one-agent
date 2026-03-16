@@ -70,7 +70,7 @@ public class TtsWsEndpoint {
         try {
             Request request = objectMapper.readValue(message, Request.class);
             if (StringUtils.hasText(request.text)) {
-                ttsSession.appendText(message);
+                ttsSession.appendText(request.getText());
             }
             if (Boolean.TRUE.equals(request.completed)) {
                 ttsSession.complete();
