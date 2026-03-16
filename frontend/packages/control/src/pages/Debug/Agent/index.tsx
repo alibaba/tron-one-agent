@@ -37,7 +37,7 @@ import {
 } from "chatbox/extends/service";
 import { getAllAgents, getSessionList, type SessionListItem } from "@/services/agent";
 import { AgentConfig } from "@/types/agent.interface";
-import { Card, Form, message, Select, Tag, Tabs, Table, Typography, Modal, Space, List } from "antd";
+import { Card, Form, message, Select, Tag, Tabs, Table, Typography, Modal, Space, List, Switch } from "antd";
 import { LocalAgentType } from "@/types/common.interface";
 import { getUserId, getUserName } from "@/utils/userInfo";
 
@@ -125,6 +125,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const lastEventIdRef = useRef(0);
 
   const [sessionId, setSessionId] = useState<string>("");
+  const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(true);
 
   const agentIdChanged = Form.useWatch("agentId", form);
 
@@ -433,6 +434,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }}
       >
         <ChatBox
+          sessionId={chatState.sessionId}
           messages={chatState.messages}
           sessionName={chatState.sessionName as string}
           userName={userName}
@@ -444,11 +446,26 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           supportInputTypes={agentSupportInputTypes}
           supportAgentTTS={true}
           ttsWsUrl={`${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/tts`}
-          ttsAutoPlay={true}
+          ttsAutoPlay={ttsAutoPlay}
           onLike={(messageId) => console.log("点赞消息:", messageId)}
           onDislike={(messageId) => console.log("点踩消息:", messageId)}
         />
-        <Card className={styles.operateWrap} title="调试面板">
+        <Card
+          className={styles.operateWrap}
+          title={
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>调试面板</span>
+              <Space size="small">
+                <span style={{ fontSize: 12, color: "#666" }}>自动TTS</span>
+                <Switch
+                  size="small"
+                  checked={ttsAutoPlay}
+                  onChange={setTtsAutoPlay}
+                />
+              </Space>
+            </div>
+          }
+        >
           <Form
             form={form}
             layout="vertical"

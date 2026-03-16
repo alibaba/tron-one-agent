@@ -153,16 +153,15 @@ export const useTTS = (options: UseTTSOptions): UseTTSReturn => {
       !audioContextRef.current ||
       audioQueueRef.current.length === 0
     ) {
-      if (audioQueueRef.current.length === 0) {
+      if (audioQueueRef.current.length === 0 && isPlayingRef.current) {
         isPlayingRef.current = false;
-        if (status === "playing") {
-          setStatus("idle");
-        }
+        setStatus("idle");
       }
       return;
     }
 
     isPlayingRef.current = true;
+    setStatus("playing");
     const audioBuffer = audioQueueRef.current.shift();
     if (!audioBuffer) return;
 
@@ -183,7 +182,7 @@ export const useTTS = (options: UseTTSOptions): UseTTSReturn => {
       console.error("播放音频失败:", error);
       onError?.(error as Error);
     }
-  }, [onError, status]);
+  }, [onError]);
 
   // 初始化 WebSocket
   const initWebSocket = useCallback(() => {
@@ -249,16 +248,14 @@ export const useTTS = (options: UseTTSOptions): UseTTSReturn => {
 
       ws.onclose = () => {
         console.log("TTS WebSocket 连接关闭");
-        if (status === "playing" || status === "connecting") {
-          setStatus("idle");
-        }
+        // 不在 onclose 中改变状态，让 playNext 在队列播完后处理
       };
     } catch (error) {
       console.error("初始化 WebSocket 失败:", error);
       setStatus("error");
       onError?.(error as Error);
     }
-  }, [wsUrl, onError, status, playNext]);
+  }, [wsUrl, onError, playNext]);
 
   // 开始播放
   const speak = useCallback(

@@ -22,6 +22,9 @@
 }
 
 .sessionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
   padding-bottom: 4px;
   border-bottom: 1px solid #e8e8e8;
@@ -31,6 +34,18 @@
   font-size: 1rem;
   font-weight: 600;
   color: #262626;
+  margin: 0;
+}
+
+.ttsSwitch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  span {
+    font-size: 12px;
+    color: #666;
+  }
 }
 
 .sessionDetails {

@@ -19,6 +19,7 @@ import React from "react";
 import MessageItem from "../MessageItem";
 import styles from "./index.module.less";
 import type { AgentSessionMessage, UserSessionMessage } from "../../types";
+import { SessionMessageType } from "../../types/enums";
 
 export interface MessageListProps {
   messages: Array<AgentSessionMessage | UserSessionMessage>;
@@ -58,6 +59,28 @@ const MessageList: React.FC<MessageListProps> = ({
   onLike,
   onDislike,
 }) => {
+  // 记录初始加载的消息 ID 集合，用于区分历史消息和新消息
+  const initialMessageIdsRef = React.useRef<Set<number> | null>(null);
+  
+  // 首次渲染时记录已有消息 ID
+  if (initialMessageIdsRef.current === null) {
+    initialMessageIdsRef.current = new Set(messages.map(m => m.id));
+  }
+
+  // 找到最后一条新增的 agent 消息 ID（不在初始集合中的）
+  const lastNewAgentMessageId = React.useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (
+        msg.type === SessionMessageType.AGENT &&
+        !initialMessageIdsRef.current?.has(msg.id)
+      ) {
+        return msg.id;
+      }
+    }
+    return null;
+  }, [messages]);
+
   return (
     <div className={`${styles.messageList} ${className || ""}`} style={style}>
       {messages.map((message) => (
@@ -71,6 +94,7 @@ const MessageList: React.FC<MessageListProps> = ({
           supportAgentTTS={supportAgentTTS}
           ttsWsUrl={ttsWsUrl}
           ttsAutoPlay={ttsAutoPlay}
+          isLastMessage={message.id === lastNewAgentMessageId}
           onLike={onLike}
           onDislike={onDislike}
         />

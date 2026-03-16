@@ -82,6 +82,7 @@ const Chat = ({
   supportInputTypes?: ContentType[];
 }) => {
   const navigate = useNavigate();
+  const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(true);
   const sseEventSource = useEventSource<SseEventSource>(
     () =>
       new SseEventSource({
@@ -246,10 +247,16 @@ const Chat = ({
   return (
     <div className={styles.container}>
       <div className={styles.sessionInfoWrap}>
-        <SessionInfo session={session} messages={chatState.messages} />
+        <SessionInfo
+          session={session}
+          messages={chatState.messages}
+          ttsAutoPlay={ttsAutoPlay}
+          onTtsAutoPlayChange={setTtsAutoPlay}
+        />
       </div>
       <div className={styles.chatWrap}>
         <ChatBox
+          sessionId={chatState.sessionId}
           messages={chatState.messages}
           sessionName={chatState.sessionName as string}
           userName={getUserName()}
@@ -260,6 +267,9 @@ const Chat = ({
           onCreateSessionClick={onCreateSessionClick}
           customTagMap={customTagMap}
           supportInputTypes={supportInputTypes}
+          supportAgentTTS={true}
+          ttsWsUrl={`${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/tts`}
+          ttsAutoPlay={ttsAutoPlay}
         />
       </div>
     </div>

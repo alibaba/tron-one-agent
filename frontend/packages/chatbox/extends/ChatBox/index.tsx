@@ -37,6 +37,7 @@ import { throttle } from "lodash";
 import cls from "classnames";
 
 export interface ChatBoxProps {
+  sessionId?: string | number;
   sessionName: string;
   userName?: string;
   agentName?: string;
@@ -71,6 +72,7 @@ const AUTO_SCROLL_THRESHOLD = 50;
 const SHOW_BACK_TO_BOTTOM_THRESHOLD = 80;
 const ChatBox: React.FC<ChatBoxProps> = (props) => {
   const {
+    sessionId,
     sessionName,
     userName,
     agentName,
@@ -223,6 +225,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
           style={{ overflowY: "auto", height: "100%" }}
         >
           <MessageList
+            key={sessionId}
             messages={messages || []}
             userName={userName}
             agentName={agentName}

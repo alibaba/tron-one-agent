@@ -16,6 +16,7 @@
 
 
 import React, { useMemo } from "react";
+import { Switch } from "antd";
 import {
   UserSessionMessage,
   AgentSessionMessage,
@@ -26,19 +27,25 @@ import { SessionResult } from "@/services/session";
 import styles from "./index.module.less";
 import { TaskContent } from "chatbox/types";
 
+interface SessionInfoProps {
+  session: SessionResult | null;
+  messages?: Array<UserSessionMessage | AgentSessionMessage>;
+  ttsAutoPlay?: boolean;
+  onTtsAutoPlayChange?: (checked: boolean) => void;
+}
+
 function SessionInfo({
   session,
   messages,
-}: {
-  session: SessionResult;
-  messages: Array<UserSessionMessage | AgentSessionMessage>;
-}) {
+  ttsAutoPlay = true,
+  onTtsAutoPlayChange,
+}: SessionInfoProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("zh-CN");
   };
 
   const taskTotal = useMemo(() => {
-    if (!messages) return 0;
+    if (!messages || messages.length === 0) return 0;
     return messages.reduce((pre, cur) => {
       if (cur && cur.id && cur.contents?.length) {
         return (
@@ -52,7 +59,7 @@ function SessionInfo({
   }, [messages]);
 
   const actionTotal = useMemo(() => {
-    if (!messages) return 0;
+    if (!messages || messages.length === 0) return 0;
     return messages.reduce((pre, cur) => {
       // 计算当前消息中的ACTION数量
       const actions = cur.contents.filter(
@@ -87,6 +94,14 @@ function SessionInfo({
     <div className={styles.sessionInfo}>
       <div className={styles.sessionHeader}>
         <h3>会话信息</h3>
+        <div className={styles.ttsSwitch}>
+          <span>自动TTS</span>
+          <Switch
+            size="small"
+            checked={ttsAutoPlay}
+            onChange={onTtsAutoPlayChange}
+          />
+        </div>
       </div>
 
       <div className={styles.sessionDetails}>

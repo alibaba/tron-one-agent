@@ -73,7 +73,28 @@ const extractTextForTTS = (markdown: string): string => {
   result = result.replace(/__([^_]+)__/g, "$1");
   result = result.replace(/_([^_]+)_/g, "$1");
 
-  // 9. 清理特殊字符和多余空白
+  // 9. 移除 markdown 分隔线 (---, ***, ___)
+  result = result.replace(/^[-*_]{3,}$/gm, "");
+
+  // 10. 移除 markdown 表格分隔行 (|---|---|)
+  result = result.replace(/\|?[\s]*[-:]+[\s]*\|[\s\-:|]+\|?/g, "");
+  // 移除表格单元格分隔符 |
+  result = result.replace(/\|/g, " ");
+
+  // 11. 移除列表符号
+  result = result.replace(/^[\s]*[-*+]\s+/gm, "");
+  result = result.replace(/^[\s]*\d+\.\s+/gm, "");
+
+  // 12. 移除引用符号
+  result = result.replace(/^>+\s*/gm, "");
+
+  // 13. 清理特殊字符和多余空白
+  result = result.replace(/&nbsp;/gi, " ");   // HTML 空格实体
+  result = result.replace(/&amp;/gi, "&");    // HTML & 实体
+  result = result.replace(/&lt;/gi, "<");     // HTML < 实体
+  result = result.replace(/&gt;/gi, ">");     // HTML > 实体
+  result = result.replace(/&quot;/gi, '"');   // HTML " 实体
+  result = result.replace(/&#?\w+;/g, "");    // 其他 HTML 实体
   result = result.replace(/[\n\t\r]/g, " ");  // 换行符、制表符转为空格
   result = result.replace(/\s{2,}/g, " ");     // 多个空格合并为一个
   result = result.trim();
@@ -93,6 +114,8 @@ export interface MessageItemProps {
   ttsWsUrl?: string;
   /** 是否自动播放 TTS，默认 false */
   ttsAutoPlay?: boolean;
+  /** 是否是最后一条消息，用于控制自动播放 */
+  isLastMessage?: boolean;
   /** 点赞回调 */
   onLike?: (messageId: number) => void;
   /** 点踩回调 */
@@ -108,6 +131,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   supportAgentTTS = false,
   ttsWsUrl = "",
   ttsAutoPlay = false,
+  isLastMessage = false,
   onLike,
   onDislike,
 }) => {
@@ -191,26 +215,36 @@ const MessageItem: React.FC<MessageItemProps> = ({
   }, [textContent, isPlaying, appendText, complete, message.status]);
 
   // 自动播放 TTS
+  const hasTriggeredAutoPlayRef = useRef(false);
   useEffect(() => {
     if (
       !ttsAutoPlay ||
       !supportAgentTTS ||
       !isAgent ||
+      !isLastMessage ||
       !textContent ||
-      isTTSActiveRef.current ||
+      hasTriggeredAutoPlayRef.current ||
       isPlaying
     ) {
       return;
     }
 
-    // 只有消息正在生成中时才自动播放
-    if (message.status === SessionMessageStatus.EXECUTING) {
+    // 新消息正在生成或快速完成时触发自动播放（isLastMessage 已确保只对新增消息生效）
+    if (
+      message.status === SessionMessageStatus.EXECUTING ||
+      message.status === SessionMessageStatus.SUCCEED
+    ) {
+      hasTriggeredAutoPlayRef.current = true;
       sentTextLengthRef.current = 0;
       isTTSActiveRef.current = true;
-      speak(textContent, false);
+      const isCompleted = message.status === SessionMessageStatus.SUCCEED;
+      speak(textContent, isCompleted);
       sentTextLengthRef.current = textContent.length;
+      if (isCompleted) {
+        isTTSActiveRef.current = false;
+      }
     }
-  }, [ttsAutoPlay, supportAgentTTS, isAgent, textContent, message.status, isPlaying, speak]);
+  }, [ttsAutoPlay, supportAgentTTS, isAgent, isLastMessage, textContent, message.status, isPlaying, speak]);
 
   // 处理点赞
   const handleLike = useCallback(() => {
@@ -385,31 +419,39 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {statusElement}
 
         {/* Agent 消息功能按钮区域 */}
-        {isAgent && supportAgentTTS && (
-          <div className={styles.actionButtons}>
-            <button
-              className={`${styles.actionButton} ${isLiked ? styles.active : ""}`}
-              onClick={handleLike}
-              title="点赞"
-            >
-              <i className={`fas fa-thumbs-up`}></i>
-            </button>
-            <button
-              className={`${styles.actionButton} ${isDisliked ? styles.active : ""}`}
-              onClick={handleDislike}
-              title="点踩"
-            >
-              <i className={`fas fa-thumbs-down`}></i>
-            </button>
-            {textContent && (
-              <button
-                className={`${styles.actionButton} ${isPlaying ? styles.active : ""}`}
-                onClick={handleTTSClick}
-                title={isPlaying ? "取消" : "播放语音"}
-              >
-                <i className={`fas ${isPlaying ? "fa-stop" : "fa-volume-up"}`}></i>
-              </button>
-            )}
+        {isAgent && supportAgentTTS && textContent && (
+          <div className={styles.ttsPlayer}>
+            <div className={styles.ttsWaveform}>
+              {isPlaying ? (
+                <div className={styles.waveAnimating}>
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              ) : (
+                <div className={styles.waveStatic}>
+                  <i className="fas fa-volume-up"></i>
+                  <span>语音播放</span>
+                </div>
+              )}
+            </div>
+            <div className={styles.ttsControls}>
+              {isPlaying ? (
+                <button
+                  className={`${styles.ttsButton} ${styles.cancelBtn}`}
+                  onClick={handleTTSClick}
+                >
+                  <i className="fas fa-stop"></i>
+                  <span>取消</span>
+                </button>
+              ) : (
+                <button
+                  className={`${styles.ttsButton} ${styles.playBtn}`}
+                  onClick={handleTTSClick}
+                >
+                  <i className="fas fa-play"></i>
+                  <span>播放</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
