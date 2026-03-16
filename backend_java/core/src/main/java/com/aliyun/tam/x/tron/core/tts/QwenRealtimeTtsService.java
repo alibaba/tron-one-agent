@@ -77,16 +77,37 @@ public class QwenRealtimeTtsService implements TtsService {
             }
 
             return new TtsSession() {
+                private volatile long lastChunkTimestamp = 0L;
+
                 @Override
                 public void appendText(String text) {
-                    realtime.appendText(text);
+                    long now = System.currentTimeMillis();
+                    long interval = now - lastChunkTimestamp;
+                    if (interval < properties.getChunkIntervalInMills()) {
+                        sleep(properties.getChunkIntervalInMills() - interval);
+                    }
+                    for (int i = 0; i < text.length(); i += properties.getMaxChunkSize()) {
+                        String chunk = text.substring(i, Math.min(i + properties.getMaxChunkSize(), text.length()));
+                        realtime.appendText(chunk);
+                        sleep(properties.getChunkIntervalInMills());
+                    }
+
+                    lastChunkTimestamp = now;
+                }
+
+                private void sleep(long millis) {
+                    try {
+                        Thread.sleep(millis);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
                 }
 
                 @Override
                 public void complete() {
                     try {
                         realtime.finish();
-                        if (!finishLatch.await(10, TimeUnit.SECONDS)) {
+                        if (!finishLatch.await(properties.getCompleteTimeoutInSecs(), TimeUnit.SECONDS)) {
                             throw new TimeoutException("Response completion timed out");
                         }
                     } catch (InterruptedException | TimeoutException e) {

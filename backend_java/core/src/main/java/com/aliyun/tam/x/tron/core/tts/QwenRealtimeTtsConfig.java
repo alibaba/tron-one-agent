@@ -33,7 +33,11 @@ public class QwenRealtimeTtsConfig {
 
         private Boolean optimizeInstructions = Boolean.FALSE;
 
+        private Integer maxChunkSize = 20;
 
+        private Long chunkIntervalInMills = 100L;
+
+        private Long completeTimeoutInSecs = 60L;
     }
 
     @Bean
