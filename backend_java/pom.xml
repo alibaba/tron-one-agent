@@ -140,6 +140,12 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>dashscope-sdk-java</artifactId>
                 <version>${dashscope.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.github.victools</groupId>
+                        <artifactId>jsonschema-generator</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
