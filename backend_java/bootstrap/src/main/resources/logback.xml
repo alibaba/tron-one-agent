@@ -31,7 +31,7 @@
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="com.aliyun.tam.x.tron" level="DEBUG"/>
+    <logger name="com.aliyun.tam.x.tron" level="INFO"/>
     <logger name="org.springframework" level="WARN"/>
     <logger name="com.mysql" level="WARN"/>
     <logger name="org.mybatis" level="WARN"/>

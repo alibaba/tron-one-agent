@@ -53,6 +53,16 @@ export interface ChatBoxProps {
   style?: React.CSSProperties;
   className?: string;
   customTagMap?: Record<string, React.FC<any>>;
+  /** 是否支持 Agent TTS 功能 */
+  supportAgentTTS?: boolean;
+  /** TTS WebSocket URL */
+  ttsWsUrl?: string;
+  /** 是否自动播放 TTS */
+  ttsAutoPlay?: boolean;
+  /** 点赞回调 */
+  onLike?: (messageId: number) => void;
+  /** 点踩回调 */
+  onDislike?: (messageId: number) => void;
 }
 
 // 滚动吸附阈值（距离底部px）
@@ -74,6 +84,11 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
     className,
     customTagMap,
     supportInputTypes,
+    supportAgentTTS,
+    ttsWsUrl,
+    ttsAutoPlay,
+    onLike,
+    onDislike,
   } = props;
 
   // 只有 TEXT 时使用文本模式，包含 IMAGE/VIDEO/AUDIO 时使用多模式
@@ -213,6 +228,11 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
             agentName={agentName}
             onToggleExpand={stopAutoScroll}
             customTagMap={customTagMap}
+            supportAgentTTS={supportAgentTTS}
+            ttsWsUrl={ttsWsUrl}
+            ttsAutoPlay={ttsAutoPlay}
+            onLike={onLike}
+            onDislike={onDislike}
           />
           <div ref={bottomRef} style={{ height: 1 }} />
         </div>

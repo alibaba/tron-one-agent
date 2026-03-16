@@ -15,17 +15,71 @@
  */
 
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import TaskContentRender from "../TaskContent";
 import ActionContentRender from "../ActionContent";
 import TextContentRender from "../TextContent";
 import styles from "./index.module.less";
-import type { AgentSessionMessage, UserSessionMessage } from "../../types";
+import type { AgentSessionMessage, UserSessionMessage, TextContent } from "../../types";
 import {
   SessionMessageType,
   ContentType,
   SessionMessageStatus,
 } from "../../types/enums";
+import { useTTS } from "../../hooks/useTTS";
+
+/**
+ * 从 markdown 文本中提取纯文本，排除 HTML 标签及其内容
+ * 支持流式场景：未闭合的标签会被截断
+ */
+const extractTextForTTS = (markdown: string): string => {
+  if (!markdown) return "";
+
+  let result = markdown;
+
+  // 1. 移除已闭合的 HTML 标签及其内容 (e.g., <customtag>...</customtag>)
+  result = result.replace(/<([a-zA-Z][a-zA-Z0-9-]*)[^>]*>[\s\S]*?<\/\1>/g, "");
+
+  // 2. 流式场景：移除未闭合的标签开始部分 (e.g., <customtag>...未闭合)
+  //    匹配从 <tag 开始到字符串末尾，且中间没有对应的闭合标签
+  const unclosedTagMatch = result.match(/<([a-zA-Z][a-zA-Z0-9-]*)[^>]*>(?:(?!<\/\1>)[\s\S])*$/);
+  if (unclosedTagMatch) {
+    result = result.slice(0, unclosedTagMatch.index);
+  }
+
+  // 3. 移除剩余的独立 HTML 标签 (e.g., <br/>, <img .../>)
+  result = result.replace(/<[^>]+\/>/g, "");
+
+  // 4. 移除 markdown 代码块
+  result = result.replace(/```[\s\S]*?```/g, "");
+  // 流式场景：未闭合的代码块
+  const unclosedCodeBlock = result.match(/```[\s\S]*$/);
+  if (unclosedCodeBlock) {
+    result = result.slice(0, unclosedCodeBlock.index);
+  }
+
+  // 5. 移除行内代码
+  result = result.replace(/`[^`]+`/g, "");
+
+  // 6. 移除 markdown 链接，保留文本
+  result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+  // 7. 移除 markdown 标题符号
+  result = result.replace(/^#{1,6}\s+/gm, "");
+
+  // 8. 移除加粗、斜体符号
+  result = result.replace(/\*\*([^*]+)\*\*/g, "$1");
+  result = result.replace(/\*([^*]+)\*/g, "$1");
+  result = result.replace(/__([^_]+)__/g, "$1");
+  result = result.replace(/_([^_]+)_/g, "$1");
+
+  // 9. 清理特殊字符和多余空白
+  result = result.replace(/[\n\t\r]/g, " ");  // 换行符、制表符转为空格
+  result = result.replace(/\s{2,}/g, " ");     // 多个空格合并为一个
+  result = result.trim();
+
+  return result;
+};
 
 export interface MessageItemProps {
   message: AgentSessionMessage | UserSessionMessage;
@@ -33,6 +87,16 @@ export interface MessageItemProps {
   agentName?: string;
   onToggleExpand?: (id: number, isExpanded: boolean, type: 'task' | 'action') => void;
   customTagMap?: Record<string, React.FC<any>>;
+  /** 是否支持 Agent TTS 功能 */
+  supportAgentTTS?: boolean;
+  /** TTS WebSocket URL */
+  ttsWsUrl?: string;
+  /** 是否自动播放 TTS，默认 false */
+  ttsAutoPlay?: boolean;
+  /** 点赞回调 */
+  onLike?: (messageId: number) => void;
+  /** 点踩回调 */
+  onDislike?: (messageId: number) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
@@ -41,9 +105,139 @@ const MessageItem: React.FC<MessageItemProps> = ({
   agentName,
   onToggleExpand,
   customTagMap,
+  supportAgentTTS = false,
+  ttsWsUrl = "",
+  ttsAutoPlay = false,
+  onLike,
+  onDislike,
 }) => {
   const isUser = message.type === SessionMessageType.USER;
   const isAgent = message.type === SessionMessageType.AGENT;
+
+  // TTS 状态
+  const [isLiked, setIsLiked] = useState(false);
+  const [isDisliked, setIsDisliked] = useState(false);
+
+  // 提取消息中的所有文本内容，转换为纯文本用于 TTS
+  const textContent = useMemo(() => {
+    if (!isAgent || !message.contents) return "";
+    const rawText = message.contents
+      .filter((content): content is TextContent => content.type === ContentType.TEXT)
+      .map((content) => (content as TextContent).text)
+      .join("\n");
+    return extractTextForTTS(rawText);
+  }, [message.contents, isAgent]);
+
+  // 记录已发送到 TTS 的文本长度
+  const sentTextLengthRef = useRef(0);
+  // 记录当前是否处于 TTS 播放模式
+  const isTTSActiveRef = useRef(false);
+
+  console.log("MessageItem", { message, textContent });
+
+  // TTS Hook
+  const {
+    isPlaying,
+    speak,
+    appendText,
+    stop,
+    complete,
+  } = useTTS({
+    wsUrl: ttsWsUrl,
+  });
+
+  // 处理 TTS 按钮点击
+  const handleTTSClick = useCallback(() => {
+    if (isPlaying) {
+      // 取消播放
+      stop();
+      sentTextLengthRef.current = 0;
+      isTTSActiveRef.current = false;
+    } else {
+      // 开始播放（从头开始）
+      if (textContent) {
+        sentTextLengthRef.current = 0;
+        isTTSActiveRef.current = true;
+        const isCompleted = message.status === SessionMessageStatus.SUCCEED;
+        speak(textContent, isCompleted);
+        sentTextLengthRef.current = textContent.length;
+        if (isCompleted) {
+          isTTSActiveRef.current = false;
+        }
+      }
+    }
+  }, [isPlaying, stop, speak, textContent, message.status]);
+
+  // 流式追加文本到 TTS
+  useEffect(() => {
+    if (!isTTSActiveRef.current || !isPlaying) return;
+
+    const currentLength = textContent.length;
+    const sentLength = sentTextLengthRef.current;
+    const isCompleted = message.status === SessionMessageStatus.SUCCEED;
+
+    // 有新文本需要发送
+    if (currentLength > sentLength) {
+      const newText = textContent.slice(sentLength);
+      appendText(newText, isCompleted);
+      sentTextLengthRef.current = currentLength;
+      if (isCompleted) {
+        isTTSActiveRef.current = false;
+      }
+    } else if (isCompleted && currentLength === sentLength && sentLength > 0) {
+      complete();
+      isTTSActiveRef.current = false;
+    }
+  }, [textContent, isPlaying, appendText, complete, message.status]);
+
+  // 自动播放 TTS
+  useEffect(() => {
+    if (
+      !ttsAutoPlay ||
+      !supportAgentTTS ||
+      !isAgent ||
+      !textContent ||
+      isTTSActiveRef.current ||
+      isPlaying
+    ) {
+      return;
+    }
+
+    // 只有消息正在生成中时才自动播放
+    if (message.status === SessionMessageStatus.EXECUTING) {
+      sentTextLengthRef.current = 0;
+      isTTSActiveRef.current = true;
+      speak(textContent, false);
+      sentTextLengthRef.current = textContent.length;
+    }
+  }, [ttsAutoPlay, supportAgentTTS, isAgent, textContent, message.status, isPlaying, speak]);
+
+  // 处理点赞
+  const handleLike = useCallback(() => {
+    if (!isLiked) {
+      setIsLiked(true);
+      setIsDisliked(false);
+      onLike?.(message.id);
+    }
+  }, [isLiked, message.id, onLike]);
+
+  // 处理点踩
+  const handleDislike = useCallback(() => {
+    if (!isDisliked) {
+      setIsDisliked(true);
+      setIsLiked(false);
+      onDislike?.(message.id);
+    }
+  }, [isDisliked, message.id, onDislike]);
+
+  // 组件卸载时停止 TTS
+  useEffect(() => {
+    return () => {
+      stop();
+      sentTextLengthRef.current = 0;
+      isTTSActiveRef.current = false;
+    };
+  }, [stop]);
 
   const formatTime = (timestamp: string | Date) => {
     return new Date(timestamp).toLocaleTimeString("zh-CN", {
@@ -189,6 +383,35 @@ const MessageItem: React.FC<MessageItemProps> = ({
         ) : null}
 
         {statusElement}
+
+        {/* Agent 消息功能按钮区域 */}
+        {isAgent && supportAgentTTS && (
+          <div className={styles.actionButtons}>
+            <button
+              className={`${styles.actionButton} ${isLiked ? styles.active : ""}`}
+              onClick={handleLike}
+              title="点赞"
+            >
+              <i className={`fas fa-thumbs-up`}></i>
+            </button>
+            <button
+              className={`${styles.actionButton} ${isDisliked ? styles.active : ""}`}
+              onClick={handleDislike}
+              title="点踩"
+            >
+              <i className={`fas fa-thumbs-down`}></i>
+            </button>
+            {textContent && (
+              <button
+                className={`${styles.actionButton} ${isPlaying ? styles.active : ""}`}
+                onClick={handleTTSClick}
+                title={isPlaying ? "取消" : "播放语音"}
+              >
+                <i className={`fas ${isPlaying ? "fa-stop" : "fa-volume-up"}`}></i>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -25,7 +25,8 @@ export { default as MessageList } from './components/MessageList';
 
 
 export * from './hooks/useChatModel';
-export * from './hooks/useEventSource'
+export * from './hooks/useEventSource';
+export * from './hooks/useTTS';
 
 export * from './eventBuffer/eventbuffer';
 

@@ -32,6 +32,16 @@ export interface MessageListProps {
   style?: React.CSSProperties;
   className?: string;
   customTagMap?: Record<string, React.FC<any>>;
+  /** 是否支持 Agent TTS 功能 */
+  supportAgentTTS?: boolean;
+  /** TTS WebSocket URL */
+  ttsWsUrl?: string;
+  /** 是否自动播放 TTS */
+  ttsAutoPlay?: boolean;
+  /** 点赞回调 */
+  onLike?: (messageId: number) => void;
+  /** 点踩回调 */
+  onDislike?: (messageId: number) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -42,6 +52,11 @@ const MessageList: React.FC<MessageListProps> = ({
   style,
   className,
   customTagMap,
+  supportAgentTTS,
+  ttsWsUrl,
+  ttsAutoPlay,
+  onLike,
+  onDislike,
 }) => {
   return (
     <div className={`${styles.messageList} ${className || ""}`} style={style}>
@@ -53,6 +68,11 @@ const MessageList: React.FC<MessageListProps> = ({
           agentName={agentName}
           onToggleExpand={onToggleExpand}
           customTagMap={customTagMap}
+          supportAgentTTS={supportAgentTTS}
+          ttsWsUrl={ttsWsUrl}
+          ttsAutoPlay={ttsAutoPlay}
+          onLike={onLike}
+          onDislike={onDislike}
         />
       ))}
     </div>

@@ -442,6 +442,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           className={styles.mainWrap}
           onCreateSessionClick={handleCreateSessionClick}
           supportInputTypes={agentSupportInputTypes}
+          supportAgentTTS={true}
+          ttsWsUrl={`${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/tts`}
+          ttsAutoPlay={true}
+          onLike={(messageId) => console.log("点赞消息:", messageId)}
+          onDislike={(messageId) => console.log("点踩消息:", messageId)}
         />
         <Card className={styles.operateWrap} title="调试面板">
           <Form
