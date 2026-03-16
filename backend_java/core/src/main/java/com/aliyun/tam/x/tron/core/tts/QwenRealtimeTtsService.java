@@ -77,22 +77,13 @@ public class QwenRealtimeTtsService implements TtsService {
             }
 
             return new TtsSession() {
-                private volatile long lastChunkTimestamp = 0L;
-
                 @Override
-                public void appendText(String text) {
-                    long now = System.currentTimeMillis();
-                    long interval = now - lastChunkTimestamp;
-                    if (interval < properties.getChunkIntervalInMills()) {
-                        sleep(properties.getChunkIntervalInMills() - interval);
-                    }
+                public synchronized void appendText(String text) {
                     for (int i = 0; i < text.length(); i += properties.getMaxChunkSize()) {
                         String chunk = text.substring(i, Math.min(i + properties.getMaxChunkSize(), text.length()));
                         realtime.appendText(chunk);
                         sleep(properties.getChunkIntervalInMills());
                     }
-
-                    lastChunkTimestamp = now;
                 }
 
                 private void sleep(long millis) {
