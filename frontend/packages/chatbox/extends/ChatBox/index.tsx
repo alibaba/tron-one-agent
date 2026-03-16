@@ -66,10 +66,10 @@ export interface ChatBoxProps {
   onDislike?: (messageId: number) => void;
 }
 
-// 滚动吸附阈值（距离底部px）
-const AUTO_SCROLL_THRESHOLD = 50;
 // 显示回到底部按钮的阈值
-const SHOW_BACK_TO_BOTTOM_THRESHOLD = 80;
+const SHOW_BACK_TO_BOTTOM_THRESHOLD = 200;
+// 自动吸底阈值
+const AUTO_SCROLL_THRESHOLD = 100;
 const ChatBox: React.FC<ChatBoxProps> = (props) => {
   const {
     sessionId,
@@ -108,9 +108,10 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const messageListRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef(true);
-  const autoScrollTimerRef = useRef<number>();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef(true);
+  const lastScrollTopRef = useRef(0);
+  const autoScrollTimerRef = useRef<number>();
 
   const handleMessageSend = useCallback(async () => {
     if (!inputValue.trim() || !handleSendMessage) return;
@@ -148,36 +149,30 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
     bottomRef.current?.scrollIntoView({ behavior: "auto" });
   }, []);
 
-  const startAutoScroll = useCallback(() => {
-    autoScrollRef.current = true;
-    /* @ts-ignore */
-    autoScrollTimerRef.current = setInterval(() => {
-      if (!autoScrollRef.current) return;
-      bottomRef.current?.scrollIntoView({ behavior: "auto" });
-    }, 500);
-  }, []);
-
-  const stopAutoScroll = useCallback(() => {
-    autoScrollRef.current = false;
-    clearInterval(autoScrollTimerRef.current);
-    autoScrollTimerRef.current = undefined;
-  }, []);
+  // 检测滚动位置和方向
   const checkScrollPosition = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
     const { scrollTop, scrollHeight, clientHeight } = container;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    const shouldAutoScroll = distanceFromBottom <= AUTO_SCROLL_THRESHOLD;
-    autoScrollRef.current = shouldAutoScroll;
-    if (!shouldAutoScroll) {
-      stopAutoScroll();
-    } else {
-      startAutoScroll();
+    
+    // 检测是否向上滚动
+    const isScrollingUp = scrollTop < lastScrollTopRef.current;
+    lastScrollTopRef.current = scrollTop;
+    
+    // 用户向上滚动，退出自动吸底
+    if (isScrollingUp) {
+      autoScrollRef.current = false;
     }
-    const shouldShowBackToBottom =
-      distanceFromBottom >= SHOW_BACK_TO_BOTTOM_THRESHOLD;
+    
+    // 用户滚动到底部附近，重新启用自动吸底
+    if (distanceFromBottom <= AUTO_SCROLL_THRESHOLD) {
+      autoScrollRef.current = true;
+    }
+    
+    const shouldShowBackToBottom = distanceFromBottom >= SHOW_BACK_TO_BOTTOM_THRESHOLD;
     setShowBackToBottom(shouldShowBackToBottom);
-  }, [stopAutoScroll, startAutoScroll]);
+  }, []);
 
   const handleScroll = useCallback(
     throttle(
@@ -205,11 +200,28 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
 
   useEffect(() => scrollToBottom(), [messages?.length]);
 
+  // running 时启动自动吸底定时器
   useEffect(() => {
     if (running) {
-      scrollToBottom();
+      autoScrollRef.current = true;
+      autoScrollTimerRef.current = window.setInterval(() => {
+        if (autoScrollRef.current) {
+          scrollToBottom();
+        }
+      }, 100);
+    } else {
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+        autoScrollTimerRef.current = undefined;
+      }
     }
-  }, [running]);
+    return () => {
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+        autoScrollTimerRef.current = undefined;
+      }
+    };
+  }, [running, scrollToBottom]);
 
   return (
     <div className={cls(styles.chatMain, className)} style={style}>
@@ -229,7 +241,6 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
             messages={messages || []}
             userName={userName}
             agentName={agentName}
-            onToggleExpand={stopAutoScroll}
             customTagMap={customTagMap}
             supportAgentTTS={supportAgentTTS}
             ttsWsUrl={ttsWsUrl}
