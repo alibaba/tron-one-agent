@@ -54,6 +54,7 @@ public class AsrWsEndpoint {
     @OnOpen
     public void onOpen(Session session) {
         log.info("WebSocket connection opened");
+        this.session = session;
         if (asrService == null) {
             send(Response.builder().success(false).error("AsrService is not available").build());
             return;
@@ -68,7 +69,6 @@ public class AsrWsEndpoint {
             @Override
             public void onFinished() {
                 send(Response.builder().finished(true).build());
-
                 try {
                     session.close();
                 } catch (IOException e) {
@@ -87,7 +87,6 @@ public class AsrWsEndpoint {
             }
 
         });
-        this.session = session;
         log.info("New WebSocket session opened for {}", session.getId());
     }
 

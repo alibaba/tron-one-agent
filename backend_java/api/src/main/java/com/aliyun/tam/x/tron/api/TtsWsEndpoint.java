@@ -15,8 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
 @ServerEndpoint("/tts")
@@ -56,6 +54,7 @@ public class TtsWsEndpoint {
     @OnOpen
     public void onOpen(Session session) {
         log.info("WebSocket connection opened");
+        this.session = session;
         if (ttsService == null) {
             send(Response.builder().success(false).error("TtsService is not available").build());
             return;
@@ -88,7 +87,6 @@ public class TtsWsEndpoint {
             }
 
         });
-        this.session = session;
         log.info("New WebSocket session opened for {}", session.getId());
     }
 
@@ -138,6 +136,12 @@ public class TtsWsEndpoint {
     @OnError
     public void onError(Session session, Throwable error) {
         log.error("WebSocket error, sessionId={}", session.getId(), error);
+        try {
+            send(Response.builder().success(false).error("WebSocket error").build());
+            session.close();
+        } catch (IOException e) {
+            log.error("Failed to close session", e);
+        }
     }
 
     @Autowired(required = false)
