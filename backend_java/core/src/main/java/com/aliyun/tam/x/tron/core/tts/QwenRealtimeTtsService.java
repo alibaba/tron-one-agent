@@ -22,8 +22,10 @@ public class QwenRealtimeTtsService implements TtsService {
 
     @Override
     public TtsSession newSession(TtsCallback callback) {
-        final CountDownLatch startLatch = new CountDownLatch(1);
-        final CountDownLatch finishLatch = new CountDownLatch(1);
+        final CountDownLatch sessionCreatedLatch = new CountDownLatch(1);
+        final CountDownLatch sessionUpdatedLatch = new CountDownLatch(1);
+
+        final AtomicReference<String> sessionId = new AtomicReference<>();
         QwenTtsRealtime realtime = new QwenTtsRealtime(param(), new QwenTtsRealtimeCallback() {
 
             @Override
@@ -35,28 +37,30 @@ public class QwenRealtimeTtsService implements TtsService {
             public void onEvent(JsonObject message) {
                 log.debug("Received message: {}", message);
                 String type = message.get("type").getAsString();
-                AtomicReference<String> sessionId = new AtomicReference<>();
                 switch (type) {
                     case "session.created":
-                        if (message.has("session")) {
-                            String eventId = message.get("event_id").getAsString();
-                            sessionId.set(message.get("session").getAsJsonObject().get("id").getAsString());
-                            log.info("Session created with event_id: {}, session_id: {}", eventId, sessionId.get());
-                            startLatch.countDown();
-                        }
+                        JsonObject session = message.get("session").getAsJsonObject();
+                        sessionId.set(session.get("id").getAsString());
+                        log.info("tts session created, session_id: {}", sessionId.get());
+                        sessionCreatedLatch.countDown();
+                        break;
+                    case "session.updated":
+                        log.info("tts session updated, session_id: {}", sessionId.get());
+                        sessionUpdatedLatch.countDown();
                         break;
                     case "response.audio.delta":
-                        String eventId = message.get("event_id").getAsString();
                         String audioDataBase64 = message.get("delta").getAsString();
-                        log.debug("Received audio data, event_id: {}, session_id: {}, size: {}", eventId, sessionId.get(), audioDataBase64.length());
+                        log.debug("Received audio data, session_id: {}, size: {}", sessionId.get(), audioDataBase64.length());
                         callback.onData(audioDataBase64);
-                        break;
-                    case "response.done":
                         break;
                     case "session.finished":
                         log.info("Session finished,session_id: {}", sessionId.get());
-                        finishLatch.countDown();
+                        callback.onFinished();
                         break;
+                    case "error":
+                        JsonObject error = message.getAsJsonObject("error");
+                        log.error("Encounter tts error, sessionId={}, code={}, message={}", sessionId.get(), error.get("code"), error.get("message"));
+                        callback.onError(new RuntimeException(error.get("code") + " - " + error.get("message")));
                     default:
                         break;
                 }
@@ -70,10 +74,16 @@ public class QwenRealtimeTtsService implements TtsService {
 
 
         try {
+            long startInMs = System.currentTimeMillis();
             realtime.connect();
-            realtime.updateSession(config());
-            if (!startLatch.await(10, TimeUnit.SECONDS)) {
+            if (!sessionCreatedLatch.await(properties.getSessionCreateTimeoutInMills(), TimeUnit.MILLISECONDS)) {
                 throw new TimeoutException("Session creation timed out");
+            }
+
+            long costInMs = System.currentTimeMillis() - startInMs;
+            realtime.updateSession(config());
+            if (!sessionUpdatedLatch.await(properties.getSessionCreateTimeoutInMills() - costInMs, TimeUnit.MILLISECONDS)) {
+                throw new TimeoutException("Session update timed out");
             }
 
             return new TtsSession() {
@@ -96,14 +106,7 @@ public class QwenRealtimeTtsService implements TtsService {
 
                 @Override
                 public void complete() {
-                    try {
-                        realtime.finish();
-                        if (!finishLatch.await(properties.getCompleteTimeoutInSecs(), TimeUnit.SECONDS)) {
-                            throw new TimeoutException("Response completion timed out");
-                        }
-                    } catch (InterruptedException | TimeoutException e) {
-                        throw new RuntimeException(e);
-                    }
+                    realtime.finish();
                 }
 
                 @Override

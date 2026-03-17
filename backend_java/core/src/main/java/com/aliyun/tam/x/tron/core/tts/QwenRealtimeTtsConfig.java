@@ -37,7 +37,7 @@ public class QwenRealtimeTtsConfig {
 
         private Long chunkIntervalInMills = 100L;
 
-        private Long completeTimeoutInSecs = 60L;
+        private Long sessionCreateTimeoutInMills = 10_000L;
     }
 
     @Bean

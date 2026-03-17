@@ -1,8 +1,8 @@
 package com.aliyun.tam.x.tron.api;
 
 
-import com.aliyun.tam.x.tron.core.tts.TtsService;
-import com.aliyun.tam.x.tron.core.tts.TtsSession;
+import com.aliyun.tam.x.tron.core.asr.AsrService;
+import com.aliyun.tam.x.tron.core.asr.AsrSession;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.*;
@@ -15,22 +15,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
-@ServerEndpoint("/tts")
+@ServerEndpoint("/asr")
 @Slf4j
-public class TtsWsEndpoint {
+public class AsrWsEndpoint {
 
-    private volatile static TtsService ttsService;
+    private volatile static AsrService asrService;
 
     private volatile static ObjectMapper objectMapper;
 
     @Data
     public static class Request {
 
-        private String text;
+        private String dataBase64;
 
         private Boolean completed = false;
     }
@@ -41,7 +39,7 @@ public class TtsWsEndpoint {
         @Builder.Default
         private Boolean success = true;
 
-        private String dataBase64;
+        private String text;
 
         @Builder.Default
         private Boolean finished = false;
@@ -51,25 +49,26 @@ public class TtsWsEndpoint {
 
     private volatile Session session;
 
-    private volatile TtsSession ttsSession;
+    private volatile AsrSession asrSession;
 
     @OnOpen
     public void onOpen(Session session) {
         log.info("WebSocket connection opened");
-        if (ttsService == null) {
-            send(Response.builder().success(false).error("TtsService is not available").build());
+        if (asrService == null) {
+            send(Response.builder().success(false).error("AsrService is not available").build());
             return;
         }
 
-        this.ttsSession = ttsService.newSession(new TtsService.TtsCallback() {
+        this.asrSession = asrService.newSession(new AsrService.AsrCallback() {
             @Override
-            public void onData(String dataBase64) {
-                send(Response.builder().dataBase64(dataBase64).build());
+            public void onText(String text) {
+                send(Response.builder().text(text).build());
             }
 
             @Override
             public void onFinished() {
                 send(Response.builder().finished(true).build());
+
                 try {
                     session.close();
                 } catch (IOException e) {
@@ -101,25 +100,25 @@ public class TtsWsEndpoint {
                     objectMapper.writeValueAsString(response)
             );
         } catch (IOException e) {
-            log.error("Failed to send text to client", e);
+            log.error("Failed to send response to client", e);
         }
     }
 
     @OnMessage
     public void onMessage(String message, Session session) {
         log.debug("Received message: {}", message);
-        if (ttsSession == null) {
-            send(Response.builder().success(false).error("TtsSession is not available").build());
+        if (asrSession == null) {
+            send(Response.builder().success(false).error("AsrService is not available").build());
             return;
         }
 
         try {
             Request request = objectMapper.readValue(message, Request.class);
-            if (StringUtils.hasText(request.text)) {
-                ttsSession.appendText(request.getText());
+            if (StringUtils.hasText(request.dataBase64)) {
+                asrSession.appendData(request.getDataBase64());
             }
             if (Boolean.TRUE.equals(request.completed)) {
-                ttsSession.complete();
+                asrSession.complete();
             }
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse request: {}", message);
@@ -129,24 +128,30 @@ public class TtsWsEndpoint {
     @OnClose
     public void onClose() {
         log.info("WebSocket connection closed, sessionId={}", session == null ? "" : session.getId());
-        if (ttsSession != null) {
-            ttsSession.close();
-            ttsSession = null;
+        if (asrSession != null) {
+            asrSession.close();
+            asrSession = null;
         }
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
         log.error("WebSocket error, sessionId={}", session.getId(), error);
+        try {
+            send(Response.builder().success(false).error("WebSocket error").build());
+            session.close();
+        } catch (IOException e) {
+            log.error("Failed to close session", e);
+        }
     }
 
     @Autowired(required = false)
-    public void setTtsService(TtsService ttsService) {
-        TtsWsEndpoint.ttsService = ttsService;
+    public void setAsrService(AsrService ttsService) {
+        AsrWsEndpoint.asrService = ttsService;
     }
 
     @Autowired
     public void setObjectMapper(ObjectMapper objectMapper) {
-        TtsWsEndpoint.objectMapper = objectMapper;
+        AsrWsEndpoint.objectMapper = objectMapper;
     }
 }
