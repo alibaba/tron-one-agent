@@ -6,3 +6,5 @@
 
 # local-run skill logs
 logs/
+
+.vscode/
