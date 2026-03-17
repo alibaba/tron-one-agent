@@ -30,6 +30,7 @@ import com.aliyun.tam.x.tron.core.rag.KnowledgeRegistry;
 import com.aliyun.tam.x.tron.core.tools.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import io.agentscope.core.ReActAgent;
@@ -235,33 +236,37 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
 
     private GenerateOptions buildGenerateOptions(Map<String, Object> kwargs) {
-        if (CollectionUtils.isEmpty(kwargs)) {
-            return null;
-        }
         GenerateOptions.Builder builder = GenerateOptions.builder();
+        if (CollectionUtils.isEmpty(kwargs)) {
+            return builder.build();
+        }
+        kwargs = Maps.newHashMap(kwargs);
         if (kwargs.containsKey("temperature")) {
-            builder.temperature(((Number) kwargs.get("temperature")).doubleValue());
+            builder.temperature(((Number) kwargs.remove("temperature")).doubleValue());
         }
         if (kwargs.containsKey("maxTokens")) {
-            builder.maxTokens(((Number) kwargs.get("maxTokens")).intValue());
+            builder.maxTokens(((Number) kwargs.remove("maxTokens")).intValue());
         }
         if (kwargs.containsKey("topP")) {
-            builder.topP(((Number) kwargs.get("topP")).doubleValue());
+            builder.topP(((Number) kwargs.remove("topP")).doubleValue());
         }
         if (kwargs.containsKey("topK")) {
-            builder.topK(((Number) kwargs.get("topK")).intValue());
+            builder.topK(((Number) kwargs.remove("topK")).intValue());
         }
         if (kwargs.containsKey("thinkingBudget")) {
-            builder.thinkingBudget(((Number) kwargs.get("thinkingBudget")).intValue());
+            builder.thinkingBudget(((Number) kwargs.remove("thinkingBudget")).intValue());
         }
         if (kwargs.containsKey("presencePenalty")) {
-            builder.presencePenalty(((Number) kwargs.get("presencePenalty")).doubleValue());
+            builder.presencePenalty(((Number) kwargs.remove("presencePenalty")).doubleValue());
         }
         if (kwargs.containsKey("frequencyPenalty")) {
-            builder.frequencyPenalty(((Number) kwargs.get("frequencyPenalty")).doubleValue());
+            builder.frequencyPenalty(((Number) kwargs.remove("frequencyPenalty")).doubleValue());
         }
         if (kwargs.containsKey("seed")) {
-            builder.seed((Long) kwargs.get("seed"));
+            builder.seed((Long) kwargs.remove("seed"));
+        }
+        if (!kwargs.isEmpty()) {
+            builder.additionalBodyParams(kwargs);
         }
         return builder.build();
     }
