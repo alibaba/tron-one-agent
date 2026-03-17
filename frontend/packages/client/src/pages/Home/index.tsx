@@ -90,6 +90,11 @@ const Chat = (): React.ReactElement => {
         onQuestionClear={handleQuestionClear}
         handleSendMessage={handleSendMessage}
         supportInputTypes={supportInputTypes}
+        voiceInput={{
+          enabled: true,
+          mode: 'text',
+          wsUrl: `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/asr`,
+        }}
       />
     </div>
   );

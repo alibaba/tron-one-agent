@@ -26,10 +26,31 @@ export interface AttachmentItem {
   uploadError?: boolean; // 是否上传失败
 }
 
+/**
+ * 语音输入模式
+ * - text: 语音转文本后发送文本
+ * - audio: 直接发送音频数据
+ */
+export type VoiceInputMode = 'text' | 'audio';
+
+/**
+ * 语音输入配置
+ */
+export interface VoiceInputConfig {
+  /** 是否启用语音输入 */
+  enabled?: boolean;
+  /** 语音输入模式，默认 'text' */
+  mode?: VoiceInputMode;
+  /** ASR WebSocket URL */
+  wsUrl?: string;
+}
+
 export interface BaseMessageInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: (value: string, attachments?: AttachmentItem[]) => void;
+  /** 发送音频数据（预留接口，用于 audio 模式） */
+  onSendAudio?: (audioData: Blob) => void;
   disabled?: boolean;
   placeholder?: string;
   supportInputTypes?: ContentType[];
@@ -37,4 +58,6 @@ export interface BaseMessageInputProps {
     enableThinking?: boolean;
   };
   onOptionsChanged?: (options: { enableThinking: boolean }) => void;
+  /** 语音输入配置 */
+  voiceInput?: VoiceInputConfig;
 }

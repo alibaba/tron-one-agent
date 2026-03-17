@@ -25,7 +25,7 @@ import React, {
 import MessageList from "../../components/MessageList";
 import Header from "./Header";
 import { NormalMessageInput, MultiModeMessageInput } from "./MessageInput";
-import type { AttachmentItem } from "./MessageInput";
+import type { AttachmentItem, VoiceInputConfig } from "./MessageInput";
 import styles from "./index.module.less";
 import {
   UserSessionMessage,
@@ -64,6 +64,8 @@ export interface ChatBoxProps {
   onLike?: (messageId: number) => void;
   /** 点踩回调 */
   onDislike?: (messageId: number) => void;
+  /** 语音输入配置 */
+  voiceInput?: VoiceInputConfig;
 }
 
 // 显示回到底部按钮的阈值
@@ -91,6 +93,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
     ttsAutoPlay,
     onLike,
     onDislike,
+    voiceInput,
   } = props;
 
   // 只有 TEXT 时使用文本模式，包含 IMAGE/VIDEO/AUDIO 时使用多模式
@@ -272,6 +275,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
                 sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
               }
               supportInputTypes={supportInputTypes}
+              voiceInput={voiceInput}
             />
           ) : (
             <NormalMessageInput
@@ -279,6 +283,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               onChange={setInputValue}
               onSend={handleMessageSendWithAttachments}
               disabled={sending || running}
+              voiceInput={voiceInput}
               placeholder={
                 sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
               }
@@ -293,4 +298,4 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
 export default ChatBox;
 
 export { Header, NormalMessageInput, MultiModeMessageInput, ChatBox };
-export type { AttachmentItem } from "./MessageInput";
+export type { AttachmentItem, VoiceInputConfig, VoiceInputMode } from "./MessageInput";
