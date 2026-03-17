@@ -20,6 +20,7 @@ import { BaseMessageInputProps } from './types';
 import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useInputComposition } from './hooks/useInputComposition';
 import { useAttachments } from './hooks/useAttachments';
+import { useASR } from './hooks/useASR';
 import { AttachmentPreview } from './components/AttachmentPreview';
 import { ContentType } from '../../../types/enums';
 import styles from './index.module.less';
@@ -30,12 +31,45 @@ export function MultiModeMessageInput({
   value,
   onChange,
   onSend,
+  onSendAudio: _onSendAudio, // 预留接口，用于 audio 模式
   disabled = false,
   placeholder,
   supportInputTypes,
+  voiceInput,
 }: MultiModeMessageInputProps) {
   const { textareaRef, adjustHeight } = useTextareaAutoResize();
   const { isComposing, handleCompositionStart, handleCompositionEnd } = useInputComposition();
+
+  // 语音输入
+  const voiceEnabled = voiceInput?.enabled ?? false;
+  const voiceMode = voiceInput?.mode ?? 'text';
+
+  // 语音识别实时文本回调
+  const handleASRText = useCallback((text: string) => {
+    if (voiceMode === 'text') {
+      onChange(text);
+      adjustHeight();
+    }
+  }, [voiceMode, onChange, adjustHeight]);
+
+  // 语音识别最终文本回调
+  const handleASRFinalText = useCallback((text: string) => {
+    if (voiceMode === 'text' && text) {
+      onChange(text);
+      adjustHeight();
+    }
+  }, [voiceMode, onChange, adjustHeight]);
+
+  const { 
+    isRecording,
+    startRecording, 
+    stopRecording,
+    cancelRecording 
+  } = useASR({
+    wsUrl: voiceInput?.wsUrl,
+    onText: handleASRText,
+    onFinalText: handleASRFinalText,
+  });
 
   // 根据 supportInputTypes 计算 accept 属性
   const accept = useMemo(() => {
@@ -83,6 +117,21 @@ export function MultiModeMessageInput({
     [onChange, adjustHeight]
   );
 
+  // 处理语音按钮点击
+  const handleVoiceClick = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
+
+  // 取消录音
+  const handleVoiceCancel = useCallback(() => {
+    cancelRecording();
+    onChange('');
+  }, [cancelRecording, onChange]);
+
   return (
     <div className={styles.messageInput}>
       <AttachmentPreview attachments={attachments} onRemove={handleRemoveAttachment} />
@@ -99,11 +148,24 @@ export function MultiModeMessageInput({
         <button
           className={styles.attachButton}
           onClick={handleFileSelect}
-          disabled={disabled}
+          disabled={disabled || isRecording}
           title="上传文件"
         >
           <i className="fas fa-paperclip"></i>
         </button>
+        
+        {/* 语音输入按钮 */}
+        {voiceEnabled && (
+          <button
+            className={`${styles.voiceButton} ${isRecording ? styles.recording : ''}`}
+            onClick={handleVoiceClick}
+            disabled={disabled}
+            title={isRecording ? '停止录音' : '语音输入'}
+          >
+            <i className={`fas ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
+          </button>
+        )}
+        
         <textarea
           ref={textareaRef}
           value={value}
@@ -111,14 +173,14 @@ export function MultiModeMessageInput({
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          placeholder={placeholder || '输入消息... (Enter发送，Shift+Enter换行)'}
+          placeholder={isRecording ? '正在录音...' : (placeholder || '输入消息... (Enter发送，Shift+Enter换行)')}
           className={styles.messageTextarea}
           rows={2}
-          disabled={disabled}
+          disabled={disabled || isRecording}
         />
         <button
           onClick={handleSend}
-          disabled={(!value.trim() && attachments.length === 0) || disabled || isUploading}
+          disabled={(!value.trim() && attachments.length === 0) || disabled || isUploading || isRecording}
           className={styles.sendButton}
           title={isUploading ? '文件上传中...' : undefined}
         >

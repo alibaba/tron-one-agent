@@ -205,8 +205,24 @@ export const useTTS = (options: UseTTSOptions): UseTTSReturn => {
 
       ws.onmessage = async (event) => {
         try {
+          // 解析后端返回的 JSON 响应
+          const response = JSON.parse(event.data);
+          
+          // 处理错误
+          if (response.success === false) {
+            console.error("TTS 错误:", response.error);
+            onError?.(new Error(response.error || "TTS 错误"));
+            return;
+          }
+          
+          // 处理完成信号
+          if (response.finished === true) {
+            console.log("TTS 流完成");
+            return;
+          }
+          
           // 接收 base64 编码的音频数据
-          const base64Data = event.data;
+          const base64Data = response.dataBase64;
           if (!base64Data || typeof base64Data !== "string") return;
 
           // 解码 base64

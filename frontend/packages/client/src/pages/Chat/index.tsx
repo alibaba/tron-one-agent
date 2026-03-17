@@ -270,6 +270,11 @@ const Chat = ({
           supportAgentTTS={true}
           ttsWsUrl={`${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/tts`}
           ttsAutoPlay={ttsAutoPlay}
+          voiceInput={{
+            enabled: true,
+            mode: 'text',
+            wsUrl: `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/asr`,
+          }}
         />
       </div>
     </div>

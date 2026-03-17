@@ -18,10 +18,12 @@
 // 统一导出入口
 export { NormalMessageInput } from './NormalMessageInput';
 export { MultiModeMessageInput } from './MultiModeMessageInput';
-export type { BaseMessageInputProps, AttachmentItem } from './types';
+export type { BaseMessageInputProps, AttachmentItem, VoiceInputMode, VoiceInputConfig } from './types';
 export { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 export { useInputComposition } from './hooks/useInputComposition';
 export { useAttachments } from './hooks/useAttachments';
+export { useASR } from './hooks/useASR';
+export type { ASRStatus } from './hooks/useASR';
 export { AttachmentPreview } from './components/AttachmentPreview';
 
 // 默认导出多模态版本（保持向后兼容）

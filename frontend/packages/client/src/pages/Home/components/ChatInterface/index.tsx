@@ -20,7 +20,7 @@ import styles from "./index.less";
 import { Button } from "antd";
 import HistorySessionDrawer from "@/components/HistorySessionDrawer";
 import { NormalMessageInput, MultiModeMessageInput } from "chatbox/extends/ChatBox";
-import type { AttachmentItem } from "chatbox/extends/ChatBox";
+import type { AttachmentItem, VoiceInputConfig } from "chatbox/extends/ChatBox";
 import { ContentType } from "chatbox";
 
 interface ChatInterfaceProps {
@@ -28,6 +28,7 @@ interface ChatInterfaceProps {
   onQuestionClear?: () => void;
   handleSendMessage: (input: string, attachments?: AttachmentItem[]) => void;
   supportInputTypes?: ContentType[];
+  voiceInput?: VoiceInputConfig;
 }
 
 function ChatInterface({
@@ -35,6 +36,7 @@ function ChatInterface({
   onQuestionClear,
   handleSendMessage,
   supportInputTypes,
+  voiceInput,
 }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
   const [openHistorySession, setOpenHistorySession] = useState(false);
@@ -76,6 +78,7 @@ function ChatInterface({
                 onSend={handleSend}
                 placeholder="请输入您的问题...（Enter发送，Shift+Enter换行）"
                 supportInputTypes={supportInputTypes}
+                voiceInput={voiceInput}
               />
             ) : (
               <NormalMessageInput
@@ -83,6 +86,7 @@ function ChatInterface({
                 onChange={setMessage}
                 onSend={handleSend}
                 placeholder="请输入您的问题，或从上方选择常见问题...（Enter发送，Shift+Enter换行）"
+                voiceInput={voiceInput}
               />
             )}
             <div className={styles["input-toolbar"]}>

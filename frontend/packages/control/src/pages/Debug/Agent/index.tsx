@@ -449,6 +449,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           ttsAutoPlay={ttsAutoPlay}
           onLike={(messageId) => console.log("点赞消息:", messageId)}
           onDislike={(messageId) => console.log("点踩消息:", messageId)}
+          voiceInput={{
+            enabled: true,
+            mode: 'text',
+            wsUrl: `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/asr`,
+          }}
         />
         <Card
           className={styles.operateWrap}
