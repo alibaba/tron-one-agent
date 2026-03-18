@@ -18,17 +18,33 @@
 package com.aliyun.tam.x.tron.core.agents;
 
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 @Component
 @RequiredArgsConstructor
 public final class AgentRegistry {
+
     private final List<AgentBuilder> agentBuilders;
+
+    private final LoadingCache<AgentConfig, Optional<AgentHandler>> agentCache = CacheBuilder.newBuilder()
+            .build(new CacheLoader<>() {
+                @Override
+                public Optional<AgentHandler> load(AgentConfig key) throws Exception {
+                    return Optional.ofNullable(buildAgent(key));
+                }
+            });
 
     public List<AgentBuilder> getAgentBuilders() {
         return Lists.newArrayList(agentBuilders);
@@ -44,6 +60,18 @@ public final class AgentRegistry {
     }
 
     public AgentHandler getAgent(String agentId, AgentConfig agentConfig) {
+        if (agentConfig == null) {
+            agentConfig = getAgentConfigById(agentId);
+        }
+        if (agentConfig == null) {
+            return null;
+        }
+
+        return agentCache.getUnchecked(agentConfig).orElse(null);
+    }
+
+    private AgentHandler buildAgent(AgentConfig agentConfig) {
+        String agentId = agentConfig.getId();
         for (AgentBuilder agentBuilder : agentBuilders) {
             if (Objects.equals(agentBuilder.getAgentId(), agentId)) {
                 return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig));
