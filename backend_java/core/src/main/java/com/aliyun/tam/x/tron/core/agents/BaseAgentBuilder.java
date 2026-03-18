@@ -52,6 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -68,6 +70,8 @@ import java.util.Objects;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseAgentBuilder implements AgentBuilder {
     private static final Path WORKSPACE_BASEDIR = Path.of(".workspace");
+
+    private static final String RESOURCE_PREFIX = "classpath:/prompts/";
 
     @Autowired
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
@@ -96,7 +100,12 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ResourceLoader resourceLoader;
+
     private final String agentId;
+
+    private final Map<String, String> resourcesCache = Maps.newConcurrentMap();
 
     protected abstract AgentConfig defaultConfig();
 
@@ -368,5 +377,16 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                 .enable();
         agentSkills.forEach(skillBox::registerSkill);
         return skillBox;
+    }
+
+    protected String loadPrompt(String path) {
+        return resourcesCache.computeIfAbsent(path, p -> {
+            try {
+                Resource resource = resourceLoader.getResource(RESOURCE_PREFIX + path);
+                return resource.getContentAsString(StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

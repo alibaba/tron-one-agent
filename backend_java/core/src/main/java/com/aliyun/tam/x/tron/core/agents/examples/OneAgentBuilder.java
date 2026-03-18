@@ -20,7 +20,6 @@ package com.aliyun.tam.x.tron.core.agents.examples;
 import com.aliyun.tam.x.tron.core.agents.BaseAgentBuilder;
 import com.aliyun.tam.x.tron.core.config.*;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -41,6 +40,7 @@ public class OneAgentBuilder extends BaseAgentBuilder {
         return AgentConfig.builder()
                 .name("小AI")
                 .enabled(true)
+                .systemPrompt(loadPrompt("one_agent_system_prompt.md"))
                 .chatModel(
                         ChatModelConfig.builder()
                                 .type(ChatModelType.OPENAI_COMPATIBLE)
