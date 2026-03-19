@@ -112,7 +112,7 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
                 messages.add(ImmutableMap.of("role", "assistant", "content", msg.getTextContent()));
             }
         }
-        request.put("memory_library_id", messages.build());
+        request.put("messages", messages.build());
         return request.build();
     }
 
