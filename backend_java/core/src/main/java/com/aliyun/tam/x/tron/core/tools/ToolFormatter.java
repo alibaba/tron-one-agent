@@ -97,7 +97,7 @@ public class ToolFormatter {
                 String command = (String) arguments.get("command");
                 return "命令: " + command + "\n\n";
             }
-            return objectMapper.writeValueAsString(arguments);
+            return "请求参数: \n\n```json\n" + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(arguments) + "\n```\n\n返回值:\n\n";
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
