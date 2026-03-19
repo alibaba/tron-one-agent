@@ -142,7 +142,7 @@ public class A2AController {
             String sessionId = String.format("a2a_%s", context.getContextId());
             String userId = String.format("a2a_%s", context.getContextId());
 
-            AgentHandler agentHandler = agentBuilder.build(agentBuilder.getAgentId(), null, userId);
+            AgentHandler agentHandler = agentBuilder.build(agentBuilder.getAgentId(), null, userId, sessionId);
             if (agentHandler == null) {
                 throw new InvalidRequestError("agent not found");
             }

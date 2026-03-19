@@ -195,7 +195,7 @@ public abstract class BaseFuncTest {
                 agentMessage.getId()
         );
 
-        AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, "mock");
+        AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
         return agentHandler.handleInput(userMessage, eventSink);
     }
 }

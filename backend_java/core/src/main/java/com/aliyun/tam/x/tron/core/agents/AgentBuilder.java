@@ -25,7 +25,7 @@ public interface AgentBuilder {
 
     AgentConfig getAgentConfig();
 
-    AgentHandler build(String agentId, AgentConfig config, String userId);
+    AgentHandler build(String agentId, AgentConfig config, String userId, String sessionId);
 
     default AgentCard publishAsA2AAgent() {
         return null;

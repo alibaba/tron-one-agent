@@ -127,15 +127,15 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     }
 
     @Override
-    public AgentHandler build(String agentId, AgentConfig config, String userId) {
+    public AgentHandler build(String agentId, AgentConfig config, String userId, String sessionId) {
         if (!Objects.equals(agentId, this.agentId)) {
             return null;
         }
 
-        return buildFromConfig(agentId, config, userId);
+        return buildFromConfig(agentId, config, userId, sessionId);
     }
 
-    private AgentHandler buildFromConfig(String agentId, AgentConfig config, String userId) {
+    private AgentHandler buildFromConfig(String agentId, AgentConfig config, String userId, String sessionId) {
         if (config == null) {
             config = getAgentConfig();
             if (!Objects.equals(Boolean.TRUE, config.getEnabled())) {
@@ -216,7 +216,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
                 if (subAgentConfig instanceof LocalSubAgentConfig c) {
                     AgentHandler agentHandler = applicationContext.getBean(AgentRegistry.class)
-                            .getAgent(c.getAgentId(), null, userId);
+                            .getAgent(c.getAgentId(), null, userId, sessionId);
 
                     SubAgentHandler subAgentHandler = new LocalSubAgentHandler(c, agentHandler);
                     autowireCapableBeanFactory.autowireBean(subAgentHandler);

@@ -54,6 +54,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDateTime;
@@ -105,6 +106,11 @@ public class SessionController {
         if (e instanceof IllegalArgumentException) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
+        }
+        if (e instanceof AsyncRequestTimeoutException) {
+            log.debug("sse timeout", e);
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
+                    .body("Request timeout");
         }
         log.error("Internal server error", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -342,7 +348,7 @@ public class SessionController {
             @RequestHeader(value = "accept", required = false) String accept,
             @RequestBody @NotNull ChatRequest chatRequest
     ) {
-        AgentHandler agent = agentRegistry.getAgent(agentId, null, userId);
+        AgentHandler agent = agentRegistry.getAgent(agentId, null, userId, sessionId);
         if (agent == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .contentType(MediaType.APPLICATION_JSON)

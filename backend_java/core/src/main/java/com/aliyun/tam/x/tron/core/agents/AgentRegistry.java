@@ -42,6 +42,7 @@ public final class AgentRegistry {
     private static class CacheKey {
         private final AgentConfig agentConfig;
         private final String userId;
+        private final String sessionId;
     }
     private final List<AgentBuilder> agentBuilders;
 
@@ -49,7 +50,7 @@ public final class AgentRegistry {
             .build(new CacheLoader<>() {
                 @Override
                 public Optional<AgentHandler> load(CacheKey key) throws Exception {
-                    return Optional.ofNullable(buildAgent(key.agentConfig, key.userId));
+                    return Optional.ofNullable(buildAgent(key.agentConfig, key.userId, key.sessionId));
                 }
             });
 
@@ -66,7 +67,7 @@ public final class AgentRegistry {
         return null;
     }
 
-    public AgentHandler getAgent(String agentId, AgentConfig agentConfig, String userId) {
+    public AgentHandler getAgent(String agentId, AgentConfig agentConfig, String userId, String sessionId) {
         if (agentConfig == null) {
             agentConfig = getAgentConfigById(agentId);
         }
@@ -74,14 +75,14 @@ public final class AgentRegistry {
             return null;
         }
 
-        return agentCache.getUnchecked(new CacheKey(agentConfig, userId)).orElse(null);
+        return agentCache.getUnchecked(new CacheKey(agentConfig, userId, sessionId)).orElse(null);
     }
 
-    private AgentHandler buildAgent(AgentConfig agentConfig, String userId) {
+    private AgentHandler buildAgent(AgentConfig agentConfig, String userId, String sessionId) {
         String agentId = agentConfig.getId();
         for (AgentBuilder agentBuilder : agentBuilders) {
             if (Objects.equals(agentBuilder.getAgentId(), agentId)) {
-                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig, userId));
+                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig, userId, sessionId));
             }
         }
         return null;
