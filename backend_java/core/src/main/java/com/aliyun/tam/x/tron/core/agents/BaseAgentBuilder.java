@@ -26,6 +26,7 @@ import com.aliyun.tam.x.tron.core.domain.repository.AgentRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SkillConfigRepository;
 import com.aliyun.tam.x.tron.core.domain.service.SkillConfigService;
 import com.aliyun.tam.x.tron.core.mcp.McpClientRegistry;
+import com.aliyun.tam.x.tron.core.mem.LongTermMemoryFactory;
 import com.aliyun.tam.x.tron.core.rag.KnowledgeRegistry;
 import com.aliyun.tam.x.tron.core.tools.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,7 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.memory.InMemoryMemory;
+import io.agentscope.core.memory.LongTermMemoryMode;
 import io.agentscope.core.model.ChatModelBase;
 import io.agentscope.core.model.DashScopeChatModel;
 import io.agentscope.core.model.GenerateOptions;
@@ -103,6 +105,9 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     @Autowired
     private ResourceLoader resourceLoader;
 
+    @Autowired(required = false)
+    private LongTermMemoryFactory longTermMemoryFactory;
+
     private final String agentId;
 
     private final Map<String, String> resourcesCache = Maps.newConcurrentMap();
@@ -122,15 +127,15 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     }
 
     @Override
-    public AgentHandler build(String agentId, AgentConfig config) {
+    public AgentHandler build(String agentId, AgentConfig config, String userId) {
         if (!Objects.equals(agentId, this.agentId)) {
             return null;
         }
 
-        return buildFromConfig(agentId, config);
+        return buildFromConfig(agentId, config, userId);
     }
 
-    private AgentHandler buildFromConfig(String agentId, AgentConfig config) {
+    private AgentHandler buildFromConfig(String agentId, AgentConfig config, String userId) {
         if (config == null) {
             config = getAgentConfig();
             if (!Objects.equals(Boolean.TRUE, config.getEnabled())) {
@@ -155,7 +160,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                         + "\nResources and Scripts of a specific skill can be found in " + skillBox.getUploadDir() + " /<skill_id>/ directory\n";
             }
 
-            ReActAgent agent = ReActAgent.builder()
+            ReActAgent.Builder agentBuilder = ReActAgent.builder()
                     .name(config.getName())
                     .model(chatModel)
                     .sysPrompt(systemPrompt)
@@ -164,9 +169,13 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .memory(new InMemoryMemory())
                     .maxIters(config.getMaxIters())
                     .knowledges(knowledges)
-                    .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()))
-                    .build();
-            AgentHandler handler = new ReActAgentHandler(agentId, agent, config.getSupportInputTypes());
+                    .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
+
+            if (longTermMemoryFactory != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
+                agentBuilder.longTermMemory(longTermMemoryFactory.create(userId))
+                        .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
+            }
+            AgentHandler handler = new ReActAgentHandler(agentId, agentBuilder.build(), config.getSupportInputTypes());
             autowireCapableBeanFactory.autowireBean(handler);
             return handler;
         } else if (config.getType() == LocalAgentType.ONE) {
@@ -194,6 +203,11 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .knowledges(knowledges)
                     .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
 
+            if (longTermMemoryFactory != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
+                mainAgentBuilder.longTermMemory(longTermMemoryFactory.create(userId))
+                        .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
+            }
+
             List<SubAgentHandler> subAgents = Lists.newArrayList();
             for (SubAgentConfig subAgentConfig : config.getSubAgents()) {
                 if (!Objects.equals(Boolean.TRUE, subAgentConfig.getEnabled())) {
@@ -202,7 +216,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
                 if (subAgentConfig instanceof LocalSubAgentConfig c) {
                     AgentHandler agentHandler = applicationContext.getBean(AgentRegistry.class)
-                            .getAgent(c.getAgentId(), null);
+                            .getAgent(c.getAgentId(), null, userId);
 
                     SubAgentHandler subAgentHandler = new LocalSubAgentHandler(c, agentHandler);
                     autowireCapableBeanFactory.autowireBean(subAgentHandler);

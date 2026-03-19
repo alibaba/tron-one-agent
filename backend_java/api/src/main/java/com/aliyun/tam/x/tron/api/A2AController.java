@@ -138,14 +138,14 @@ public class A2AController {
 
         @Override
         public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-            AgentHandler agentHandler = agentBuilder.build(agentBuilder.getAgentId(), null);
-            if (agentHandler == null) {
-                throw new InvalidRequestError("agent not found");
-            }
-
             String query = context.getUserInput("");
             String sessionId = String.format("a2a_%s", context.getContextId());
             String userId = String.format("a2a_%s", context.getContextId());
+
+            AgentHandler agentHandler = agentBuilder.build(agentBuilder.getAgentId(), null, userId);
+            if (agentHandler == null) {
+                throw new InvalidRequestError("agent not found");
+            }
 
             {
                 Session session = sessionRepository.getSession(agentBuilder.getAgentId(), sessionId);

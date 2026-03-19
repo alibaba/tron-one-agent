@@ -23,6 +23,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -36,13 +37,19 @@ import java.util.concurrent.ExecutionException;
 @RequiredArgsConstructor
 public final class AgentRegistry {
 
+    @Data
+    @RequiredArgsConstructor
+    private static class CacheKey {
+        private final AgentConfig agentConfig;
+        private final String userId;
+    }
     private final List<AgentBuilder> agentBuilders;
 
-    private final LoadingCache<AgentConfig, Optional<AgentHandler>> agentCache = CacheBuilder.newBuilder()
+    private final LoadingCache<CacheKey, Optional<AgentHandler>> agentCache = CacheBuilder.newBuilder()
             .build(new CacheLoader<>() {
                 @Override
-                public Optional<AgentHandler> load(AgentConfig key) throws Exception {
-                    return Optional.ofNullable(buildAgent(key));
+                public Optional<AgentHandler> load(CacheKey key) throws Exception {
+                    return Optional.ofNullable(buildAgent(key.agentConfig, key.userId));
                 }
             });
 
@@ -59,7 +66,7 @@ public final class AgentRegistry {
         return null;
     }
 
-    public AgentHandler getAgent(String agentId, AgentConfig agentConfig) {
+    public AgentHandler getAgent(String agentId, AgentConfig agentConfig, String userId) {
         if (agentConfig == null) {
             agentConfig = getAgentConfigById(agentId);
         }
@@ -67,14 +74,14 @@ public final class AgentRegistry {
             return null;
         }
 
-        return agentCache.getUnchecked(agentConfig).orElse(null);
+        return agentCache.getUnchecked(new CacheKey(agentConfig, userId)).orElse(null);
     }
 
-    private AgentHandler buildAgent(AgentConfig agentConfig) {
+    private AgentHandler buildAgent(AgentConfig agentConfig, String userId) {
         String agentId = agentConfig.getId();
         for (AgentBuilder agentBuilder : agentBuilders) {
             if (Objects.equals(agentBuilder.getAgentId(), agentId)) {
-                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig));
+                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig, userId));
             }
         }
         return null;

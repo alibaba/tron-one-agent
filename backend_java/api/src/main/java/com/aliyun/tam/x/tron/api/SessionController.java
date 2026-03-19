@@ -342,7 +342,7 @@ public class SessionController {
             @RequestHeader(value = "accept", required = false) String accept,
             @RequestBody @NotNull ChatRequest chatRequest
     ) {
-        AgentHandler agent = getAgent(agentId, null);
+        AgentHandler agent = agentRegistry.getAgent(agentId, null, userId);
         if (agent == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -488,9 +488,5 @@ public class SessionController {
             config = null;
         }
         return config;
-    }
-
-    private AgentHandler getAgent(String agentId, AgentConfig config) {
-        return agentRegistry.getAgent(agentId, config);
     }
 }

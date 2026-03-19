@@ -19,6 +19,7 @@ package com.aliyun.tam.x.tron.core.config;
 
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.google.common.collect.Lists;
+import io.agentscope.core.memory.LongTermMemoryMode;
 import io.agentscope.core.rag.RAGMode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -104,4 +105,10 @@ public class AgentConfig {
 
     @Builder.Default
     private List<ContentType> supportInputTypes = Lists.newArrayList(ContentType.TEXT);
+
+    @Builder.Default
+    private Boolean enableLongTermMemory = Boolean.TRUE;
+
+    @Builder.Default
+    private LongTermMemoryMode longTermMemoryMode = LongTermMemoryMode.BOTH;
 }

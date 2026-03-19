@@ -20,12 +20,17 @@ package com.aliyun.tam.x.tron.core.mcp;
 import com.aliyun.tam.x.tron.core.config.McpClientConfig;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
 @Slf4j
 public class WebSearchMcpConfigBuilder implements McpConfigBuilder {
+
+    @Value("${tron.dashscope.api-key}")
+    private String apiKey;
+
     @Override
     public String getId() {
         return "WebSearch";
@@ -33,9 +38,8 @@ public class WebSearchMcpConfigBuilder implements McpConfigBuilder {
 
     @Override
     public McpClientConfig getConfig() {
-        String apiKey = System.getenv("DASHSCOPE_API_KEY");
         if (!StringUtils.hasText(apiKey)) {
-            log.error("DASHSCOPE_API_KEY is required for WebSearch mcp client");
+            log.error("api key is required for WebSearch mcp client");
             return null;
         }
         return McpClientConfig.builder()
