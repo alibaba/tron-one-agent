@@ -40,7 +40,7 @@ public class SubAgentTaskEventSink extends EventSink {
 
     @Override
     public void newEvent(SessionEvent event) {
-        if (event instanceof SessionNameChangedEvent || event instanceof NewUserInputEvent || event instanceof NewAgentMessageEvent
+        if (event instanceof NewUserInputEvent || event instanceof NewAgentMessageEvent
                 || event instanceof AgentMessageStatusChangedEvent || event instanceof TaskAppendContentEvent
                 || event instanceof TaskStatusChangeEvent) {
             return;
@@ -81,5 +81,9 @@ public class SubAgentTaskEventSink extends EventSink {
     @Override
     public Long nextSequence(SequenceService.SequenceName sequenceName) {
         return delegate.nextSequence(sequenceName);
+    }
+
+    @Override
+    public void onComplete() {
     }
 }

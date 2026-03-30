@@ -24,8 +24,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * Session event type enum
  */
 public enum SessionEventType {
-    SESSION_NAME_CHANGED(1),
-
     NEW_USER_INPUT(10),
 
     NEW_AGENT_MESSAGE(20),

@@ -195,6 +195,9 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                                     .build())
                     );
                 }
+                finally {
+                    eventSink.onComplete();
+                }
             }
         };
 

@@ -102,7 +102,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
             }
         }
 
-        renamingService.renameSession(mainAgent.getModel(), msg, mainAgent.getMemory().getMessages(), eventSink);
+        renamingService.renameSession(mainAgent.getModel(), msg, mainAgent.getMemory().getMessages(),
+                eventSink.getAgentId(), eventSink.getSessionId());
 
         Set<String> subAgentTools = Sets.newHashSet();
         for (SubAgentHandler subAgent : subAgents) {
@@ -202,9 +203,10 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         }
                     }
                 })
+                .doOnComplete(() -> eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED))
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                    eventSink.onComplete();
                 })
                 .blockLast();
         return result.get();

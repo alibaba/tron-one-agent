@@ -31,16 +31,20 @@ import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.SessionEventDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.SessionEventMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Repository
 public class MysqlEventRepository implements EventRepository {
@@ -60,9 +64,11 @@ public class MysqlEventRepository implements EventRepository {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     private static final Map<SessionEventType, Class<? extends SessionEvent>> EVENT_TYPE_TO_CLS =
             ImmutableMap.<SessionEventType, Class<? extends SessionEvent>>builder()
-                    .put(SessionEventType.SESSION_NAME_CHANGED, SessionNameChangedEvent.class)
                     .put(SessionEventType.NEW_USER_INPUT, NewUserInputEvent.class)
                     .put(SessionEventType.NEW_AGENT_MESSAGE, NewAgentMessageEvent.class)
                     .put(SessionEventType.AGENT_MESSAGE_APPEND_CONTENT, AgentMessageAppendContentEvent.class)
@@ -131,6 +137,12 @@ public class MysqlEventRepository implements EventRepository {
 
     public class MySQLEventSink extends EventSink {
 
+        private volatile Long lastAppliedEventId = null;
+
+        private final List<SessionEventDO> events = new CopyOnWriteArrayList<>();
+
+        private final List<SessionMessage> messages = new CopyOnWriteArrayList<>();
+
         public MySQLEventSink(String agentId, String userId, String sessionId, Long messageId) {
             super(agentId, userId, sessionId, messageId);
         }
@@ -141,7 +153,25 @@ public class MysqlEventRepository implements EventRepository {
         }
 
         @Override
-        @Transactional(rollbackFor = Exception.class)
+        public void onComplete() {
+            transactionTemplate.execute(status -> {
+                for (SessionMessage message : messages) {
+                    messageRepository.saveMessage(message);
+                }
+
+                for (List<SessionEventDO> partition : Lists.partition(events, 64)) {
+                    sessionEventMapper.insertBatch(partition);
+                }
+
+                if (lastAppliedEventId != null) {
+                    sessionRepository.updateSessionLastAppliedEventId(agentId, sessionId, lastAppliedEventId);
+                }
+
+                return null;
+            });
+        }
+
+        @Override
         public void newEvent(SessionEvent event) {
             Long messageId = null;
             if (event instanceof AgentMessageAppendContentEvent) {
@@ -189,13 +219,13 @@ public class MysqlEventRepository implements EventRepository {
                 eventDO.setType((short) event.getType().getValue());
                 eventDO.setStatus(status);
                 eventDO.setData(data);
-                MysqlEventRepository.this.sessionEventMapper.insert(eventDO);
-            } catch (Exception e) {
+
+                events.add(eventDO);
+            } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to serialize event", e);
             }
-            if (event instanceof SessionNameChangedEvent) {
-                handleSessionNameChanged((SessionNameChangedEvent) event);
-            } else if (event instanceof NewUserInputEvent) {
+
+            if (event instanceof NewUserInputEvent) {
                 handleNewUserInput((NewUserInputEvent) event);
             } else if (event instanceof NewAgentMessageEvent) {
                 handleNewAgentMessage((NewAgentMessageEvent) event);
@@ -216,16 +246,12 @@ public class MysqlEventRepository implements EventRepository {
             updateSessionLastAppliedEventId(event.getAgentId(), event.getSessionId(), event.getId());
         }
 
-        private void handleSessionNameChanged(SessionNameChangedEvent event) {
-            sessionRepository.updateSessionName(event.getAgentId(), event.getSessionId(), event.getNewName());
-        }
-
         private void handleNewUserInput(NewUserInputEvent event) {
-            saveMessage(event.getMsg());
+            messages.add(event.getMsg());
         }
 
         private void handleNewAgentMessage(NewAgentMessageEvent event) {
-            saveMessage(event.getMsg());
+            messages.add(event.getMsg());
         }
 
         private void handleAgentMessageAppendContent(AgentMessageAppendContentEvent event) {
@@ -301,18 +327,22 @@ public class MysqlEventRepository implements EventRepository {
             if (messageId == null) {
                 return null;
             }
-            return messageRepository.getMessage(messageId);
+            for (SessionMessage message : messages) {
+                if (messageId.equals(message.getId())) {
+                    return message;
+                }
+            }
+            return null;
         }
 
         private void saveMessage(SessionMessage msg) {
-            if (msg == null) {
-                return;
-            }
-            messageRepository.saveMessage(msg);
+            // dummy
         }
 
         private void updateSessionLastAppliedEventId(String agentId, String sessionId, Long eventId) {
-            sessionRepository.updateSessionLastAppliedEventId(agentId, sessionId, eventId);
+            if (lastAppliedEventId == null || eventId > lastAppliedEventId) {
+                lastAppliedEventId = eventId;
+            }
         }
     }
 }

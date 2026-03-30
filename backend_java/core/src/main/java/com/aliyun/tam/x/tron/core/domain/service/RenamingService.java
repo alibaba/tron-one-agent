@@ -17,7 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.domain.service;
 
-import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
+import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.google.common.collect.Lists;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -26,6 +26,7 @@ import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -36,12 +37,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class RenamingService {
     @Value("${tron.renaming.history.limit: 2}")
     private int historyLimit;
 
+    private final SessionRepository sessionRepository;
+
     @Async
-    public void renameSession(Model model, Msg msg, List<Msg> history, EventSink eventSink) {
+    public void renameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
         String text = "Below is the history of the conversation :\n\n";
         text += history.stream()
                 .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
@@ -68,6 +72,6 @@ public class RenamingService {
                 .map(TextBlock::getText)
                 .reduce((s, s2) -> s + s2)
                 .block();
-        eventSink.renameSession(name);
+        sessionRepository.updateSessionName(agentId, sessionId, name);
     }
 }

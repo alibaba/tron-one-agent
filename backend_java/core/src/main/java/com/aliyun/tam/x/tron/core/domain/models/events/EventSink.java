@@ -39,8 +39,11 @@ import java.util.List;
 @AllArgsConstructor
 public abstract class EventSink {
     protected String agentId;
+
     protected String userId;
+
     protected String sessionId;
+
     protected Long messageId;
 
     /**
@@ -68,28 +71,6 @@ public abstract class EventSink {
                 .gmtCreated(LocalDateTime.now())
                 .build());
     }
-
-    /**
-     * Rename session event
-     */
-    public void renameSession(String newName) {
-        if (newName == null || newName.isEmpty()) {
-            return;
-        }
-        if (newName.length() > 128) {
-            newName = newName.substring(0, 128);
-        }
-
-        newEvent(SessionNameChangedEvent.builder()
-                .id(newEventId())
-                .agentId(agentId)
-                .userId(userId)
-                .sessionId(sessionId)
-                .newName(newName)
-                .gmtCreated(LocalDateTime.now())
-                .build());
-    }
-
     /**
      * Create new agent message event
      */
@@ -266,4 +247,6 @@ public abstract class EventSink {
      * This should be implemented by subclasses or injected via dependency
      */
     public abstract Long nextSequence(SequenceService.SequenceName sequenceName);
+
+    public abstract void onComplete();
 }

@@ -98,7 +98,8 @@ public class ReActAgentHandler extends AbstractAgentHandler {
             }
         }
 
-        renamingService.renameSession(agent.getModel(), msg, agent.getMemory().getMessages(), eventSink);
+        renamingService.renameSession(agent.getModel(), msg, agent.getMemory().getMessages(),
+                eventSink.getAgentId(), eventSink.getSessionId());
 
         AtomicReference<String> result = new AtomicReference<>();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
@@ -162,9 +163,10 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                         }
                     }
                 })
+                .doOnComplete(() -> eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED))
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                    eventSink.onComplete();
                 })
                 .blockLast();
         return result.get();
