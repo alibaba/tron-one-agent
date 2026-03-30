@@ -58,12 +58,7 @@ public class OneAgentBuilder extends BaseAgentBuilder {
                                 .capacities("根据用户需求规划旅行或者徒步等各类外出行程，帮助用户查询目的地天气")
                                 .build()
                 ))
-                .tools(Lists.newArrayList(
-                        AgentToolConfig.builder()
-                                .name("datetime")
-                                .enabled(true)
-                                .build()
-                ))
+                .tools(Lists.newArrayList())
                 .type(LocalAgentType.ONE)
                 .supportInputTypes(Lists.newArrayList(ContentType.TEXT, ContentType.IMAGE))
                 .build();

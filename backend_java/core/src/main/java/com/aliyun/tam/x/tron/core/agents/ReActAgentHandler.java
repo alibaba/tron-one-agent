@@ -98,6 +98,8 @@ public class ReActAgentHandler extends AbstractAgentHandler {
             }
         }
 
+        msg = buildRuntimeContext(msg);
+
         renamingService.renameSession(agent.getModel(), msg, agent.getMemory().getMessages(),
                 eventSink.getAgentId(), eventSink.getSessionId());
 

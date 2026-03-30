@@ -47,14 +47,10 @@ public class ToolFormatter {
     private static final String INSERT_TEXT_FILE_TOOL_NAME = "insert_text_file";
     private static final String VIEW_TEXT_FILE_TOOL_NAME = "view_text_file";
     private static final String LIST_DIR_TOOL_NAME = "list_directory";
-    private static final String DATE_TIME_TOOL_NAME = "dateTime";
 
     private final ObjectMapper objectMapper;
 
     public String formatToolName(String name) {
-        if (DATE_TIME_TOOL_NAME.equals(name)) {
-            return null;
-        }
         if (LOAD_SKILL_TOOL_NAME.equals(name)) {
             return "加载技能";
         }

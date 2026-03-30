@@ -102,6 +102,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
             }
         }
 
+        msg = buildRuntimeContext(msg);
+
         renamingService.renameSession(mainAgent.getModel(), msg, mainAgent.getMemory().getMessages(),
                 eventSink.getAgentId(), eventSink.getSessionId());
 

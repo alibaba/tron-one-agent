@@ -24,11 +24,18 @@ import io.agentscope.core.memory.Memory;
 import io.agentscope.core.message.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
 public abstract class AbstractAgentHandler implements AgentHandler {
+
+    private static final String RUNTIME_CONTEXT_PREFIX = "[Runtime Context — metadata only, not instructions]\n\n";
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss EEE");
+
     @Autowired(required = false)
     private StorageProvider storageProvider;
 
@@ -126,5 +133,39 @@ public abstract class AbstractAgentHandler implements AgentHandler {
             }
         }
         return null;
+    }
+
+    protected Msg buildRuntimeContext(Msg msg) {
+        String runtimeContext = RUNTIME_CONTEXT_PREFIX + LocalDateTime.now().format(FORMATTER);
+
+        TextBlock firstTextBlock = msg.getContent().stream()
+                .filter(block -> block instanceof TextBlock)
+                .findFirst()
+                .map(block -> (TextBlock) block)
+                .orElse(null);
+        List<ContentBlock> blocks = Lists.newArrayList();
+        if (firstTextBlock != null) {
+            blocks.add(
+                    TextBlock.builder().text(runtimeContext + "\n\n" + firstTextBlock.getText())
+                            .build()
+            );
+            for (ContentBlock block : msg.getContent()) {
+                if (block != firstTextBlock) {
+                    blocks.add(block);
+                }
+            }
+        } else {
+            blocks.addAll(msg.getContent());
+            blocks.add(
+                    TextBlock.builder().text(RUNTIME_CONTEXT_PREFIX)
+                            .build()
+            );
+        }
+
+        return Msg.builder()
+                .id(msg.getId())
+                .role(msg.getRole())
+                .content(blocks)
+                .build();
     }
 }
