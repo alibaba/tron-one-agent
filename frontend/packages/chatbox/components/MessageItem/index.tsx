@@ -129,7 +129,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onToggleExpand,
   customTagMap,
   supportAgentTTS = false,
-  ttsWsUrl = "",
+  ttsWsUrl,
   ttsAutoPlay = false,
   isLastMessage = false,
   onLike,
@@ -137,6 +137,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
 }) => {
   const isUser = message.type === SessionMessageType.USER;
   const isAgent = message.type === SessionMessageType.AGENT;
+
+  // 默认 TTS WebSocket URL
+  const defaultTtsWsUrl = useMemo(() => {
+    if (ttsWsUrl) return ttsWsUrl;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/chatApi/api/tts`;
+  }, [ttsWsUrl]);
 
   // TTS 状态
   const [isLiked, setIsLiked] = useState(false);
@@ -167,7 +174,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     stop,
     complete,
   } = useTTS({
-    wsUrl: ttsWsUrl,
+    wsUrl: defaultTtsWsUrl,
   });
 
   // 处理 TTS 按钮点击
