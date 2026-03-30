@@ -136,6 +136,7 @@ public class AgentWsEndpoint {
             } catch (InvocationTargetException | IllegalAccessException e) {
                 if (e instanceof InvocationTargetException ie && ie.getTargetException() instanceof JsonRpcException jre) {
                     wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(jre.toResponse()));
+                    return;
                 }
                 log.warn("Error processing request: {}", request.getId(), e);
                 wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
@@ -214,7 +215,7 @@ public class AgentWsEndpoint {
                     wsSession.getBasicRemote().sendText(
                             jsonRpcHelper.serialize(
                                     JsonRpcNotification.builder()
-                                            .method("sessionEvent")
+                                            .method("event")
                                             .params(event)
                                             .build()
                             )
