@@ -1,0 +1,293 @@
+package com.aliyun.tam.x.tron.ws;
+
+import com.aliyun.tam.x.tron.api.request.ChatRequest;
+import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
+import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
+import com.aliyun.tam.x.tron.core.domain.models.events.SessionEvent;
+import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
+import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
+import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
+import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
+import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.ws.jsonrpc.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import jakarta.websocket.*;
+import jakarta.websocket.server.PathParam;
+import jakarta.websocket.server.ServerEndpoint;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+@Component
+@Scope("prototype")
+@ServerEndpoint(value = "/ws/agents/{agent_id}/sessions/{session_id}", configurator = AgentEndpointConfigurator.class)
+@RequiredArgsConstructor
+public class AgentWsEndpoint {
+
+    private final AgentRegistry agentRegistry;
+
+    private final SessionRepository sessionRepository;
+
+    private final AgentStateRepository agentStateRepository;
+
+    private final JsonRpcHelper jsonRpcHelper;
+
+    private final SequenceService sequenceService;
+
+    private final EventRepository eventRepository;
+
+    private final Map<String, Method> methods = new HashMap<>();
+
+    {
+        try {
+            Method m = this.getClass().getDeclaredMethod("handleChat", ChatRequest.class, Session.class);
+            m.setAccessible(true);
+            methods.put("chat", m);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+            10,
+            10,
+            Long.MAX_VALUE,
+            TimeUnit.SECONDS,
+            new LinkedBlockingDeque<>(1000),
+            new ThreadFactoryBuilder()
+                    .setNameFormat("ws-chat-%d")
+                    .setDaemon(true)
+                    .build(),
+            new ThreadPoolExecutor.CallerRunsPolicy()
+    );
+
+    private volatile String userName;
+
+    private volatile AgentHandler agentHandler;
+
+    private volatile com.aliyun.tam.x.tron.core.domain.models.Session session;
+
+    @OnOpen
+    public void onOpen(Session wsSession,
+                       EndpointConfig config,
+                       @PathParam("agent_id") String agentId,
+                       @PathParam("session_id") String sessionId
+    ) {
+        String userId = getRequiredHeader(config, "X-User-Id");
+        userName = getOptionalHeader(config, "X-User-Name", userId);
+
+        AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
+        if (agentHandler == null) {
+            throw new IllegalArgumentException("Agent not found");
+        }
+
+        agentHandler.loadFrom(agentStateRepository.agentSessionsOf(agentId, userId), sessionId);
+        this.agentHandler = agentHandler;
+        this.session = getOrCreateSession(agentId, sessionId, userId);
+
+        log.info("Open session for agent {} and session {}", agentId, sessionId);
+    }
+
+    @OnMessage
+    public void onMessage(String message, Session wsSession) throws IOException {
+        log.debug("Received message: {}", message);
+        try {
+            JsonRpcRequest request = jsonRpcHelper.parseRequest(message);
+            Method method = methods.get(request.getMethod());
+            if (method == null) {
+                wsSession.getBasicRemote().sendText(
+                        jsonRpcHelper.serialize(
+                                JsonRpcResponse.error(request.getId(),
+                                        JsonRpcError.builder().code(JsonRpcError.METHOD_NOT_FOUND).message("Method not found").build()
+                                )
+                        )
+                );
+                return;
+            }
+            try {
+                Object result = jsonRpcHelper.callMethod(method, this, request.getParams(), ImmutableMap.of(
+                        "wsSession", wsSession
+                ));
+                wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
+                        JsonRpcResponse.success(request.getId(), result)
+                ));
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                log.warn("Error processing request: {}", request.getId(), e);
+                wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
+                        JsonRpcResponse.error(request.getId(),
+                                JsonRpcError.builder().code(JsonRpcError.INTERNAL_ERROR).message("Internal error").build()
+                        )
+                ));
+            }
+        } catch (JsonRpcException e) {
+            wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(e.toResponse()));
+        }
+    }
+
+    @OnClose
+    public void onClose(Session wsSession) {
+        if (session != null && agentHandler != null) {
+            log.info("Close session for agent {} and session {}", session.getAgentId(), session.getId());
+            agentHandler.saveTo(agentStateRepository.agentSessionsOf(session.getAgentId(), session.getUserId()), session.getId());
+        }
+    }
+
+    @OnError
+    public void onError(Session session, Throwable throwable) throws IOException {
+        log.error("WebSocket error, sessionId={}", session.getId(), throwable);
+        session.close();
+    }
+
+    private String getRequiredHeader(EndpointConfig config, String name) {
+        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
+        List<String> headerValues = headers.get(name);
+        if (headerValues == null || headerValues.isEmpty()) {
+            throw new RuntimeException("Missing required header: " + name);
+        } else if (headerValues.size() > 1) {
+            throw new RuntimeException("Multiple values for header: " + name);
+        }
+        return headerValues.get(0);
+    }
+
+
+    private String getOptionalHeader(EndpointConfig config, String name, String defaultValue) {
+        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
+        List<String> headerValues = headers.get(name);
+        if (headerValues == null || headerValues.isEmpty()) {
+            return defaultValue;
+        } else if (headerValues.size() > 1) {
+            throw new RuntimeException("Multiple values for header: " + name);
+        }
+        return headerValues.get(0);
+    }
+
+    private com.aliyun.tam.x.tron.core.domain.models.Session getOrCreateSession(String agentId, String sessionId, String userId) {
+        com.aliyun.tam.x.tron.core.domain.models.Session session = sessionRepository.getSession(agentId, sessionId);
+        if (session == null || !Objects.equals(userId, session.getUserId())) {
+            session = com.aliyun.tam.x.tron.core.domain.models.Session.builder()
+                    .id(sessionId)
+                    .userId(userId)
+                    .agentId(agentId)
+                    .name("")
+                    .lastAppliedEventId(0L)
+                    .gmtCreated(LocalDateTime.now())
+                    .gmtModified(LocalDateTime.now())
+                    .build();
+            sessionRepository.newSession(session);
+        }
+        return session;
+    }
+
+    private void saveAgent() {
+        agentHandler.saveTo(agentStateRepository.agentSessionsOf(session.getAgentId(), session.getUserId()), session.getId());
+    }
+
+    private Long handleChat(
+            ChatRequest request,
+            Session wsSession
+    ) {
+        List<Content> contents = request.getInput()
+                .stream()
+                .map(c -> c.toInputContent(agentHandler))
+                .toList();
+
+        UserSessionMessage userMessage = UserSessionMessage.builder()
+                .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))
+                .agentId(session.getAgentId())
+                .sessionId(session.getId())
+                .userId(session.getUserId())
+                .status(SessionMessageStatus.SUCCEED)
+                .name(userName)
+                .contents(contents)
+                .gmtCreate(LocalDateTime.now())
+                .gmtModified(LocalDateTime.now())
+                .build();
+
+        AgentSessionMessage agentMessage = AgentSessionMessage.builder()
+                .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))
+                .agentId(session.getAgentId())
+                .sessionId(session.getId())
+                .userId(session.getUserId())
+                .status(SessionMessageStatus.EXECUTING)
+                .gmtCreate(LocalDateTime.now())
+                .gmtModified(LocalDateTime.now())
+                .gmtFinished(null)
+                .build();
+
+        EventSink rawEventSink = eventRepository.createEventSink(
+                session.getAgentId(),
+                session.getUserId(),
+                session.getId(),
+                agentMessage.getId()
+        );
+        EventSink eventSink = new EventSink() {
+            @Override
+            public void newEvent(SessionEvent event) {
+                rawEventSink.newEvent(event);
+                try {
+                    wsSession.getBasicRemote().sendText(
+                            jsonRpcHelper.serialize(
+                                    JsonRpcNotification.builder()
+                                            .method("sessionEvent")
+                                            .params(event)
+                                            .build()
+                            )
+                    );
+                } catch (IOException e) {
+                    log.warn("Failed to send notification to client", e);
+                    try {
+                        wsSession.close();
+                    } catch (IOException ex) {
+                        // ignore
+                    }
+                }
+            }
+
+            @Override
+            public Long nextSequence(SequenceService.SequenceName sequenceName) {
+                return rawEventSink.nextSequence(sequenceName);
+            }
+
+            @Override
+            public void onComplete() {
+                rawEventSink.onComplete();
+            }
+        };
+        eventSink.setAgentId(session.getAgentId());
+        eventSink.setSessionId(session.getId());
+        eventSink.setUserId(session.getUserId());
+        eventSink.setMessageId(agentMessage.getId());
+
+        threadPoolExecutor.submit(() -> {
+            eventSink.newUserMessage(userMessage);
+            eventSink.newAgentMessage(agentMessage);
+            try {
+                agentHandler.handleInput(userMessage, eventSink);
+            } catch (Exception e) {
+                log.warn("Error handling input for session {}", session.getId(), e);
+            } finally {
+                saveAgent();
+            }
+        });
+        return agentMessage.getId();
+    }
+}
