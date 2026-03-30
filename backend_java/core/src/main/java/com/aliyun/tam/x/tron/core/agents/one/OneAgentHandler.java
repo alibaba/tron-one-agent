@@ -116,7 +116,6 @@ public class OneAgentHandler extends AbstractAgentHandler {
 
         AtomicReference<String> result = new AtomicReference<>();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
-        AtomicBoolean inThinking = new AtomicBoolean(false);
         mainAgent.stream(msg)
                 .doOnEach(s -> {
                     Event event = s.get();
@@ -135,20 +134,12 @@ public class OneAgentHandler extends AbstractAgentHandler {
                             if (!event.isLast()) {
                                 List<ThinkingBlock> thinkingBlocks = event.getMessage().getContentBlocks(ThinkingBlock.class);
                                 if (!CollectionUtils.isEmpty(thinkingBlocks)) {
-                                    if (!inThinking.get()) {
-                                        eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text("<details style=\"padding: 8px; border: 1px solid #8b5cf6; border-radius: 10px; background-color: ghostwhite;font-size: 12px;\"> <summary>思考&规划</summary>\n").build()));
-                                        inThinking.set(true);
-                                    }
                                     String content = thinkingBlocks.stream().map(ThinkingBlock::getThinking).reduce("", String::concat);
-                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
+                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().type(ContentType.THINKING).text(content).build()));
                                 }
 
                                 List<TextBlock> textBlocks = eventMsg.getContentBlocks(TextBlock.class);
                                 if (!CollectionUtils.isEmpty(textBlocks)) {
-                                    if (inThinking.get()) {
-                                        eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text("\n</details>\n\n").build()));
-                                        inThinking.set(false);
-                                    }
                                     String content = textBlocks.stream().map(TextBlock::getText).reduce("", String::concat);
                                     eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
                                 }
@@ -168,10 +159,6 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                         continue;
                                     }
 
-                                    if (inThinking.get()) {
-                                        eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text("\n</details>\n\n").build()));
-                                        inThinking.set(false);
-                                    }
                                     actionId = eventSink.newAction(formattedToolName);
                                     eventSink.appendContentToAction(actionId,
                                             Lists.newArrayList(TextContent.builder()

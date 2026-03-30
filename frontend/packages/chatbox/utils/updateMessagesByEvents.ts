@@ -151,10 +151,8 @@ const eventHandlers: Record<
       (message) => {
         const contents = [...message.contents];
         e.newContents.forEach((content) => {
-          if (
-            content.type === ContentType.TEXT ||
-            content.type === ContentType.THINKING
-          ) {
+          if (content.type === ContentType.TEXT) {
+            // TEXT 类型：与前一个 TEXT 合并
             const lastIndex = contents.length - 1;
             if (
               lastIndex >= 0 &&
@@ -169,6 +167,25 @@ const eventHandlers: Record<
             } else {
               contents.push({
                 type: ContentType.TEXT,
+                text: (content as TextContent).text || "",
+              });
+            }
+          } else if (content.type === ContentType.THINKING) {
+            // THINKING 类型：与前一个 THINKING 合并，保持独立类型
+            const lastIndex = contents.length - 1;
+            if (
+              lastIndex >= 0 &&
+              contents[lastIndex].type === ContentType.THINKING
+            ) {
+              contents[lastIndex] = {
+                ...contents[lastIndex],
+                text:
+                  (contents[lastIndex] as TextContent).text +
+                  (content as TextContent).text,
+              };
+            } else {
+              contents.push({
+                type: ContentType.THINKING,
                 text: (content as TextContent).text || "",
               });
             }

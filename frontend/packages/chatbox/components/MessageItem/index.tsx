@@ -297,6 +297,22 @@ const MessageItem: React.FC<MessageItemProps> = ({
             customTagMap={customTagMap}
           />
         );
+      case ContentType.THINKING:
+        return (
+          <details className={styles.thinkingContent}>
+            <summary className={styles.thinkingSummary}>
+              <span>深度思考</span>
+            </summary>
+            <div className={styles.thinkingBody}>
+              <TextContentRender
+                text={content.text}
+                isUser={isUser}
+                status={content.status}
+                customTagMap={customTagMap}
+              />
+            </div>
+          </details>
+        );
       case ContentType.IMAGE:
         return (
           <div className={styles.mediaContent}>
