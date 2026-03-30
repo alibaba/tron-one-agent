@@ -19,11 +19,23 @@ package com.aliyun.tam.x.tron.infra.dal.mapper;
 
 import com.aliyun.tam.x.tron.infra.dal.dataobject.SessionEventDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * 会话事件表Mapper
  */
 @Mapper
 public interface SessionEventMapper extends BaseMapper<SessionEventDO> {
+
+    @Insert("<script>" +
+            "INSERT INTO session_events (id, session_id, agent_id, user_id, message_id, type, status, data, gmt_created, gmt_modified) VALUES " +
+            "<foreach collection='events' item='event' separator=',' > " +
+            "(#{event.id}, #{event.sessionId}, #{event.agentId}, #{event.userId}, #{event.messageId}, #{event.type}, #{event.status}, #{event.data}, #{event.gmtCreated}, #{event.gmtModified}) " +
+            "</foreach>" +
+            "</script>")
+    int insertBatch(@Param("events") List<SessionEventDO> events);
 }
