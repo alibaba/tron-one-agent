@@ -18,18 +18,16 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { message, Skeleton } from "antd";
 import {
-  useChatModel,
-  useEventSource,
-  SseEventSource,
   ContentType,
   SessionMessageStatus,
   SessionMessageType,
-  UserSessionMessage,
-  AgentSessionMessage,
+  SessionEventType,
 } from "chatbox";
+import type { EventItem, ChatState, UserSessionMessage, AgentSessionMessage } from "chatbox";
 import { ChatBox } from "chatbox/extends/ChatBox";
 import type { AttachmentItem } from "chatbox/extends/ChatBox";
-import { createChat, setServiceConfig } from "chatbox/extends/service";
+import { createChatStream, setServiceConfig } from "chatbox/extends/service";
+import { updateMessageListByEvents } from "chatbox/utils/updateMessagesByEvents";
 import { useNavigate, useLocation } from "react-router";
 import SessionInfo from "./components/SessionInfo";
 import SuggestHotelCard from "../Demo/components/SuggestHotelCard";
@@ -83,38 +81,31 @@ const Chat = ({
 }) => {
   const navigate = useNavigate();
   const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(true);
-  const sseEventSource = useEventSource<SseEventSource>(
-    () =>
-      new SseEventSource({
-        urlBuilder: (params) => {
-          const baseUrl = `/chatApi/api/agents/${agentId}/sessions/${params.sessionId}/events`;
-          return `${baseUrl}?offset=${params.lastEventId}&size=100`;
-        },
-        headers: {
-          "X-User-Id": encodeURIComponent(getUserId()),
-          "X-User-Name": encodeURIComponent(getUserName()),
-        },
-      }),
-    [agentId]
-  );
-  const {
-    data: chatState,
-    running,
-    run,
-    update,
-    stop,
-    reset,
-    sendUserMessageShawde,
-    updateUserMessageShawdeStatus,
-  } = useChatModel({
-    initialData: {
-      sessionId: session?.sessionId || "",
-      messages: session?.messages || [],
-      lastEventId: session?.lastEventId || 0,
-      sessionName: session?.sessionName || "新会话",
-    },
-    eventSource: sseEventSource,
+  
+  // 聊天状态管理（替代 useChatModel）
+  const [chatState, setChatState] = useState<ChatState>({
+    sessionId: session?.sessionId || "",
+    sessionName: session?.sessionName || "新会话",
+    messages: session?.messages || [],
+    lastEventId: session?.lastEventId || 0,
   });
+  const [running, setRunning] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 初始化时检查是否需要恢复运行状态
+  useEffect(() => {
+    if (chatState.messages.length > 0) {
+      const lastMessage = chatState.messages[chatState.messages.length - 1];
+      if (
+        lastMessage &&
+        lastMessage.type === SessionMessageType.AGENT &&
+        lastMessage.status === SessionMessageStatus.EXECUTING
+      ) {
+        // 如果有正在执行的消息，不自动恢复，让用户手动触发
+      }
+    }
+  }, []);
+
   const handleSendMessage = useCallback(
     async (inputStr: string, attachments?: AttachmentItem[]) => {
       const newMessageId = new Date().getTime();
@@ -132,11 +123,17 @@ const Chat = ({
           });
         });
       }
-      sendUserMessageShawde({
+
+      // 添加用户消息到列表
+      const userMessage = {
         id: newMessageId,
+        type: SessionMessageType.USER,
         contents: userContents.length > 0 ? userContents : [{ type: ContentType.TEXT, text: inputStr }],
         status: SessionMessageStatus.EXECUTING,
-      });
+        gmtCreate: new Date().toISOString(),
+        gmtModified: new Date().toISOString(),
+      } as UserSessionMessage;
+      setChatState((prev) => ({ ...prev, messages: [...prev.messages, userMessage] }));
 
       // 构建请求 input（附件使用 serverUrl）
       const inputContents: any[] = [];
@@ -151,86 +148,126 @@ const Chat = ({
         });
       }
 
-      if (chatState.sessionId) {
-        // session中继续对话
-        try {
-          const chatResult = await createChat(agentId, chatState.sessionId, {
-            data: { input: inputContents },
-          });
-          if (chatResult === "success") {
-            run();
-          } else {
-            updateUserMessageShawdeStatus(
-              newMessageId,
-              SessionMessageStatus.FAILED
-            );
-            message.error(
-              typeof chatResult === "string" ? chatResult : "对话创建失败"
-            );
-          }
-        } catch (error) {
-          console.error(error);
-          updateUserMessageShawdeStatus(
-            newMessageId,
-            SessionMessageStatus.FAILED
-          );
-          message.error("对话创建失败");
-        }
-      } else {
-        // 先创建会话，然后再创建对话
+      // 确定 sessionId
+      let currentSessionId = chatState.sessionId;
+      
+      // 如果没有 sessionId，先创建会话
+      if (!currentSessionId) {
         try {
           const sessionResult = await createSession(agentId);
           if (sessionResult.length > 0) {
-            try {
-              const chatResult = await createChat(agentId, sessionResult, {
-                data: { input: inputContents },
-              });
-              if (chatResult === "success") {
-                update({
-                  sessionId: sessionResult,
-                });
-                run();
-              } else {
-                updateUserMessageShawdeStatus(
-                  newMessageId,
-                  SessionMessageStatus.FAILED
-                );
-                message.error(
-                  typeof chatResult === "string" ? chatResult : "对话创建失败"
-                );
-              }
-            } catch (error) {
-              console.error(error);
-              updateUserMessageShawdeStatus(
-                newMessageId,
-                SessionMessageStatus.FAILED
-              );
-              message.error("对话创建失败");
-            }
+            currentSessionId = sessionResult;
+            setChatState((prev) => ({ ...prev, sessionId: sessionResult }));
           } else {
-            updateUserMessageShawdeStatus(
-              newMessageId,
-              SessionMessageStatus.FAILED
-            );
-            message.error(
-              typeof sessionResult === "string" ? sessionResult : "会话创建失败"
-            );
+            setChatState((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === newMessageId
+                  ? { ...msg, status: SessionMessageStatus.FAILED }
+                  : msg
+              ),
+            }));
+            message.error("会话创建失败");
+            return false;
           }
         } catch (error) {
           console.error(error);
-          updateUserMessageShawdeStatus(
-            newMessageId,
-            SessionMessageStatus.FAILED
-          );
+          setChatState((prev) => ({
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg.id === newMessageId
+                ? { ...msg, status: SessionMessageStatus.FAILED }
+                : msg
+            ),
+          }));
           message.error("会话创建失败");
+          return false;
         }
       }
+
+      // 使用 SSE 流式 chat 接口
+      setRunning(true);
+      
+      // 取消之前的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      abortControllerRef.current = createChatStream(
+        agentId,
+        currentSessionId,
+        { data: { input: inputContents } },
+        {
+          onEvent: (event: EventItem) => {
+            // 更新消息列表
+            setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
+
+            // 检查是否需要停止运行
+            if (
+              event.type === SessionEventType.AGENT_MESSAGE_STATUS_CHANGED &&
+              (event as any).newStatus !== SessionMessageStatus.EXECUTING
+            ) {
+              setRunning(false);
+              // 更新用户消息状态为成功
+              setChatState((prev) => ({
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === newMessageId
+                    ? { ...msg, status: SessionMessageStatus.SUCCEED }
+                    : msg
+                ),
+              }));
+            }
+          },
+          onError: (error: Error) => {
+            console.error("SSE 错误:", error);
+            setRunning(false);
+            // 更新用户消息状态为失败
+            setChatState((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === newMessageId
+                  ? { ...msg, status: SessionMessageStatus.FAILED }
+                  : msg
+              ),
+            }));
+            message.error("对话失败");
+          },
+          onComplete: () => {
+            console.log("SSE 连接完成");
+            setRunning(false);
+            // 确保用户消息状态更新为成功
+            setChatState((prev) => ({
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg.id === newMessageId && msg.status === SessionMessageStatus.EXECUTING
+                  ? { ...msg, status: SessionMessageStatus.SUCCEED }
+                  : msg
+              ),
+            }));
+          },
+        }
+      );
+
       return true;
     },
-    [chatState.sessionId, agentId, run, update]
+    [chatState.sessionId, agentId]
   );
+
   const onCreateSessionClick = useCallback(async () => {
-    reset();
+    // 取消正在进行的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setRunning(false);
+    setChatState({
+      sessionId: "",
+      sessionName: "新会话",
+      messages: [],
+      lastEventId: 0,
+    });
+    
     try {
       const result = await createSession(agentId);
       if (result.length > 0) {
@@ -242,7 +279,7 @@ const Chat = ({
       console.error(error);
       message.error("会话创建失败");
     }
-  }, [agentId, reset]);
+  }, [agentId, navigate]);
 
   return (
     <div className={styles.container}>
