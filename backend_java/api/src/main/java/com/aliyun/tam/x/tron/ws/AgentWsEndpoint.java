@@ -59,7 +59,7 @@ public class AgentWsEndpoint {
 
     {
         try {
-            Method m = this.getClass().getDeclaredMethod("handleChat", ChatRequest.class, Session.class);
+            Method m = this.getClass().getDeclaredMethod("handleChat", ChatRequest.class, Session.class, Object.class);
             m.setAccessible(true);
             methods.put("chat", m);
         } catch (NoSuchMethodException e) {
@@ -85,6 +85,8 @@ public class AgentWsEndpoint {
     private volatile AgentHandler agentHandler;
 
     private volatile com.aliyun.tam.x.tron.core.domain.models.Session session;
+
+    private volatile boolean chatting = false;
 
     @OnOpen
     public void onOpen(Session wsSession,
@@ -125,12 +127,16 @@ public class AgentWsEndpoint {
             }
             try {
                 Object result = jsonRpcHelper.callMethod(method, this, request.getParams(), ImmutableMap.of(
-                        "wsSession", wsSession
+                        "wsSession", wsSession,
+                        "requestId", request.getId()
                 ));
                 wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
                         JsonRpcResponse.success(request.getId(), result)
                 ));
             } catch (InvocationTargetException | IllegalAccessException e) {
+                if (e instanceof InvocationTargetException ie && ie.getTargetException() instanceof JsonRpcException jre) {
+                    wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(jre.toResponse()));
+                }
                 log.warn("Error processing request: {}", request.getId(), e);
                 wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
                         JsonRpcResponse.error(request.getId(),
@@ -203,8 +209,13 @@ public class AgentWsEndpoint {
 
     private Long handleChat(
             ChatRequest request,
-            Session wsSession
+            Session wsSession,
+            Object requestId
     ) {
+        if (chatting) {
+            throw new JsonRpcException(requestId, JsonRpcError.INVALID_REQUEST, "Chatting already in progress");
+        }
+
         List<Content> contents = request.getInput()
                 .stream()
                 .map(c -> c.toInputContent(agentHandler))
@@ -277,6 +288,7 @@ public class AgentWsEndpoint {
         eventSink.setUserId(session.getUserId());
         eventSink.setMessageId(agentMessage.getId());
 
+        chatting = true;
         threadPoolExecutor.submit(() -> {
             eventSink.newUserMessage(userMessage);
             eventSink.newAgentMessage(agentMessage);
@@ -286,6 +298,7 @@ public class AgentWsEndpoint {
                 log.warn("Error handling input for session {}", session.getId(), e);
             } finally {
                 saveAgent();
+                chatting = false;
             }
         });
         return agentMessage.getId();
