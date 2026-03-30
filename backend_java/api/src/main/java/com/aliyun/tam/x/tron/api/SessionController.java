@@ -433,9 +433,6 @@ public class SessionController {
                     rawEventSink.newEvent(event);
                     try {
                         sseEmitter.send(event);
-                        if (event instanceof AgentMessageStatusChangedEvent e && e.getNewStatus() != SessionMessageStatus.EXECUTING) {
-                            sseEmitter.complete();
-                        }
                     } catch (Exception e) {
                         try {
                             sseEmitter.completeWithError(e);
@@ -447,6 +444,12 @@ public class SessionController {
                 @Override
                 public Long nextSequence(SequenceService.SequenceName sequenceName) {
                     return rawEventSink.nextSequence(sequenceName);
+                }
+
+                @Override
+                public void onComplete() {
+                    rawEventSink.onComplete();
+                    sseEmitter.complete();
                 }
             };
             eventSink.setAgentId(agentId);
