@@ -163,50 +163,6 @@ public class AgentWsEndpoint {
         session.close();
     }
 
-    private String getRequiredHeader(EndpointConfig config, String name) {
-        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
-        List<String> headerValues = headers.get(name);
-        if (headerValues == null || headerValues.isEmpty()) {
-            throw new RuntimeException("Missing required header: " + name);
-        } else if (headerValues.size() > 1) {
-            throw new RuntimeException("Multiple values for header: " + name);
-        }
-        return headerValues.get(0);
-    }
-
-
-    private String getOptionalHeader(EndpointConfig config, String name, String defaultValue) {
-        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
-        List<String> headerValues = headers.get(name);
-        if (headerValues == null || headerValues.isEmpty()) {
-            return defaultValue;
-        } else if (headerValues.size() > 1) {
-            throw new RuntimeException("Multiple values for header: " + name);
-        }
-        return headerValues.get(0);
-    }
-
-    private com.aliyun.tam.x.tron.core.domain.models.Session getOrCreateSession(String agentId, String sessionId, String userId) {
-        com.aliyun.tam.x.tron.core.domain.models.Session session = sessionRepository.getSession(agentId, sessionId);
-        if (session == null || !Objects.equals(userId, session.getUserId())) {
-            session = com.aliyun.tam.x.tron.core.domain.models.Session.builder()
-                    .id(sessionId)
-                    .userId(userId)
-                    .agentId(agentId)
-                    .name("")
-                    .lastAppliedEventId(0L)
-                    .gmtCreated(LocalDateTime.now())
-                    .gmtModified(LocalDateTime.now())
-                    .build();
-            sessionRepository.newSession(session);
-        }
-        return session;
-    }
-
-    private void saveAgent() {
-        agentHandler.saveTo(agentStateRepository.agentSessionsOf(session.getAgentId(), session.getUserId()), session.getId());
-    }
-
     private Long handleChat(
             ChatRequest request,
             Session wsSession,
@@ -303,4 +259,49 @@ public class AgentWsEndpoint {
         });
         return agentMessage.getId();
     }
+
+    private String getRequiredHeader(EndpointConfig config, String name) {
+        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
+        List<String> headerValues = headers.get(name);
+        if (headerValues == null || headerValues.isEmpty()) {
+            throw new RuntimeException("Missing required header: " + name);
+        } else if (headerValues.size() > 1) {
+            throw new RuntimeException("Multiple values for header: " + name);
+        }
+        return headerValues.get(0);
+    }
+
+
+    private String getOptionalHeader(EndpointConfig config, String name, String defaultValue) {
+        Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
+        List<String> headerValues = headers.get(name);
+        if (headerValues == null || headerValues.isEmpty()) {
+            return defaultValue;
+        } else if (headerValues.size() > 1) {
+            throw new RuntimeException("Multiple values for header: " + name);
+        }
+        return headerValues.get(0);
+    }
+
+    private com.aliyun.tam.x.tron.core.domain.models.Session getOrCreateSession(String agentId, String sessionId, String userId) {
+        com.aliyun.tam.x.tron.core.domain.models.Session session = sessionRepository.getSession(agentId, sessionId);
+        if (session == null || !Objects.equals(userId, session.getUserId())) {
+            session = com.aliyun.tam.x.tron.core.domain.models.Session.builder()
+                    .id(sessionId)
+                    .userId(userId)
+                    .agentId(agentId)
+                    .name("")
+                    .lastAppliedEventId(0L)
+                    .gmtCreated(LocalDateTime.now())
+                    .gmtModified(LocalDateTime.now())
+                    .build();
+            sessionRepository.newSession(session);
+        }
+        return session;
+    }
+
+    private void saveAgent() {
+        agentHandler.saveTo(agentStateRepository.agentSessionsOf(session.getAgentId(), session.getUserId()), session.getId());
+    }
+
 }
