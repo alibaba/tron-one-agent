@@ -270,7 +270,6 @@ public class SessionController {
             @PathVariable("agent_id") String agentId,
             @PathVariable("session_id") String sessionId,
             @RequestHeader("X-User-Id") String userId,
-            @RequestHeader(value = "accept", required = false) String accept,
             @RequestParam(value = "offset", required = false, defaultValue = "0") @Min(0) long offset,
             @RequestParam(value = "size", required = false, defaultValue = "10") @Min(1) @Max(100) int size
     ) {
@@ -288,55 +287,10 @@ public class SessionController {
                     .body(String.format("session %s not found", sessionId));
         }
 
-        if (Objects.equals("text/event-stream", accept)) {
-            SseEmitter emitter = new SseEmitter(300_000L);
-            
-            emitter.onTimeout(() -> {
-                log.info("SSE connection timeout for user: {}, session: {}", userId, sessionId);
-            });
-            emitter.onCompletion(() -> {
-                log.info("SSE connection completed for user: {}, session: {}", userId, sessionId);
-            });
-            emitter.onError(e -> {
-                log.warn("SSE connection error for user: {}, session: {}", userId, sessionId, e);
-            });
-            
-            threadPoolExecutor.submit(() -> {
-                int batchSize = size;
-                long currentOffset = offset;
-                try {
-                    while (true) {
-                        List<SessionEvent> sessionEvents = eventRepository.pullEvents(agentId, sessionId, currentOffset, batchSize);
-                        if (sessionEvents.isEmpty()) {
-                            emitter.send("ping");
-                            TimeUnit.SECONDS.sleep(1);
-                        } else {
-                            for (SessionEvent sessionEvent : sessionEvents) {
-                                emitter.send(sessionEvent);
-                            }
-                            if (sessionEvents.size() < batchSize) {
-                                TimeUnit.SECONDS.sleep(1);
-                            }
-                            currentOffset = sessionEvents.get(sessionEvents.size() - 1).getId();
-                        }
-                    }
-                } catch (Exception e) {
-                    try {
-                        emitter.completeWithError(e);
-                    } catch (Exception e1) {
-                    }
-                }
-            });
-            return ResponseEntity.status(HttpStatus.OK)
-                    .contentType(MediaType.TEXT_EVENT_STREAM)
-                    .header(HttpHeaders.CONNECTION, "keep-alive")
-                    .body(emitter);
-        } else {
-            List<SessionEvent> sessionEvents = eventRepository.pullEvents(agentId, sessionId, offset, size);
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(sessionEvents);
-        }
+        List<SessionEvent> sessionEvents = eventRepository.pullEvents(agentId, sessionId, offset, size);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(sessionEvents);
     }
 
     @PostMapping("/sessions/{session_id}/chat")

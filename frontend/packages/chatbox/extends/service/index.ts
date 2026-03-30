@@ -15,7 +15,8 @@
  */
 
 
-import type { EventItem } from "../types/event";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+import type { EventItem } from "../../types/event";
 interface RequestConfig {
   headers?: Record<string, string>;
   params?: Record<string, any>;
@@ -316,5 +317,80 @@ export const getSessionEvents = async (
     console.error(`获取会话事件失败 (ID: ${agentId}):`, error);
     return [];
   }
+};
+
+/**
+ * 创建聊天 (SSE 流式响应)
+ * @param agentId Agent ID
+ * @param sessionId Session ID
+ * @param config 请求配置
+ * @param callbacks 回调函数
+ * @returns AbortController 用于中断请求
+ */
+export interface ChatStreamCallbacks {
+  onEvent?: (event: EventItem) => void;
+  onError?: (error: Error) => void;
+  onComplete?: () => void;
+}
+
+export const createChatStream = (
+  agentId: string,
+  sessionId: string,
+  config?: RequestConfig,
+  callbacks?: ChatStreamCallbacks
+): AbortController => {
+  const abortController = new AbortController();
+
+  const headers = {
+    "Content-Type": "application/json",
+    "accept": "text/event-stream",
+    ...serviceConfig.authorizationHeader,
+    ...config?.headers,
+  };
+  const body = config?.data;
+
+  const url = getFullUrl(`/api/agents/${agentId}/sessions/${sessionId}/chat`);
+
+  fetchEventSource(url, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body),
+    signal: abortController.signal,
+
+    onopen: async (response) => {
+      if (
+        response.ok &&
+        response.headers.get("content-type")?.includes("text/event-stream")
+      ) {
+        return;
+      }
+      throw new Error(`连接失败: ${response.status} ${response.statusText}`);
+    },
+
+    onmessage: (msg) => {
+      try {
+        const eventData: EventItem = JSON.parse(msg.data);
+        callbacks?.onEvent?.(eventData);
+      } catch (error) {
+        callbacks?.onError?.(new Error("消息解析失败: " + msg.data));
+      }
+    },
+
+    onerror: (error) => {
+      if (error instanceof Error && error.name !== "AbortError") {
+        callbacks?.onError?.(error);
+      }
+    },
+
+    onclose: () => {
+      callbacks?.onComplete?.();
+    },
+  }).catch((error) => {
+    if (error instanceof Error && error.name !== "AbortError") {
+      callbacks?.onError?.(error);
+    }
+  });
+
+  return abortController;
 };
 

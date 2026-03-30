@@ -18,28 +18,27 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import styles from "./index.module.less";
 import {
-  useChatModel,
-  useEventSource,
-  SseEventSource,
   ContentType,
   SessionMessageStatus,
   SessionEventType,
+  SessionMessageType,
 } from "chatbox";
-import type { EventItem } from "chatbox";
+import type { EventItem, ChatState, UserSessionMessage } from "chatbox";
 import { ChatBox } from "chatbox/extends/ChatBox";
 import type { AttachmentItem } from "chatbox/extends/ChatBox";
 import {
-  createChat,
   createSession,
   getSessionById,
   getSessionMessages,
   setServiceConfig,
+  createChatStream,
 } from "chatbox/extends/service";
 import { getAllAgents, getSessionList, type SessionListItem } from "@/services/agent";
 import { AgentConfig } from "@/types/agent.interface";
 import { Card, Form, message, Select, Tag, Tabs, Table, Typography, Modal, Space, List, Switch } from "antd";
 import { LocalAgentType } from "@/types/common.interface";
 import { getUserId, getUserName } from "@/utils/userInfo";
+import { updateMessageListByEvents } from "chatbox/utils/updateMessagesByEvents";
 
 const EventTypeNameMap: Record<number, string> = {
   [SessionEventType.SESSION_NAME_CHANGED]: "会话名变更",
@@ -127,45 +126,17 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const [sessionId, setSessionId] = useState<string>("");
   const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(true);
 
-  const agentIdChanged = Form.useWatch("agentId", form);
-
-  const sseEventSource = useEventSource<SseEventSource>(
-    () =>
-      new SseEventSource({
-        urlBuilder: (params) => {
-          const offset = lastEventIdRef.current || params.lastEventId;
-          const baseUrl = `/chatApi/api/agents/${agentIdChanged}/sessions/${sessionId}/events`;
-          // const baseUrl = `http://0.0.0.0:8080/api/agents/${agentIdChanged}/sessions/${sessionId}/events`;
-          return `${baseUrl}?offset=${offset}&size=100`;
-        },
-        headers: {
-          "X-User-Id": encodeURIComponent(getUserId()),
-          "X-User-Name": encodeURIComponent(getUserName()),
-        },
-        autoReconnect: true,
-        reconnectInterval: 3000,
-      }),
-    [agentIdChanged, sessionId]
-  );
-
-  const {
-    data: chatState,
-    running,
-    run,
-    update,
-    stop,
-    reset,
-    sendUserMessageShawde,
-    updateUserMessageShawdeStatus,
-  } = useChatModel({
-    initialData: {
-      sessionId: sessionId,
-      messages: [],
-      lastEventId: 0,
-      sessionName: "新会话",
-    },
-    eventSource: sseEventSource,
+  // 聊天状态管理（替代 useChatModel）
+  const [chatState, setChatState] = useState<ChatState>({
+    sessionId: "",
+    sessionName: "新会话",
+    messages: [],
+    lastEventId: 0,
   });
+  const [running, setRunning] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const agentIdChanged = Form.useWatch("agentId", form);
   const getAgentsOptions = async () => {
     try {
       const result: any = await getAllAgents();
@@ -193,7 +164,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       const newMessageId = new Date().getTime();
 
       // 如果 sessionId 为空，先创建 session
-      let currentSessionId = chatState.sessionId;
+      let currentSessionId = sessionId;
       if (!currentSessionId) {
         try {
           const newSessionId = await createSession(agentIdChanged, {
@@ -202,7 +173,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           currentSessionId = newSessionId;
           setSessionId(newSessionId);
           lastEventIdRef.current = 0;
-          update({ sessionId: newSessionId });
+          setChatState((prev) => ({ ...prev, sessionId: newSessionId }));
         } catch (error) {
           console.error("创建会话失败:", error);
           message.error("创建会话失败，请重试");
@@ -224,11 +195,16 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         });
       }
 
-      sendUserMessageShawde({
+      // 添加用户消息到列表
+      const userMessage = {
         id: newMessageId,
+        type: SessionMessageType.USER,
         contents: userContents.length > 0 ? userContents : [{ type: ContentType.TEXT, text: inputStr }],
         status: SessionMessageStatus.EXECUTING,
-      });
+        gmtCreate: new Date().toISOString(),
+        gmtModified: new Date().toISOString(),
+      } as UserSessionMessage;
+      setChatState((prev) => ({ ...prev, messages: [...prev.messages, userMessage] }));
 
       // 构建请求 input（附件已在选择时上传完毕，直接使用 serverUrl）
       try {
@@ -250,40 +226,108 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           });
         }
 
-        const chatResult = await createChat(
+        // 使用 SSE 流式 chat 接口
+        setRunning(true);
+        
+        // 取消之前的请求
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+
+        abortControllerRef.current = createChatStream(
           agentIdChanged,
           currentSessionId,
-          { data: { input: inputContents } }
+          { data: { input: inputContents } },
+          {
+            onEvent: (event: EventItem) => {
+              // 更新事件列表用于调试面板
+              setEvents((prev) => [...prev, event]);
+              lastEventIdRef.current = event.id;
+
+              // 更新消息列表
+              setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
+
+              // 检查是否需要停止运行
+              if (
+                event.type === SessionEventType.AGENT_MESSAGE_STATUS_CHANGED &&
+                (event as any).newStatus !== SessionMessageStatus.EXECUTING
+              ) {
+                setRunning(false);
+                // 更新用户消息状态为成功
+                setChatState((prev) => ({
+                  ...prev,
+                  messages: prev.messages.map((msg) =>
+                    msg.id === newMessageId
+                      ? { ...msg, status: SessionMessageStatus.SUCCEED }
+                      : msg
+                  ),
+                }));
+              }
+            },
+            onError: (error: Error) => {
+              console.error("SSE 错误:", error);
+              setRunning(false);
+              // 更新用户消息状态为失败
+              setChatState((prev) => ({
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === newMessageId
+                    ? { ...msg, status: SessionMessageStatus.FAILED }
+                    : msg
+                ),
+              }));
+              message.error("对话失败");
+            },
+            onComplete: () => {
+              console.log("SSE 连接完成");
+              setRunning(false);
+              // 确保用户消息状态更新为成功
+              setChatState((prev) => ({
+                ...prev,
+                messages: prev.messages.map((msg) =>
+                  msg.id === newMessageId && msg.status === SessionMessageStatus.EXECUTING
+                    ? { ...msg, status: SessionMessageStatus.SUCCEED }
+                    : msg
+                ),
+              }));
+            },
+          }
         );
-        if (chatResult === "success") {
-          run();
-        } else {
-          updateUserMessageShawdeStatus(
-            newMessageId,
-            SessionMessageStatus.FAILED
-          );
-          message.error(chatResult.message || "对话创建失败");
-        }
       } catch (error) {
         console.error(error);
-        updateUserMessageShawdeStatus(
-          newMessageId,
-          SessionMessageStatus.FAILED
-        );
+        setRunning(false);
+        setChatState((prev) => ({
+          ...prev,
+          messages: prev.messages.map((msg) =>
+            msg.id === newMessageId
+              ? { ...msg, status: SessionMessageStatus.FAILED }
+              : msg
+          ),
+        }));
         message.error("对话创建失败");
       }
       return true;
     },
-    [chatState.sessionId, agentIdChanged, run, update]
+    [sessionId, agentIdChanged]
   );
   const onCreateSessionClick = useCallback(() => {
     const newId = generateSessionId();
     setSessionId(newId);
     lastEventIdRef.current = 0;
     setEvents([]);
-    reset();
-    update({ sessionId: newId });
-  }, [reset, update]);
+    setChatState({
+      sessionId: newId,
+      sessionName: "新会话",
+      messages: [],
+      lastEventId: 0,
+    });
+    // 取消正在进行的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setRunning(false);
+  }, []);
 
   const configValuesChanged = (changedValues: any, allValues: any) => {
     // 初始加载时跳过重置逻辑
@@ -296,7 +340,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     
     // 停止当前运行中的对话
     if (running) {
-      stop();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      setRunning(false);
     }
     
     // 生成新 sessionId
@@ -305,35 +353,13 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     
     lastEventIdRef.current = 0;
     setEvents([]);
-    reset();
-    update({
+    setChatState({
       sessionId: newId,
+      sessionName: "新会话",
       messages: [],
       lastEventId: 0,
-      sessionName: "新会话",
     });
   };
-  // 订阅事件用于调试面板展示，并同步 lastEventIdRef
-  useEffect(() => {
-    if (!sseEventSource) return;
-    const unsubscribe = sseEventSource.onMessage((event: EventItem) => {
-      // 过滤掉 ping 心跳事件
-      if ((event as any) === "ping") return;
-      setEvents((prev) => [...prev, event]);
-      lastEventIdRef.current = event.id;
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [sseEventSource]);
-
-  // sseEventSource 重建时，同步已有的 lastEventId 和 sessionId，避免从头拉取
-  useEffect(() => {
-    if (sseEventSource && lastEventIdRef.current > 0) {
-      sseEventSource.lastEventId = lastEventIdRef.current;
-      sseEventSource.sessionId = sessionId;
-    }
-  }, [sseEventSource]);
 
   const handleCreateSessionClick = useCallback(() => {
     onCreateSessionClick();
@@ -367,11 +393,23 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const handleSwitchSession = useCallback(async (targetSessionId: string) => {
     if (targetSessionId === sessionId) return;
     
+    // 取消正在进行的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setRunning(false);
+    
     // 重置状态
     setEvents([]);
     lastEventIdRef.current = 0;
     setSessionId(targetSessionId);
-    reset();
+    setChatState({
+      sessionId: targetSessionId,
+      sessionName: "新会话",
+      messages: [],
+      lastEventId: 0,
+    });
     
     // 获取会话详情和消息列表
     if (agentIdChanged) {
@@ -386,38 +424,23 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         
         if (sessionDetail && messagesResult?.records) {
           // 消息列表是时间逆序的，需要 reverse 显示
-          const messages = messagesResult.records.reverse();
+          const loadedMessages = messagesResult.records.reverse();
           
           // 使用消息列表更新状态
-          update({
+          setChatState({
             sessionId: targetSessionId,
-            messages: messages,
-            lastEventId: sessionDetail.lastAppliedEventId,
             sessionName: sessionDetail.name || "新会话",
+            messages: loadedMessages,
+            lastEventId: sessionDetail.lastAppliedEventId,
           });
           lastEventIdRef.current = sessionDetail.lastAppliedEventId;
-        } else {
-          // 如果获取失败，至少设置基本信息
-          update({
-            sessionId: targetSessionId,
-            messages: [],
-            lastEventId: 0,
-            sessionName: "新会话",
-          });
         }
       } catch (err) {
         console.error("获取会话详情失败:", err);
         message.error("加载会话失败");
-        // 即使失败也要设置 sessionId
-        update({
-          sessionId: targetSessionId,
-          messages: [],
-          lastEventId: 0,
-          sessionName: "新会话",
-        });
       }
     }
-  }, [sessionId, agentIdChanged, reset, update]);
+  }, [sessionId, agentIdChanged]);
 
   useEffect(() => {
     getAgentsOptions();
@@ -434,9 +457,9 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }}
       >
         <ChatBox
-          sessionId={chatState.sessionId}
+          sessionId={sessionId}
           messages={chatState.messages}
-          sessionName={chatState.sessionName as string}
+          sessionName={chatState.sessionName}
           userName={userName}
           agentName={agentName}
           handleSendMessage={handleSendMessage}
