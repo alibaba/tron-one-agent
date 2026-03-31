@@ -25,8 +25,6 @@ public class QwenRealtimeTtsConfig {
 
         private String languageType = "Auto";
 
-        private String mode = "server_commit";
-
         private QwenTtsRealtimeAudioFormat format = QwenTtsRealtimeAudioFormat.PCM_24000HZ_MONO_16BIT;
 
         private String instructions = "";

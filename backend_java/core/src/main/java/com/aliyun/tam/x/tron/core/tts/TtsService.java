@@ -10,5 +10,5 @@ public interface TtsService {
         void onError(Throwable t);
     }
 
-    TtsSession newSession(TtsCallback callback);
+    TtsSession newSession(TtsCallback callback, boolean autoCommit);
 }

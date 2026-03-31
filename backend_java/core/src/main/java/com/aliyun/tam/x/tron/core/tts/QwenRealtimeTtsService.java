@@ -21,7 +21,7 @@ public class QwenRealtimeTtsService implements TtsService {
 
 
     @Override
-    public TtsSession newSession(TtsCallback callback) {
+    public TtsSession newSession(TtsCallback callback, boolean autoCommit) {
         final CountDownLatch sessionCreatedLatch = new CountDownLatch(1);
         final CountDownLatch sessionUpdatedLatch = new CountDownLatch(1);
 
@@ -81,7 +81,7 @@ public class QwenRealtimeTtsService implements TtsService {
             }
 
             long costInMs = System.currentTimeMillis() - startInMs;
-            realtime.updateSession(config());
+            realtime.updateSession(config(autoCommit));
             if (!sessionUpdatedLatch.await(properties.getSessionCreateTimeoutInMills() - costInMs, TimeUnit.MILLISECONDS)) {
                 throw new TimeoutException("Session update timed out");
             }
@@ -94,6 +94,11 @@ public class QwenRealtimeTtsService implements TtsService {
                         realtime.appendText(chunk);
                         sleep(properties.getChunkIntervalInMills());
                     }
+                }
+
+                @Override
+                public void commit() {
+                    realtime.commit();
                 }
 
                 private void sleep(long millis) {
@@ -127,10 +132,10 @@ public class QwenRealtimeTtsService implements TtsService {
                 .build();
     }
 
-    private QwenTtsRealtimeConfig config() {
+    private QwenTtsRealtimeConfig config(boolean autoCommit) {
         return QwenTtsRealtimeConfig.builder()
                 .voice(properties.getVoice())
-                .mode(properties.getMode())
+                .mode(autoCommit ? "server_commit" : "commit")
                 .responseFormat(properties.getFormat())
                 .instructions(properties.getInstructions())
                 .optimizeInstructions(properties.getOptimizeInstructions())

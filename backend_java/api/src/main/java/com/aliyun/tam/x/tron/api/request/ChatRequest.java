@@ -36,4 +36,7 @@ import java.util.List;
 public class ChatRequest {
     @NotNull
     private List<ContentDTO> input;
+
+    @Builder.Default
+    private boolean enableTts = false;
 }

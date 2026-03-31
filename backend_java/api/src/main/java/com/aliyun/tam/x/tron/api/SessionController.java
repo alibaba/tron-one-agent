@@ -27,9 +27,10 @@ import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
-import com.aliyun.tam.x.tron.core.domain.models.events.AgentMessageStatusChangedEvent;
+import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.events.SessionEvent;
+import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
@@ -39,7 +40,9 @@ import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
+import com.aliyun.tam.x.tron.core.tts.TtsService;
+import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -47,7 +50,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +59,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -86,7 +89,7 @@ public class SessionController {
 
     private final AgentStateRepository agentStateRepository;
 
-    private final ObjectMapper objectMapper;
+    private final TtsService ttsService;
 
     private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
             10,
@@ -241,7 +244,7 @@ public class SessionController {
             @PathVariable("session_id") String sessionId,
             @RequestHeader("X-User-Id") String userId,
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") @Min(1) int pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "10") @Min(1) @Max(100) int pageSize
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") @Min(1) @Max(1000) int pageSize
     ) {
         AgentConfig agent = getAgentConfig(agentId);
         if (agent == null) {
@@ -317,21 +320,15 @@ public class SessionController {
                     .body(String.format("session %s is completing", session.getId()));
         }
 
-        List<Content> contents = chatRequest.getInput()
-                .stream()
-                .map(c -> c.toInputContent(agent))
-                .toList();
-
-
         if (Objects.equals("text/event-stream", accept)) {
             SseEmitter emitter = new SseEmitter(300_000L);
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, emitter);
+            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, emitter);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.TEXT_EVENT_STREAM)
                     .body(emitter);
         } else {
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, null);
+            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, null);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -345,9 +342,14 @@ public class SessionController {
             String userId,
             String userName,
             String sessionId,
-            List<Content> contents,
+            ChatRequest chatRequest,
             SseEmitter sseEmitter
     ) {
+        List<Content> contents = chatRequest.getInput()
+                .stream()
+                .map(c -> c.toInputContent(agentHandler))
+                .toList();
+
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
                 .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))
@@ -378,9 +380,26 @@ public class SessionController {
                 sessionId,
                 agentMessage.getId()
         );
+        EventSink eventSink = wrapEventSink(rawEventSink, chatRequest, sseEmitter);
 
+        eventSink.newUserMessage(userMessage);
+        eventSink.newAgentMessage(agentMessage);
+        return () -> {
+            io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentId, userId);
+            try {
+                agentHandler.loadFrom(session, sessionId);
+                return agentHandler.handleInput(userMessage, eventSink);
+            } finally {
+                agentHandler.saveTo(session, sessionId);
+            }
+        };
+    }
+
+    private EventSink wrapEventSink(EventSink rawEventSink, ChatRequest chatRequest, SseEmitter sseEmitter) {
         EventSink eventSink;
-        if (sseEmitter != null) {
+        if (sseEmitter == null) {
+            eventSink = rawEventSink;
+        } else {
             eventSink = new EventSink() {
                 @Override
                 public void newEvent(SessionEvent event) {
@@ -406,24 +425,49 @@ public class SessionController {
                     sseEmitter.complete();
                 }
             };
-            eventSink.setAgentId(agentId);
-            eventSink.setSessionId(sessionId);
-            eventSink.setUserId(userId);
-            eventSink.setMessageId(agentMessage.getId());
-        } else {
-            eventSink = rawEventSink;
         }
-        eventSink.newUserMessage(userMessage);
-        eventSink.newAgentMessage(agentMessage);
-        return () -> {
-            io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentId, userId);
-            try {
-                agentHandler.loadFrom(session, sessionId);
-                return agentHandler.handleInput(userMessage, eventSink);
-            } finally {
-                agentHandler.saveTo(session, sessionId);
-            }
-        };
+
+        if (sseEmitter != null && chatRequest.isEnableTts()) {
+            final EventSink original = eventSink;
+            eventSink = new TtsEventSinkWrapper(ttsService, original, new TtsService.TtsCallback() {
+                @Override
+                public void onData(String dataBase64) {
+                    send(TtsResponse.builder().dataBase64(dataBase64).finished(false).build());
+                }
+
+                @Override
+                public void onFinished() {
+                    send(TtsResponse.builder().finished(true).build());
+                    original.onComplete();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    send(TtsResponse.builder().success(false).error(t.getMessage()).build());
+                    sseEmitter.completeWithError(t);
+                }
+
+
+                private void send(TtsResponse response) {
+                    try {
+                        sseEmitter.send(CustomEvent.builder()
+                                .type(SessionEventType.TTS_RESPONSE)
+                                .needPersistent(false)
+                                .data(response)
+                                .build()
+                        );
+                    } catch (IOException e) {
+                        log.error("Failed to send text to client", e);
+                    }
+                }
+            });
+        }
+        eventSink.setAgentId(rawEventSink.getAgentId());
+        eventSink.setSessionId(rawEventSink.getSessionId());
+        eventSink.setUserId(rawEventSink.getUserId());
+        eventSink.setMessageId(rawEventSink.getMessageId());
+
+        return eventSink;
     }
 
     @Transactional

@@ -1,4 +1,4 @@
-package com.aliyun.tam.x.tron.api;
+package com.aliyun.tam.x.tron.ws;
 
 
 import com.aliyun.tam.x.tron.core.asr.AsrService;

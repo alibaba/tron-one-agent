@@ -173,6 +173,10 @@ public class MysqlEventRepository implements EventRepository {
 
         @Override
         public void newEvent(SessionEvent event) {
+            if (!event.needPersistent()) {
+                return;
+            }
+
             Long messageId = null;
             if (event instanceof AgentMessageAppendContentEvent) {
                 messageId = ((AgentMessageAppendContentEvent) event).getMessageId();

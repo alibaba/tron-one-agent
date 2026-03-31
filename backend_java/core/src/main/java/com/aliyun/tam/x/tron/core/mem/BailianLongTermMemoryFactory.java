@@ -71,7 +71,7 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
 
     private Map<String, Object> toSearchMemoryRequest(String userId, Msg msg) {
         ImmutableMap.Builder<String, Object> request = ImmutableMap.builder();
-        request.put("user_id", userId);
+        request.put("user_id", processUserId(userId));
 
         if (StringUtils.hasText(memoryLibraryId)) {
             request.put("memory_library_id", memoryLibraryId);
@@ -92,7 +92,7 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
 
     private Map<String, Object> toAddMemoryRequest(String userId, List<Msg> msgs) {
         ImmutableMap.Builder<String, Object> request = ImmutableMap.builder();
-        request.put("user_id", userId);
+        request.put("user_id", processUserId(userId));
 
         if (StringUtils.hasText(memoryLibraryId)) {
             request.put("memory_library_id", memoryLibraryId);
@@ -114,6 +114,16 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
         }
         request.put("messages", messages.build());
         return request.build();
+    }
+
+    private String processUserId(String userId) {
+        if (userId.length() < 4) {
+            return org.apache.commons.lang3.StringUtils.leftPad(userId, 4, '0');
+        }
+        if (userId.length() > 64) {
+            return userId.substring(0, 64);
+        }
+        return userId;
     }
 
 }

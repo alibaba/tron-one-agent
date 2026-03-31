@@ -33,10 +33,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public abstract class SessionEvent {
     private Long id;
+
     private String agentId;
+
     private String userId;
+
     private String sessionId;
+
     private LocalDateTime gmtCreated;
 
     public abstract SessionEventType getType();
+
+    public boolean needPersistent() {
+        return true;
+    }
 }

@@ -1,12 +1,14 @@
 package com.aliyun.tam.x.tron.ws;
 
-import com.aliyun.tam.x.tron.api.request.CancelRequest;
 import com.aliyun.tam.x.tron.api.request.ChatRequest;
+import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
+import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.events.SessionEvent;
+import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
@@ -14,6 +16,8 @@ import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
+import com.aliyun.tam.x.tron.core.tts.TtsService;
 import com.aliyun.tam.x.tron.ws.jsonrpc.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -24,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -52,6 +57,8 @@ public class AgentWsEndpoint {
     private final SequenceService sequenceService;
 
     private final EventRepository eventRepository;
+
+    private final TtsService ttsService;
 
     private final Map<String, Method> methods = new HashMap<>();
 
@@ -198,12 +205,32 @@ public class AgentWsEndpoint {
                 .gmtFinished(null)
                 .build();
 
+        EventSink eventSink = buildEventSink(agentMessage, request, wsSession);
+
+        chatting = true;
+        threadPoolExecutor.submit(() -> {
+            eventSink.newUserMessage(userMessage);
+            eventSink.newAgentMessage(agentMessage);
+            try {
+                agentHandler.handleInput(userMessage, eventSink);
+            } catch (Exception e) {
+                log.warn("Error handling input for session {}", session.getId(), e);
+            } finally {
+                saveAgent();
+                chatting = false;
+            }
+        });
+        return agentMessage.getId();
+    }
+
+    private EventSink buildEventSink(AgentSessionMessage agentMessage, ChatRequest chatRequest, Session wsSession) {
         EventSink rawEventSink = eventRepository.createEventSink(
                 session.getAgentId(),
                 session.getUserId(),
                 session.getId(),
                 agentMessage.getId()
         );
+
         EventSink eventSink = new EventSink() {
             @Override
             public void newEvent(SessionEvent event) {
@@ -240,30 +267,67 @@ public class AgentWsEndpoint {
                 rawEventSink.onComplete();
             }
         };
-        eventSink.setAgentId(session.getAgentId());
-        eventSink.setSessionId(session.getId());
-        eventSink.setUserId(session.getUserId());
-        eventSink.setMessageId(agentMessage.getId());
 
-        chatting = true;
-        threadPoolExecutor.submit(() -> {
-            eventSink.newUserMessage(userMessage);
-            eventSink.newAgentMessage(agentMessage);
-            try {
-                agentHandler.handleInput(userMessage, eventSink);
-            } catch (Exception e) {
-                log.warn("Error handling input for session {}", session.getId(), e);
-            } finally {
-                saveAgent();
-                chatting = false;
-            }
-        });
-        return agentMessage.getId();
+        if (chatRequest.isEnableTts()) {
+            final EventSink original = eventSink;
+            eventSink = new TtsEventSinkWrapper(ttsService, original, new TtsService.TtsCallback() {
+                @Override
+                public void onData(String dataBase64) {
+                    send(TtsResponse.builder().dataBase64(dataBase64).finished(false).build());
+                }
+
+                @Override
+                public void onFinished() {
+                    send(TtsResponse.builder().finished(true).build());
+                    original.onComplete();
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    send(TtsResponse.builder().success(false).error(t.getMessage()).build());
+                }
+
+
+                private void send(TtsResponse response) {
+                    if (!wsSession.isOpen()) {
+                        return;
+                    }
+
+                    try {
+                        wsSession.getBasicRemote().sendText(
+                                jsonRpcHelper.serialize(
+                                        JsonRpcNotification.builder()
+                                                .method("event")
+                                                .params(CustomEvent.builder()
+                                                        .type(SessionEventType.TTS_RESPONSE)
+                                                        .needPersistent(false)
+                                                        .data(response)
+                                                        .build())
+                                                .build()
+                                )
+                        );
+                    } catch (IOException e) {
+                        log.warn("Failed to send notification to client", e);
+                        try {
+                            wsSession.close();
+                        } catch (IOException ex) {
+                            // ignore
+                        }
+                    }
+                }
+            });
+        }
+        eventSink.setAgentId(rawEventSink.getAgentId());
+        eventSink.setSessionId(rawEventSink.getSessionId());
+        eventSink.setUserId(rawEventSink.getUserId());
+        eventSink.setMessageId(rawEventSink.getMessageId());
+
+        return eventSink;
     }
 
-    private void handleCancel(CancelRequest request) {
+    private void handleCancel(String message) {
         if (chatting) {
-            agentHandler.cancel(request == null ? null : request.getMessage());
+            agentHandler.cancel(message);
         }
     }
 

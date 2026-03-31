@@ -1,13 +1,13 @@
-package com.aliyun.tam.x.tron.api;
+package com.aliyun.tam.x.tron.ws;
 
 
 import com.aliyun.tam.x.tron.core.tts.TtsService;
 import com.aliyun.tam.x.tron.core.tts.TtsSession;
+import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
-import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,20 +33,6 @@ public class TtsWsEndpoint {
         private Boolean completed = false;
     }
 
-    @Data
-    @Builder
-    public static class Response {
-        @Builder.Default
-        private Boolean success = true;
-
-        private String dataBase64;
-
-        @Builder.Default
-        private Boolean finished = false;
-
-        private String error;
-    }
-
     private volatile Session session;
 
     private volatile TtsSession ttsSession;
@@ -56,19 +42,19 @@ public class TtsWsEndpoint {
         log.info("WebSocket connection opened");
         this.session = session;
         if (ttsService == null) {
-            send(Response.builder().success(false).error("TtsService is not available").build());
+            send(TtsResponse.builder().success(false).error("TtsService is not available").build());
             return;
         }
 
         this.ttsSession = ttsService.newSession(new TtsService.TtsCallback() {
             @Override
             public void onData(String dataBase64) {
-                send(Response.builder().dataBase64(dataBase64).build());
+                send(TtsResponse.builder().dataBase64(dataBase64).build());
             }
 
             @Override
             public void onFinished() {
-                send(Response.builder().finished(true).build());
+                send(TtsResponse.builder().finished(true).build());
                 try {
                     session.close();
                 } catch (IOException e) {
@@ -78,7 +64,7 @@ public class TtsWsEndpoint {
 
             @Override
             public void onError(Throwable t) {
-                send(Response.builder().success(false).error(t.getMessage()).build());
+                send(TtsResponse.builder().success(false).error(t.getMessage()).build());
                 try {
                     session.close();
                 } catch (IOException e) {
@@ -86,11 +72,11 @@ public class TtsWsEndpoint {
                 }
             }
 
-        });
+        }, true);
         log.info("New WebSocket session opened for {}", session.getId());
     }
 
-    private void send(Response response) {
+    private void send(TtsResponse response) {
         if (session != null && !session.isOpen()) {
             return;
         }
@@ -107,7 +93,7 @@ public class TtsWsEndpoint {
     public void onMessage(String message, Session session) {
         log.debug("Received message: {}", message);
         if (ttsSession == null) {
-            send(Response.builder().success(false).error("TtsSession is not available").build());
+            send(TtsResponse.builder().success(false).error("TtsSession is not available").build());
             return;
         }
 
@@ -137,7 +123,7 @@ public class TtsWsEndpoint {
     public void onError(Session session, Throwable error) {
         log.error("WebSocket error, sessionId={}", session.getId(), error);
         try {
-            send(Response.builder().success(false).error("WebSocket error").build());
+            send(TtsResponse.builder().success(false).error("WebSocket error").build());
             session.close();
         } catch (IOException e) {
             log.error("Failed to close session", e);

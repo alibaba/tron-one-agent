@@ -34,7 +34,10 @@ public enum SessionEventType {
     TASK_STATUS_CHANGED(31),
 
     ACTION_APPEND_CONTENT(40),
-    ACTION_STATUS_CHANGED(41);
+    ACTION_STATUS_CHANGED(41),
+
+    TTS_RESPONSE(1001),
+    ;
 
     private final int value;
 
