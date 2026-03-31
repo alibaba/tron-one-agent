@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aliyun.tam.x.tron.core.utils.AgentHelper.convertToBlocks;
@@ -199,5 +198,19 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 })
                 .blockLast();
         return result.get();
+    }
+
+    @Override
+    public void cancel(String message) {
+        if (StringUtils.hasText(message)) {
+            mainAgent.interrupt(
+                    Msg.builder()
+                            .role(MsgRole.USER)
+                            .textContent(message)
+                            .build()
+            );
+        } else {
+            mainAgent.interrupt();
+        }
     }
 }

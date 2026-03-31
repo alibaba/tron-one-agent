@@ -173,4 +173,18 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .blockLast();
         return result.get();
     }
+
+    @Override
+    public void cancel(String message) {
+        if (StringUtils.hasText(message)) {
+            agent.interrupt(
+                    Msg.builder()
+                            .role(MsgRole.USER)
+                            .textContent(message)
+                            .build()
+            );
+        } else {
+            agent.interrupt();
+        }
+    }
 }

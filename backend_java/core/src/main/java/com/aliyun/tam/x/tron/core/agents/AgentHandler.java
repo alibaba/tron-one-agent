@@ -35,6 +35,8 @@ public interface AgentHandler extends StateModule {
     default boolean supportInputType(ContentType contentType) {
         return true;
     }
+
+    void cancel(String message);
 }
 
 class AgentHandlerLoggingWrapper implements AgentHandler {
@@ -79,5 +81,10 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
                     System.currentTimeMillis() - startTime, agentId, userMessage.getUserId(), userMessage.getSessionId(), eventSink.getMessageId(), e);
             throw e;
         }
+    }
+
+    @Override
+    public void cancel(String message) {
+        agentHandler.cancel(message);
     }
 }

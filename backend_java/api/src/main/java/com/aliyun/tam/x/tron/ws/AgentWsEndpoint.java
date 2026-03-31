@@ -1,5 +1,6 @@
 package com.aliyun.tam.x.tron.ws;
 
+import com.aliyun.tam.x.tron.api.request.CancelRequest;
 import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
@@ -28,10 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -59,9 +57,8 @@ public class AgentWsEndpoint {
 
     {
         try {
-            Method m = this.getClass().getDeclaredMethod("handleChat", ChatRequest.class, Session.class, Object.class);
-            m.setAccessible(true);
-            methods.put("chat", m);
+            register("chat", "handleChat");
+            register("cancel", "handleCancel");
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
@@ -211,6 +208,9 @@ public class AgentWsEndpoint {
             @Override
             public void newEvent(SessionEvent event) {
                 rawEventSink.newEvent(event);
+                if (!wsSession.isOpen()) {
+                    return;
+                }
                 try {
                     wsSession.getBasicRemote().sendText(
                             jsonRpcHelper.serialize(
@@ -259,6 +259,21 @@ public class AgentWsEndpoint {
             }
         });
         return agentMessage.getId();
+    }
+
+    private void handleCancel(CancelRequest request) {
+        if (chatting) {
+            agentHandler.cancel(request == null ? null : request.getMessage());
+        }
+    }
+
+    private void register(String rpcMethod, String methodName) throws NoSuchMethodException {
+        Method method = Arrays.stream(getClass().getDeclaredMethods())
+                .filter(m -> m.getName().equals(methodName))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchMethodException("Method not found: " + methodName));
+        method.setAccessible(true);
+        methods.put(rpcMethod, method);
     }
 
     private String getRequiredHeader(EndpointConfig config, String name) {
