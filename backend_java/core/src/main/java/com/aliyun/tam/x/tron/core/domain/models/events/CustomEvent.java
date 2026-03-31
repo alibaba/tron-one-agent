@@ -17,7 +17,7 @@ public class CustomEvent<T> extends SessionEvent {
     private T data;
 
     @Builder.Default
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private boolean needPersistent = false;
 
 
