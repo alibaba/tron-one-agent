@@ -23,3 +23,4 @@ build/
 
 logs/
 *.log
+*.xlsx
