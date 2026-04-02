@@ -18,19 +18,25 @@
 package com.aliyun.tam.x.tron.core;
 
 import com.aliyun.tam.x.tron.BaseFuncTest;
+import com.aliyun.tam.x.tron.ExcelResultWriter;
 import com.aliyun.tam.x.tron.JsonlFileSource;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.agents.examples.OneAgentBuilder;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
 import org.springframework.util.CollectionUtils;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
 public class OneAgentTest extends BaseFuncTest {
+
+    private final ExcelResultWriter writer = new ExcelResultWriter(Paths.get("test-one-agent.xlsx"));
 
     @Override
     protected String agentId() {
@@ -41,13 +47,14 @@ public class OneAgentTest extends BaseFuncTest {
     @JsonlFileSource(
             resources = "/ddt/test-one-agent.jsonl"
     )
-    public void cxtestOneAgent(List<Content> input, List<List<Content>> history, Map<String, Object> data) {
+    public void cxtestOneAgent(List<Content> input, List<List<Content>> history, Map<String, Object> data) throws IOException, InvalidFormatException {
         if (!CollectionUtils.isEmpty(history)) {
             for (List<Content> h : history) {
                 callAgent(h);
             }
         }
         AgentResult result = callAgent(input);
+        writer.append(data, result);
         System.out.println(result);
     }
 }
