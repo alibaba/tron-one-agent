@@ -25,19 +25,6 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- * JSONL 文件参数提供器
- * <p>
- * 流式读取 JSONL 文件，将每行 JSON 根据测试方法的参数名称和类型反序列化为相应的 Java 对象。
- * </p>
- * <p>
- * 支持两种模式：
- * <ul>
- *   <li>单参数模式：JSON 直接反序列化为该参数类型</li>
- *   <li>多参数模式：JSON 对象的字段名与方法参数名匹配</li>
- * </ul>
- * </p>
- */
 public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider<JsonlFileSource> {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -65,7 +52,6 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, charset));
 
-        // 使用 Iterator 实现流式读取，避免一次性加载整个文件
         Iterator<Arguments> iterator = new JsonlIterator(reader, parameters, resource);
 
         Spliterator<Arguments> spliterator = Spliterators.spliteratorUnknownSize(
@@ -84,9 +70,6 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
         }
     }
 
-    /**
-     * 流式迭代器，逐行读取 JSONL 文件
-     */
     private class JsonlIterator implements Iterator<Arguments> {
         private final BufferedReader reader;
         private final Parameter[] parameters;
@@ -129,7 +112,7 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
             advance();
 
             try {
-                Object[] args = parseJsonLine(currentLine, parameters);
+                Object[] args = parseJsonLine(currentLine, parameters, resource);
                 return Arguments.of(args);
             } catch (Exception e) {
                 throw new JUnitException(
@@ -139,10 +122,7 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
         }
     }
 
-    /**
-     * 解析单行 JSON，根据方法参数进行反序列化
-     */
-    private Object[] parseJsonLine(String jsonLine, Parameter[] parameters) throws IOException {
+    private Object[] parseJsonLine(String jsonLine, Parameter[] parameters, String resource) throws IOException {
         if (parameters.length == 0) {
             return new Object[0];
         }
@@ -153,14 +133,26 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
         Object[] args = new Object[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
             Parameter param = parameters[i];
-            String paramName = param.getName();
 
-            // 特殊处理：名为 data 且类型为 Map<String, Object> 的参数，将整行 JSON 反序列化给它
-            if ("data".equals(paramName) && isMapStringObject(param)) {
+            JsonlFileSource.FileName fileNameAnnotation = param.getAnnotation(JsonlFileSource.FileName.class);
+            if (fileNameAnnotation != null) {
+                if (param.getType() != String.class) {
+                    throw new JUnitException("@FileName annotated parameter must be of type String");
+                }
+                args[i] = extractFileName(resource, fileNameAnnotation.keepSuffix());
+                continue;
+            }
+
+            JsonlFileSource.AllData allDataAnnotation = param.getAnnotation(JsonlFileSource.AllData.class);
+            if (allDataAnnotation != null) {
+                if (!isMapStringObject(param)) {
+                    throw new JUnitException("@AllData annotated parameter must be of type Map<String, Object>");
+                }
                 args[i] = deserializeValue(rootNode, param);
                 continue;
             }
 
+            String paramName = param.getName();
             JsonNode fieldNode = rootNode.get(paramName);
             if (fieldNode == null || fieldNode.isNull()) {
                 args[i] = null;
@@ -171,9 +163,21 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
         return args;
     }
 
-    /**
-     * 检查参数类型是否为 Map<String, Object>
-     */
+    private String extractFileName(String resource, boolean keepSuffix) {
+        String fileName = resource;
+        int lastSlash = fileName.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            fileName = fileName.substring(lastSlash + 1);
+        }
+        if (!keepSuffix) {
+            int lastDot = fileName.lastIndexOf('.');
+            if (lastDot > 0) {
+                fileName = fileName.substring(0, lastDot);
+            }
+        }
+        return fileName;
+    }
+
     private boolean isMapStringObject(Parameter parameter) {
         Type genericType = parameter.getParameterizedType();
         if (!(genericType instanceof java.lang.reflect.ParameterizedType paramType)) {
@@ -188,13 +192,9 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
                 && typeArgs[1] == Object.class;
     }
 
-    /**
-     * 将 JsonNode 反序列化为指定参数类型
-     */
     private Object deserializeValue(JsonNode node, Parameter parameter) throws IOException {
         Class<?> type = parameter.getType();
 
-        // 处理基本类型和常用类型
         if (type == String.class) {
             return node.isTextual() ? node.asText() : node.toString();
         }
@@ -214,7 +214,6 @@ public class JsonlFileArgumentsProvider extends AnnotationBasedArgumentsProvider
             return node;
         }
 
-        // 复杂类型使用 JavaType 保留泛型信息
         Type genericType = parameter.getParameterizedType();
         JavaType javaType = OBJECT_MAPPER.getTypeFactory().constructType(genericType);
         return OBJECT_MAPPER.readValue(OBJECT_MAPPER.treeAsTokens(node), javaType);

@@ -47,14 +47,13 @@ public class OneAgentTest extends BaseFuncTest {
     @JsonlFileSource(
             resources = "/ddt/test-one-agent.jsonl"
     )
-    public void cxtestOneAgent(List<Content> input, List<List<Content>> history, Map<String, Object> data) throws IOException, InvalidFormatException {
+    public void cxtestOneAgent(@JsonlFileSource.FileName String fileName, List<Content> input, List<List<Content>> history, @JsonlFileSource.AllData Map<String, Object> data) throws IOException, InvalidFormatException {
         if (!CollectionUtils.isEmpty(history)) {
             for (List<Content> h : history) {
                 callAgent(h);
             }
         }
         AgentResult result = callAgent(input);
-        writer.append(data, result);
-        System.out.println(result);
+        writer.append(fileName, data, result);
     }
 }

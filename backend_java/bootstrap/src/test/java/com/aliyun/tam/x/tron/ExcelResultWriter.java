@@ -14,7 +14,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -25,18 +24,22 @@ public class ExcelResultWriter {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final Path path;
-    private final String sheetName;
+    private final String defaultSheetName;
 
     public ExcelResultWriter(Path path) {
         this(path, null);
     }
 
-    public ExcelResultWriter(Path path, String sheetName) {
+    public ExcelResultWriter(Path path, String defaultSheetName) {
         this.path = path;
-        this.sheetName = sheetName;
+        this.defaultSheetName = defaultSheetName;
     }
 
     public void append(Object... objs) throws IOException, InvalidFormatException {
+        append(this.defaultSheetName, objs);
+    }
+
+    public void append(String sheetName, Object... objs) throws IOException, InvalidFormatException {
         Map<String, Object> data = serializeData(objs);
 
         XSSFWorkbook workbook;
@@ -54,8 +57,7 @@ public class ExcelResultWriter {
                 if (workbook.getNumberOfSheets() == 0) {
                     sheet = workbook.createSheet();
                     indices = buildNewIndices(sheet, data);
-                }
-                else {
+                } else {
                     sheet = workbook.getSheetAt(0);
                     indices = buildIndicesFromSheet(sheet, data);
                 }

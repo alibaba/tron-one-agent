@@ -15,6 +15,17 @@ import java.lang.annotation.*;
 )
 @ArgumentsSource(JsonlFileArgumentsProvider.class)
 public @interface JsonlFileSource {
+    @Target({ElementType.PARAMETER})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface FileName {
+        boolean keepSuffix() default false;
+    }
+
+    @Target({ElementType.PARAMETER})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface AllData {
+    }
+
     String[] resources() default {};
 
     String encoding() default "UTF-8";
