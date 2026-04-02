@@ -245,6 +245,14 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .defaultOptions(buildGenerateOptions(config.getGenerateKwargs()))
                     .build();
         } else if (Objects.equals(config.getType(), ChatModelType.OPENAI_COMPATIBLE)) {
+            if (config.getThinking() != null) {
+                if (config.getGenerateKwargs() == null) {
+                    config.setGenerateKwargs(Map.of("enable_thinking", config.getThinking()));
+                }
+                else {
+                    config.getGenerateKwargs().put("enable_thinking", config.getThinking());
+                }
+            }
             return OpenAIChatModel.builder()
                     .apiKey(config.getApiKey())
                     .modelName(config.getModelName())
