@@ -174,7 +174,6 @@ public class A2ASubAgentHandler extends SubAgentHandler {
                                         .build())
                         );
                     } finally {
-                        eventSink.onComplete();
                         task.setCostInMs(System.currentTimeMillis() - startTime);
                         executedTasks.add(task);
                     }

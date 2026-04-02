@@ -21,6 +21,7 @@ import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
@@ -163,7 +164,7 @@ public abstract class BaseFuncTest {
         }
     }
 
-    protected String callAgent(List<Content> input) {
+    protected AgentResult callAgent(List<Content> input) {
         String agentId = agentId();
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
@@ -197,6 +198,6 @@ public abstract class BaseFuncTest {
         );
 
         AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
-        return agentHandler.handleInput(userMessage, eventSink).getResponse();
+        return agentHandler.handleInput(userMessage, eventSink);
     }
 }

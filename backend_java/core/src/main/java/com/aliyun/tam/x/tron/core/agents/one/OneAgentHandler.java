@@ -133,14 +133,17 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         result.setFirstTokenDelayInMs(System.currentTimeMillis() - startTime);
                     }
 
+                    if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
+                        result.setResponse(event.getMessage().getTextContent());
+                        return;
+                    }
+
                     if (event.isLast() && event.getMessage() != null && event.getMessage().getChatUsage() != null) {
                         ChatUsage usage = event.getMessage().getChatUsage();
                         result.getUsage().increment(usage);
                     }
 
-                    if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
-                        result.setResponse(event.getMessage().getTextContent());
-                    } else if (event.getType() == EventType.REASONING) {
+                    if (event.getType() == EventType.REASONING) {
                         Msg eventMsg = event.getMessage();
                         if (eventMsg.getRole() != MsgRole.ASSISTANT) {
                             return;

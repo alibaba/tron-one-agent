@@ -206,7 +206,6 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                                     .build())
                     );
                 } finally {
-                    eventSink.onComplete();
                     task.setCostInMs(System.currentTimeMillis() - startTime);
                     executedTasks.add(task);
                 }

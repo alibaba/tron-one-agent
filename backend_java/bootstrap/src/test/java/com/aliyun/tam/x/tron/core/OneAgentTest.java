@@ -19,11 +19,13 @@ package com.aliyun.tam.x.tron.core;
 
 import com.aliyun.tam.x.tron.BaseFuncTest;
 import com.aliyun.tam.x.tron.JsonlFileSource;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.agents.examples.OneAgentBuilder;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,13 @@ public class OneAgentTest extends BaseFuncTest {
     @JsonlFileSource(
             resources = "/ddt/test-one-agent.jsonl"
     )
-    public void cxtestOneAgent(List<Content> input, Map<String, Object> data) {
-        System.out.println(callAgent(input));
+    public void cxtestOneAgent(List<Content> input, List<List<Content>> history, Map<String, Object> data) {
+        if (!CollectionUtils.isEmpty(history)) {
+            for (List<Content> h : history) {
+                callAgent(h);
+            }
+        }
+        AgentResult result = callAgent(input);
+        System.out.println(result);
     }
 }

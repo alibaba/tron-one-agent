@@ -54,7 +54,7 @@ public class AgentResult {
 
         public void increment(ChatUsage usage) {
             times++;
-            costInMs += (long) Math.ceil(usage.getTime());
+            costInMs += (long) Math.ceil(usage.getTime() * 1000);
             promptTokens += usage.getInputTokens();
             completionTokens += usage.getOutputTokens();
         }
