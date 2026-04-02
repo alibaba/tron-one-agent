@@ -18,10 +18,15 @@
 package com.aliyun.tam.x.tron.core;
 
 import com.aliyun.tam.x.tron.BaseFuncTest;
+import com.aliyun.tam.x.tron.JsonlFileSource;
 import com.aliyun.tam.x.tron.core.agents.examples.OneAgentBuilder;
+import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
+
+import java.util.List;
+import java.util.Map;
 
 public class OneAgentTest extends BaseFuncTest {
 
@@ -31,12 +36,10 @@ public class OneAgentTest extends BaseFuncTest {
     }
 
     @ParameterizedTest
-    @CsvFileSource(
-            resources = "/ddt/test-one-agent.csv",
-            encoding = "UTF-8",
-            useHeadersInDisplayName = true
+    @JsonlFileSource(
+            resources = "/ddt/test-one-agent.jsonl"
     )
-    public void testOneAgent(String input) {
+    public void cxtestOneAgent(List<Content> input, Map<String, Object> data) {
         System.out.println(callAgent(input));
     }
 }

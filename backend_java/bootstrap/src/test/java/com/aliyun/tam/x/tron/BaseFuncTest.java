@@ -22,6 +22,7 @@ import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
+import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
@@ -46,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -59,6 +61,7 @@ public abstract class BaseFuncTest {
         DB db = DB.newEmbeddedDB(configBuilder.build());
         db.start();
         db.createDB("tron_agent_java");
+        db.source("schema/init.sql");
 
         System.setProperty("spring.datasource.url", String.format("jdbc:mysql://localhost:%d/tron_agent_java?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false", configBuilder.getPort()));
         System.setProperty("spring.datasource.username", "root");
@@ -160,7 +163,7 @@ public abstract class BaseFuncTest {
         }
     }
 
-    protected String callAgent(String input) {
+    protected String callAgent(List<Content> input) {
         String agentId = agentId();
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
@@ -170,9 +173,7 @@ public abstract class BaseFuncTest {
                 .userId(userId)
                 .status(SessionMessageStatus.SUCCEED)
                 .name(userName)
-                .contents(Lists.newArrayList(
-                        new TextContent(ContentType.TEXT, input)
-                ))
+                .contents(input)
                 .gmtCreate(LocalDateTime.now())
                 .gmtModified(LocalDateTime.now())
                 .build();

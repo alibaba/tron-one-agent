@@ -12,6 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+USE `tron_agent_java`;
 
 DROP TABLE IF EXISTS `sequences`;
 CREATE TABLE `sequences`
