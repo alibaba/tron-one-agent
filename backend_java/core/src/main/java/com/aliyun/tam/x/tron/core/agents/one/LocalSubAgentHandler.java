@@ -18,6 +18,7 @@
 package com.aliyun.tam.x.tron.core.agents.one;
 
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.LocalSubAgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
@@ -87,6 +88,8 @@ public class LocalSubAgentHandler extends SubAgentHandler {
 
     private final AgentHandler agentHandler;
 
+    private final List<AgentResult.Task> executedTasks = Lists.newCopyOnWriteArrayList();
+
     @Autowired
     private AgentStateRepository agentStateRepository;
 
@@ -116,12 +119,15 @@ public class LocalSubAgentHandler extends SubAgentHandler {
 
             @Override
             public Mono<ToolResultBlock> callAsync(ToolCallParam param) {
-                ToolUseBlock toolUse = param.getToolUseBlock();
+                long startTime = System.currentTimeMillis();
+                AgentResult.Task task = AgentResult.Task.builder().agentId(agentId()).build();
 
+                ToolUseBlock toolUse = param.getToolUseBlock();
                 Long taskId = null;
                 try {
                     String taskName = (String) param.getInput().get(PARAM_TASK_NAME);
                     String taskDetail = (String) param.getInput().get(PARAM_TASK_DETAIL);
+
                     List<String> taskImages = (List<String>) param.getInput().get(PARAM_TASK_IMAGES);
                     List<String> taskVideos = (List<String>) param.getInput().get(PARAM_TASK_VIDEOS);
 
@@ -129,6 +135,8 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                     String userId = String.format("%s_%s", userMessage.getUserId(), eventSink.getAgentId());
 
                     taskId = eventSink.newTask(eventSink.getAgentId(), taskName, String.format("%s (%s)", taskDetail, agentId()));
+                    task.setId(taskId);
+                    task.setName(taskName);
 
                     List<Content> contents = Lists.newArrayList();
                     contents.add(TextContent.builder().type(ContentType.TEXT).text(taskDetail).build());
@@ -155,7 +163,7 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                             .gmtModified(LocalDateTime.now())
                             .build();
 
-                    String result;
+                    AgentResult result;
                     Session subSession = agentStateRepository.agentSessionsOf(agentId(), userId);
                     try {
                         agentHandler.loadFrom(subSession, sessionId);
@@ -171,16 +179,17 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                         agentHandler.saveTo(subSession, sessionId);
                     }
 
+                    String response = result == null ? "" : result.getResponse();
                     eventSink.appendContentToTask(taskId, Lists.newArrayList(
                             TextContent.builder()
                                     .type(ContentType.TEXT)
-                                    .text(result)
+                                    .text(response)
                                     .build()
                     ));
-                    eventSink.changeTaskStatus(taskId, TaskStatus.SUCCEED, result);
+                    eventSink.changeTaskStatus(taskId, TaskStatus.SUCCEED, response);
                     return Mono.just(
                             ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
-                                    .text(result)
+                                    .text(response)
                                     .build())
                     );
                 } catch (Exception e) {
@@ -189,19 +198,32 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                         e.printStackTrace(new PrintWriter(sw));
                         eventSink.changeTaskStatus(taskId, TaskStatus.FAILED, sw.toString());
                     }
+                    task.setSuccess(false);
+
                     return Mono.just(
                             ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
                                     .text("failed to process this task temporarily, try it again next time please")
                                     .build())
                     );
-                }
-                finally {
+                } finally {
                     eventSink.onComplete();
+                    task.setCostInMs(System.currentTimeMillis() - startTime);
+                    executedTasks.add(task);
                 }
             }
         };
 
         toolkit.registerAgentTool(agentTool);
         return Sets.newHashSet(agentTool.getName());
+    }
+
+    @Override
+    public void resetExecutedTasks() {
+        executedTasks.clear();
+    }
+
+    @Override
+    public List<AgentResult.Task> getExecutedTasks() {
+        return executedTasks;
     }
 }

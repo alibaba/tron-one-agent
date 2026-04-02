@@ -24,6 +24,7 @@ import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.api.request.CreateSessionRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
@@ -325,13 +326,13 @@ public class SessionController {
 
         if (Objects.equals("text/event-stream", accept)) {
             SseEmitter emitter = new SseEmitter(300_000L);
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, emitter);
+            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, emitter);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.TEXT_EVENT_STREAM)
                     .body(emitter);
         } else {
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, null);
+            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, null);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -339,7 +340,7 @@ public class SessionController {
         }
     }
 
-    private Callable<String> doChat(
+    private Callable<AgentResult> doChat(
             AgentHandler agentHandler,
             String agentId,
             String userId,

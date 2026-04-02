@@ -30,7 +30,7 @@ public interface AgentHandler extends StateModule {
 
     String getId();
 
-    String handleInput(UserSessionMessage userMessage, EventSink eventSink);
+    AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink);
 
     default boolean supportInputType(ContentType contentType) {
         return true;
@@ -65,14 +65,15 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
     }
 
     @Override
-    public String handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
         long startTime = System.currentTimeMillis();
         try {
             logger.info("serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
-            String result = agentHandler.handleInput(userMessage, eventSink);
+            AgentResult result = agentHandler.handleInput(userMessage, eventSink);
             logger.info("finished serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
+            result.setCostInMs(System.currentTimeMillis() - startTime);
             return result;
         } catch (Exception e) {
             logger.error("Encounter exception during handling input, cost={}ms, agent_id={}, user_id={}, session_id={}, agent_message_id={}",

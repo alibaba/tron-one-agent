@@ -196,6 +196,6 @@ public abstract class BaseFuncTest {
         );
 
         AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
-        return agentHandler.handleInput(userMessage, eventSink);
+        return agentHandler.handleInput(userMessage, eventSink).getResponse();
     }
 }

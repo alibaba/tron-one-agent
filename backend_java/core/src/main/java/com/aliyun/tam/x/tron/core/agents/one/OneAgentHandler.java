@@ -18,6 +18,7 @@
 package com.aliyun.tam.x.tron.core.agents.one;
 
 import com.aliyun.tam.x.tron.core.agents.AbstractAgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ActionStatus;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
@@ -87,7 +88,9 @@ public class OneAgentHandler extends AbstractAgentHandler {
     }
 
     @Override
-    public String handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+        long startTime = System.currentTimeMillis();
+
         Msg msg = Msg.builder()
                 .role(MsgRole.USER)
                 .name(userMessage.getName())
@@ -112,18 +115,28 @@ public class OneAgentHandler extends AbstractAgentHandler {
             subAgentTools.addAll(
                     subAgent.registerAgentTools(this.mainAgent.getToolkit(), userMessage, eventSink)
             );
+            subAgent.resetExecutedTasks();
         }
 
-        AtomicReference<String> result = new AtomicReference<>();
+        AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
+        Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
         mainAgent.stream(msg)
                 .doOnEach(s -> {
                     Event event = s.get();
                     if (event == null) {
                         return;
                     }
+
+                    if (result.getFirstTokenDelayInMs() == null) {
+                        result.setFirstTokenDelayInMs(System.currentTimeMillis() - startTime);
+                    }
+
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
-                        result.set(event.getMessage().getTextContent());
+                        if (result.getFirstResponseTokenDelayInMs() == null) {
+                            result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
+                        }
+                        result.setResponse(event.getMessage().getTextContent());
                     } else if (event.getType() == EventType.REASONING) {
                         Msg eventMsg = event.getMessage();
                         if (eventMsg.getRole() != MsgRole.ASSISTANT) {
@@ -167,6 +180,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                             )
                                     );
                                     ongoingToolUses.put(toolUseBlock.getId(), actionId);
+                                    actions.put(actionId, AgentResult.Action.builder().id(actionId).name(toolName).costInMs(System.currentTimeMillis()).build());
                                 } catch (Exception e) {
                                     if (actionId != null) {
                                         eventSink.appendContentToAction(actionId,
@@ -189,6 +203,11 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                     toolFormatter.formatToolResult(block.getOutput(), block.getName())
                             );
                             eventSink.changeActionStatus(actionId, ActionStatus.SUCCEED);
+                            AgentResult.Action action = actions.remove(actionId);
+                            if (action != null) {
+                                action.setCostInMs(System.currentTimeMillis() - action.getCostInMs());
+                                result.getActions().add(action);
+                            }
                         }
                     }
                 })
@@ -196,8 +215,14 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
+                    result.setCostInMs(System.currentTimeMillis() - startTime);
+
+                    for (SubAgentHandler subAgent : subAgents) {
+                        result.getTasks().addAll(subAgent.getExecutedTasks());
+                        subAgent.resetExecutedTasks();
+                    }
                 })
                 .blockLast();
-        return result.get();
+        return result;
     }
 }

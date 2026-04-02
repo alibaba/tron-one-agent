@@ -17,11 +17,13 @@
 
 package com.aliyun.tam.x.tron.core.agents.one;
 
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.SubAgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import io.agentscope.core.tool.Toolkit;
 
+import java.util.List;
 import java.util.Set;
 
 public abstract class SubAgentHandler {
@@ -36,4 +38,8 @@ public abstract class SubAgentHandler {
     }
 
     public abstract Set<String> registerAgentTools(Toolkit toolkit, UserSessionMessage userMessage, EventSink eventSink);
+
+    public abstract void resetExecutedTasks();
+
+    public abstract List<AgentResult.Task> getExecutedTasks();
 }
