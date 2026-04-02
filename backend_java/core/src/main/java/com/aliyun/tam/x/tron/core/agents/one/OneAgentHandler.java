@@ -168,6 +168,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                 }
                             }
                         } else if (event.isLast()) {
+                            result.setFirstResponseTokenDelayInMs(null);
+
                             for (ToolUseBlock toolUseBlock : toolUseBlocks) {
                                 String toolName = toolUseBlock.getName();
 
@@ -204,6 +206,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
                             }
                         }
                     } else if (event.getType() == EventType.TOOL_RESULT) {
+                        result.setFirstResponseTokenDelayInMs(null);
+
                         for (ToolResultBlock block : event.getMessage().getContentBlocks(ToolResultBlock.class)) {
                             Long actionId = ongoingToolUses.remove(block.getId());
                             if (actionId == null) {
