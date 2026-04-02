@@ -41,7 +41,6 @@ public class ExcelResultWriter {
 
         XSSFWorkbook workbook;
         if (Files.exists(path)) {
-            // 使用 InputStream 读取，读取完成后立即关闭流释放文件锁
             try (InputStream is = Files.newInputStream(path)) {
                 workbook = new XSSFWorkbook(is);
             }
