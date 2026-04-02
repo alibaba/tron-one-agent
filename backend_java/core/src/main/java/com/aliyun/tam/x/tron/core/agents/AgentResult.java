@@ -17,11 +17,13 @@
 
 package com.aliyun.tam.x.tron.core.agents;
 
+import io.agentscope.core.model.ChatUsage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,9 +40,24 @@ public class AgentResult {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Usage {
-        private long promptTokens;
+        @Builder.Default
+        private int times = 0;
 
-        private long completionTokens;
+        @Builder.Default
+        private long costInMs = 0;
+
+        @Builder.Default
+        private long promptTokens = 0;
+
+        @Builder.Default
+        private long completionTokens = 0;
+
+        public void increment(ChatUsage usage) {
+            times++;
+            costInMs += (long) Math.ceil(usage.getTime());
+            promptTokens += usage.getInputTokens();
+            completionTokens += usage.getOutputTokens();
+        }
     }
 
     @Data
@@ -80,11 +97,12 @@ public class AgentResult {
 
     private Long costInMs;
 
-    private Usage usage;
+    @Builder.Default
+    private Usage usage = Usage.builder().build();
 
     @Builder.Default
-    private List<Action> actions = List.of();
+    private List<Action> actions = new ArrayList<>();
 
     @Builder.Default
-    private List<Task> tasks = List.of();
+    private List<Task> tasks = new ArrayList<>();
 }

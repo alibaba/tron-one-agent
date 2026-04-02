@@ -71,8 +71,8 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
             logger.info("serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
             AgentResult result = agentHandler.handleInput(userMessage, eventSink);
-            logger.info("finished serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
-                    agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
+            logger.info("finished serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}, result={}",
+                    agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId(), result);
             result.setCostInMs(System.currentTimeMillis() - startTime);
             return result;
         } catch (Exception e) {

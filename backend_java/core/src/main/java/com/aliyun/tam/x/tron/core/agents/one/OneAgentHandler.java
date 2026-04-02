@@ -35,6 +35,7 @@ import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
 import io.agentscope.core.message.*;
+import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
 import lombok.Getter;
@@ -132,10 +133,12 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         result.setFirstTokenDelayInMs(System.currentTimeMillis() - startTime);
                     }
 
+                    if (event.isLast() && event.getMessage() != null && event.getMessage().getChatUsage() != null) {
+                        ChatUsage usage = event.getMessage().getChatUsage();
+                        result.getUsage().increment(usage);
+                    }
+
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
-                        if (result.getFirstResponseTokenDelayInMs() == null) {
-                            result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
-                        }
                         result.setResponse(event.getMessage().getTextContent());
                     } else if (event.getType() == EventType.REASONING) {
                         Msg eventMsg = event.getMessage();
@@ -153,6 +156,10 @@ public class OneAgentHandler extends AbstractAgentHandler {
 
                                 List<TextBlock> textBlocks = eventMsg.getContentBlocks(TextBlock.class);
                                 if (!CollectionUtils.isEmpty(textBlocks)) {
+                                    if (result.getFirstResponseTokenDelayInMs() == null) {
+                                        result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
+                                    }
+
                                     String content = textBlocks.stream().map(TextBlock::getText).reduce("", String::concat);
                                     eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
                                 }
@@ -215,14 +222,14 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
-                    result.setCostInMs(System.currentTimeMillis() - startTime);
-
-                    for (SubAgentHandler subAgent : subAgents) {
-                        result.getTasks().addAll(subAgent.getExecutedTasks());
-                        subAgent.resetExecutedTasks();
-                    }
                 })
                 .blockLast();
+
+        result.setCostInMs(System.currentTimeMillis() - startTime);
+        for (SubAgentHandler subAgent : subAgents) {
+            result.getTasks().addAll(subAgent.getExecutedTasks());
+            subAgent.resetExecutedTasks();
+        }
         return result;
     }
 }

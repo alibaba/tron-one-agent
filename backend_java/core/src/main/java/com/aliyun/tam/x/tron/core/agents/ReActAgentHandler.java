@@ -32,10 +32,8 @@ import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
 import io.agentscope.core.chat.completions.model.ToolCall;
-import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.MsgRole;
-import io.agentscope.core.message.ToolResultBlock;
-import io.agentscope.core.message.ToolUseBlock;
+import io.agentscope.core.message.*;
+import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,8 +113,14 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                     if (event == null) {
                         return;
                     }
+
                     if (result.getFirstTokenDelayInMs() == null) {
                         result.setFirstTokenDelayInMs(System.currentTimeMillis() - startTime);
+                    }
+
+                    if (event.isLast() && event.getMessage() != null && event.getMessage().getChatUsage() != null) {
+                        ChatUsage usage = event.getMessage().getChatUsage();
+                        result.getUsage().increment(usage);
                     }
 
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
@@ -133,7 +137,21 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                         List<ToolUseBlock> toolUseBlocks = eventMsg.getContentBlocks(ToolUseBlock.class);
                         if (CollectionUtils.isEmpty(toolUseBlocks)) {
                             if (!event.isLast()) {
-                                eventSink.appendContentToMessage(convertFromBlocks(eventMsg.getContent()));
+                                List<ThinkingBlock> thinkingBlocks = event.getMessage().getContentBlocks(ThinkingBlock.class);
+                                if (!CollectionUtils.isEmpty(thinkingBlocks)) {
+                                    String content = thinkingBlocks.stream().map(ThinkingBlock::getThinking).reduce("", String::concat);
+                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().type(ContentType.THINKING).text(content).build()));
+                                }
+
+                                List<TextBlock> textBlocks = eventMsg.getContentBlocks(TextBlock.class);
+                                if (!CollectionUtils.isEmpty(textBlocks)) {
+                                    if (result.getFirstResponseTokenDelayInMs() == null) {
+                                        result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
+                                    }
+
+                                    String content = textBlocks.stream().map(TextBlock::getText).reduce("", String::concat);
+                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
+                                }
                             }
                         } else if (event.isLast()) {
                             for (ToolUseBlock toolUseBlock : toolUseBlocks) {
@@ -187,9 +205,9 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
-                    result.setCostInMs(System.currentTimeMillis() - startTime);
                 })
                 .blockLast();
+        result.setCostInMs(System.currentTimeMillis() - startTime);
         return result;
     }
 }
