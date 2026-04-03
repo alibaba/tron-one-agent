@@ -42,15 +42,15 @@ import java.util.function.BiConsumer;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = TextContent.class, name = "text"),
-        @JsonSubTypes.Type(value = TextContent.class, name = "thinking"),
-        @JsonSubTypes.Type(value = MediaContent.class, name = "image"),
-        @JsonSubTypes.Type(value = MediaContent.class, name = "video"),
-        @JsonSubTypes.Type(value = MediaContent.class, name = "audio"),
-        @JsonSubTypes.Type(value = TaskContent.class, name = "task"),
-        @JsonSubTypes.Type(value = ActionContent.class, name = "action"),
+        @JsonSubTypes.Type(value = TextContent.class, name = "1"),
+        @JsonSubTypes.Type(value = TextContent.class, name = "2"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "3"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "4"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "5"),
+        @JsonSubTypes.Type(value = TaskContent.class, name = "100"),
+        @JsonSubTypes.Type(value = ActionContent.class, name = "200"),
 })
 public abstract class Content {
     private Long id;
