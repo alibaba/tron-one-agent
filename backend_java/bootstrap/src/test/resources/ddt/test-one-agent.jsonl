@@ -1,2 +1,2 @@
-{"input": [{"type": "text", "text": "hello"}]}
-{"input": [{"type": "text", "text": "what can you do for me?"}]}
+{"input": [{"type": 1, "text": "hello"}]}
+{"input": [{"type": 1, "text": "what can you do for me?"}]}
