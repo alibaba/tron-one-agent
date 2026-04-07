@@ -1,10 +1,14 @@
+<div align="center">
+
 # Tron OneAgent
 
-Tron OneAgent 是一个企业级 AI Agent 开发平台，提供完整的后端服务框架和前端交互界面，帮助开发者快速构建生产级 AI Agent 应用。
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/alibaba/tron-one-agent)
+
+</div>
 
 ## 项目简介
 
-Tron OneAgent 基于 [Alibaba AgentScope](https://java.agentscope.io/zh/intro.html) 和 Spring Boot 3 构建，采用前后端分离架构，提供了从 Agent 构建、事件溯源、动态配置到可视化交互的一站式解决方案。
+Tron OneAgent 是一个企业级 AI Agent 开发平台，提供完整的后端服务框架和前端交互界面，帮助开发者快速构建生产级 AI Agent 应用。它基于 [Alibaba AgentScope](https://java.agentscope.io/zh/intro.html) 和 Spring Boot 3 构建，采用前后端分离架构，提供了从 Agent 构建、事件溯源、动态配置到可视化交互的一站式解决方案。
 
 ### 主要解决的问题
 
