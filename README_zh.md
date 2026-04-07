@@ -44,6 +44,53 @@ Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/int
 - **企业智能助手**：支持多智能体协作、工具调用、知识库检索的企业级 AI 助手
 - **智能客服系统**：支持用户会话隔离、长期记忆、业务系统 API 接入的智能客服解决方案
 
+## 架构
+
+```mermaid
+graph TB
+  EndUser((终端用户))
+  subgraph Client["Client (Node)"]
+    Session[会话管理]
+    Chat[聊天对话]
+  end
+
+  Developer((开发者))
+  subgraph Control["Client (Node)"]
+    Config[动态配置]
+    Debugger[开发调试]
+  end
+
+  subgraph Backend["Backend (Java)"]
+    AgentScope[AgentScope]
+  end
+
+  subgraph Infrastruture
+    Mysql[(MySQL)]
+    OSS[(文件存储)]
+    RAG[(知识库)]
+    LongTermMemory[(长期记忆)]
+    ModelAPI[模型API]
+    McpServer["MCP Server"]
+  end
+
+  RemoteSubAgent[远程子Agent]
+
+  EndUser --> Client
+  Developer --> Control
+
+  Config --> Backend
+  Debugger --> Backend
+  Session --> Backend
+  Chat --> Backend
+
+  Backend --> Mysql
+  Backend --> OSS
+  Backend --> ModelAPI
+  Backend --> RAG
+  Backend --> LongTermMemory
+  Backend --> McpServer
+  Backend --> RemoteSubAgent
+```
 
 ## 技术栈
 
@@ -53,7 +100,7 @@ Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/int
 |------|------|------|
 | Spring Boot | 3.5.9 | Web 框架 |
 | JDK | 17 | Java 运行环境 |
-| AgentScope | 1.0.8 | AI Agent 框架 |
+| AgentScope | 1.0.11 | AI Agent 框架 |
 | MyBatis-Plus | 3.5.15 | ORM 框架 |
 | MySQL | 5.7+ / 8.0+ | 数据库 |
 | A2A SDK | 0.3.2 | Agent-to-Agent 协议 |

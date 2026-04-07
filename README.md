@@ -45,6 +45,54 @@ Tron OneAgent is built on [Alibaba AgentScope Java](https://java.agentscope.io/z
 - **Enterprise AI Assistant**: Enterprise-grade AI assistant supporting multi-agent collaboration, tool invocation, and knowledge base retrieval
 - **Intelligent Customer Service System**: Smart customer service solution supporting user session isolation, long-term memory, and business system API integration
 
+## Architecture
+
+```mermaid
+graph TB
+  EndUser((End User))
+  subgraph Client["Client (Node)"]
+    Session[Session]
+    Chat[Chat]
+  end
+
+  Developer((Developer))
+  subgraph Control["Control (Node)"]
+    Config[Configuration]
+    Debugger[Debug]
+  end
+
+  subgraph Backend["Backend (Java)"]
+    AgentScope[AgentScope]
+  end
+
+  subgraph Infrastructure
+    Mysql[(MySQL)]
+    OSS[("File Storage")]
+    RAG[("Knowledge Base")]
+    LongTermMemory[("Long-term Memory")]
+    ModelAPI["Model API"]
+    McpServer["MCP Server"]
+  end
+
+  RemoteSubAgent[Remote Sub-Agent]
+
+  EndUser --> Client
+  Developer --> Control
+
+  Config --> Backend
+  Debugger --> Backend
+  Session --> Backend
+  Chat --> Backend
+
+  Backend --> Mysql
+  Backend --> OSS
+  Backend --> ModelAPI
+  Backend --> RAG
+  Backend --> LongTermMemory
+  Backend --> McpServer
+  Backend --> RemoteSubAgent
+```
+
 ## Tech Stack
 
 ### Backend Technologies
@@ -53,7 +101,7 @@ Tron OneAgent is built on [Alibaba AgentScope Java](https://java.agentscope.io/z
 |-----------|---------|-------------|
 | Spring Boot | 3.5.9 | Web Framework |
 | JDK | 17 | Java Runtime Environment |
-| AgentScope | 1.0.8 | AI Agent Framework |
+| AgentScope | 1.0.11 | AI Agent Framework |
 | MyBatis-Plus | 3.5.15 | ORM Framework |
 | MySQL | 5.7+ / 8.0+ | Database |
 | A2A SDK | 0.3.2 | Agent-to-Agent Protocol |
