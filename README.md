@@ -114,9 +114,9 @@ Client will be available at: `http://localhost:3000`
 
 | Topic | Description |
 |-------|-------------|
-| User Guide | []() |
-| Development Guide | []() |
-| Deployment Guide | []() |
+| [User Guide](docs/en/use_guide.md) | Using the Control panel for developers and Client for end users (SuperBox Demo) |
+| [Development Guide](docs/en/develop_guide.md) | Frontend and backend customization for enterprise-specific business needs |
+| [Deployment Guide](docs/en/deploy_guide.md) | Deploy to production via VM or K8S |
 
 ## License
 
