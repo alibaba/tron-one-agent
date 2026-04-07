@@ -3,6 +3,9 @@
 # Tron OneAgent
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/alibaba/tron-one-agent)
+[![License](https://img.shields.io/badge/license-Apache%202.0-red.svg?logo=apache&label=License)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/alibaba/tron-one-agent?style=flat&logo=github&color=yellow&label=Stars)](https://github.com/alibaba/tron-one-agent/stargazers)
+
 
 </div>
 
