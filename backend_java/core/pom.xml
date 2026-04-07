@@ -47,6 +47,12 @@
             <groupId>io.agentscope</groupId>
             <artifactId>agentscope-a2a-spring-boot-starter</artifactId>
             <version>${agentscope.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.slf4j</groupId>
+                    <artifactId>slf4j-jboss-logmanager</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
