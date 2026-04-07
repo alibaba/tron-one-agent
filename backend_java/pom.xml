@@ -19,7 +19,7 @@
     <properties>
         <java.version>17</java.version>
         <spring-boot.version>3.5.9</spring-boot.version>
-        <agentscope.version>1.0.9</agentscope.version>
+        <agentscope.version>1.0.11</agentscope.version>
         <openai.version>4.13.0</openai.version>
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <mapstruct.version>1.6.3</mapstruct.version>
