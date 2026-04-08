@@ -550,7 +550,364 @@ data:{"id":4,"agentId":"one_agent","userId":"test_user","sessionId":"b6aa5fad7ff
 
 ---
 
-## Tables
+## 数据库表结构
+
+OneAgent 使用 MySQL 数据库，采用 **Event Sourcing** 模式存储会话和事件数据。以下是所有表的详细说明。
+
+---
+
+### 1. sequences（序列号表）
+
+**作用**: 全局唯一 ID 生成器，为事件、消息、任务等提供自增序列号
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| name | SMALLINT | 序列名称（枚举值：EVENT=1, MESSAGE=2, TASK=3, ACTION=4） |
+| current_value | BIGINT UNSIGNED | 当前序列值 |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+---
+
+### 2. agents（Agent 配置表）
+
+**作用**: 存储 Agent 的动态配置，支持运行时修改配置并持久化
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| agent_id | VARCHAR(32) | Agent 唯一标识（如：one_agent） |
+| name | VARCHAR(128) | Agent 显示名称 |
+| enabled | TINYINT | 是否启用（1=启用，0=禁用） |
+| type | SMALLINT | Agent 类型（1=普通 Agent，2=主 Agent） |
+| config | MEDIUMTEXT | Agent 完整配置（JSON 格式，包含模型、工具、知识库等） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "agent_id": "one_agent",
+  "name": "小AI",
+  "enabled": 1,
+  "type": 2,
+  "config": "{\"chatModel\":{\"type\":2,\"modelName\":\"qwen3.6-plus\"},\"systemPrompt\":\"You are a helpful assistant.\",\"maxIters\":10,\"tools\":[],\"mcpClients\":[]}",
+  "gmt_created": "2026-04-01 10:00:00"
+}
+```
+
+---
+
+### 3. agent_states（Agent 状态表）
+
+**作用**: 存储 Agent 的会话状态，支持上下文持久化和恢复
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| agent_id | VARCHAR(32) | Agent ID |
+| user_id | VARCHAR(64) | 用户 ID |
+| session_id | VARCHAR(64) | 会话 ID |
+| data | MEDIUMTEXT | Agent 状态数据（JSON 格式，包含对话历史等） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**: `uk_session_agent` (session_id, agent_id) - 唯一索引
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "agent_id": "one_agent",
+  "user_id": "user_001",
+  "session_id": "sess_abc123",
+  "data": "{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"},{\"role\":\"assistant\",\"content\":\"你好！有什么可以帮助你的？\"}]}",
+  "gmt_modified": "2026-04-08 11:30:00"
+}
+```
+
+---
+
+### 4. sessions（会话表）
+
+**作用**: 存储会话基本信息，追踪会话的事件应用进度
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| agent_id | VARCHAR(32) | Agent ID |
+| user_id | VARCHAR(64) | 用户 ID |
+| session_id | VARCHAR(64) | 会话唯一标识 |
+| name | VARCHAR(128) | 会话名称（默认空字符串） |
+| last_applied_event_id | BIGINT UNSIGNED | 最后应用的事件 ID（用于事件回放） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**:
+- `uk_session` (session_id, agent_id) - 唯一索引
+- `idx_agent_user` (agent_id, user_id) - 普通索引，用于查询用户的会话列表
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "agent_id": "one_agent",
+  "user_id": "user_001",
+  "session_id": "b6aa5fad7ff84271b59a897baa159d26",
+  "name": "测试会话",
+  "last_applied_event_id": 15,
+  "gmt_created": "2026-04-08 11:24:54"
+}
+```
+
+---
+
+### 5. messages（消息表）
+
+**作用**: 存储用户消息和 Agent 消息的快照（最终状态）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键（从序列号表获取） |
+| agent_id | VARCHAR(32) | Agent ID |
+| user_id | VARCHAR(64) | 用户 ID |
+| session_id | VARCHAR(64) | 会话 ID |
+| type | SMALLINT | 消息类型（1=用户消息，2=Agent 消息） |
+| status | SMALLINT | 消息状态（10=执行中，20=成功，30=失败） |
+| data | MEDIUMTEXT | 消息完整内容（JSON 格式） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**: `idx_session_id` (session_id, agent_id)
+
+**样例数据**:
+
+```json
+{
+  "id": 100,
+  "agent_id": "one_agent",
+  "user_id": "user_001",
+  "session_id": "sess_abc123",
+  "type": 1,
+  "status": 20,
+  "data": "{\"id\":100,\"contents\":[{\"type\":1,\"text\":\"你好\"}]}",
+  "gmt_created": "2026-04-08 11:25:00"
+}
+```
+
+---
+
+### 6. session_events（会话事件表）
+
+**作用**: Event Sourcing 核心表，存储所有会话事件的完整历史，支持事件回放和状态重建
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键（从序列号表获取） |
+| agent_id | VARCHAR(32) | Agent ID |
+| user_id | VARCHAR(64) | 用户 ID |
+| session_id | VARCHAR(64) | 会话 ID |
+| message_id | BIGINT UNSIGNED | 关联的消息 ID（可为 NULL） |
+| type | SMALLINT | 事件类型（10=新用户输入，20=新 Agent 消息，21=消息内容追加，22=消息状态变更，30=任务内容追加，31=任务状态变更，40=动作内容追加，41=动作状态变更） |
+| status | SMALLINT | 事件状态（仅状态变更事件使用） |
+| data | MEDIUMTEXT | 事件完整数据（JSON 格式，包含事件的所有字段） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**: `idx_session_id` (session_id, agent_id)
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "agent_id": "one_agent",
+  "user_id": "user_001",
+  "session_id": "sess_abc123",
+  "message_id": 100,
+  "type": 20,
+  "status": null,
+  "data": "{\"id\":1,\"agentId\":\"one_agent\",\"userId\":\"user_001\",\"sessionId\":\"sess_abc123\",\"msg\":{\"id\":100,\"status\":\"EXECUTING\"},\"type\":20}",
+  "gmt_created": "2026-04-08 11:25:00"
+}
+```
+
+**事件类型说明**:
+
+| 事件类型值 | 事件名称 | 说明 |
+|-----------|---------|------|
+| 10 | NEW_USER_INPUT | 用户输入事件 |
+| 20 | NEW_AGENT_MESSAGE | 新 Agent 消息事件 |
+| 21 | AGENT_MESSAGE_APPEND_CONTENT | Agent 消息内容追加（流式输出） |
+| 22 | AGENT_MESSAGE_STATUS_CHANGED | Agent 消息状态变更 |
+| 30 | TASK_APPEND_CONTENT | 子任务内容追加 |
+| 31 | TASK_STATUS_CHANGED | 子任务状态变更 |
+| 40 | ACTION_APPEND_CONTENT | 工具调用内容追加 |
+| 41 | ACTION_STATUS_CHANGED | 工具调用状态变更 |
+
+---
+
+### 7. mcp_clients（MCP 客户端配置表）
+
+**作用**: 存储 MCP（Model Context Protocol）客户端配置，支持动态添加外部工具服务
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| mcp_id | VARCHAR(32) | MCP 客户端唯一标识 |
+| name | VARCHAR(128) | MCP 客户端名称 |
+| enabled | TINYINT | 是否启用（1=启用，0=禁用） |
+| config | MEDIUMTEXT | MCP 配置（JSON 格式，包含传输方式、URL、超时等） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "mcp_id": "WebSearch",
+  "name": "互联网搜索",
+  "enabled": 1,
+  "config": "{\"transport\":\"SSE\",\"url\":\"https://mcp.example.com/sse\",\"timeout\":30000}",
+  "gmt_created": "2026-04-01 10:00:00"
+}
+```
+
+---
+
+### 8. knowledge_base_configs（知识库配置表）
+
+**作用**: 存储知识库配置，支持 RAG（检索增强生成）功能
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| knowledge_base_id | VARCHAR(32) | 知识库唯一标识 |
+| name | VARCHAR(128) | 知识库名称 |
+| enabled | TINYINT | 是否启用（1=启用，0=禁用） |
+| config | MEDIUMTEXT | 知识库配置（JSON 格式，包含类型、索引 ID 等） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "knowledge_base_id": "kb_001",
+  "name": "产品文档库",
+  "enabled": 1,
+  "config": "{\"type\":\"bailian\",\"workspaceId\":\"ws_123\",\"indexId\":\"idx_456\"}",
+  "gmt_created": "2026-04-01 10:00:00"
+}
+```
+
+---
+
+### 9. skill_configs（技能配置表）
+
+**作用**: 存储 Skill 配置，Skill 是可插拔的功能模块（如天气查询、代码执行等）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| name | VARCHAR(32) | 技能名称 |
+| enabled | TINYINT | 是否启用（1=启用，0=禁用） |
+| description | VARCHAR(1024) | 技能描述 |
+| instruction | MEDIUMTEXT | 技能指令（Agent 使用技能的提示词） |
+| base_dir | VARCHAR(1024) | 技能基础目录 |
+| files | MEDIUMTEXT | 技能文件列表（JSON 格式） |
+| file_id | BIGINT UNSIGNED | 关联的文件 ID（skills 表的 ZIP 包） |
+| checksum | VARCHAR(1024) | 文件校验和 |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**样例数据**:
+
+```json
+{
+  "id": 1,
+  "name": "weather",
+  "enabled": 1,
+  "description": "查询天气信息",
+  "instruction": "当用户询问天气时，使用 weather 技能查询",
+  "base_dir": "/skills/weather",
+  "files": "[\"SKILL.md\", \"scripts/weather.py\"]",
+  "file_id": 10,
+  "checksum": "sha256:abc123...",
+  "gmt_created": "2026-04-01 10:00:00"
+}
+```
+
+---
+
+### 10. files（文件表）
+
+**作用**: 存储上传的文件内容（本地文件存储模式）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键，自增 |
+| name | VARCHAR(1024) | 文件名 |
+| size | BIGINT | 文件大小（字节） |
+| content | LONGBLOB | 文件二进制内容 |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**: `idx_name` (name(512))
+
+**使用场景**: 存储 Skill 的 ZIP 包等小文件
+
+---
+
+### 11. oss_files（OSS 文件映射表）
+
+**作用**: 存储阿里云 OSS 文件映射关系（云端文件存储模式）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT UNSIGNED | 主键（非自增，由应用生成） |
+| user_id | VARCHAR(64) | 用户 ID |
+| oss_region | VARCHAR(32) | OSS 区域（如：oss-cn-hangzhou） |
+| oss_bucket | VARCHAR(32) | OSS Bucket 名称 |
+| oss_file_key | VARCHAR(1024) | OSS 文件 Key（路径） |
+| gmt_modified | TIMESTAMP | 修改时间 |
+| gmt_created | TIMESTAMP | 创建时间 |
+
+**索引**:
+- `idx_user` (user_id) - 查询用户上传的文件
+- `uk_oss_bucket_file_key` (oss_region, oss_bucket, oss_file_key) - 唯一索引，防止重复上传
+
+**样例数据**:
+
+```json
+{
+  "id": 1001,
+  "user_id": "user_001",
+  "oss_region": "oss-cn-hangzhou",
+  "oss_bucket": "tron-agent-files",
+  "oss_file_key": "users/user_001/skills/weather_v1.zip",
+  "gmt_created": "2026-04-08 10:00:00"
+}
+```
+
+---
+
+### Event Sourcing 数据流 
+
+OneAgent 采用 Event Sourcing 架构，核心数据流：
+
+1. **事件写入**: 对话过程中，所有变化都以事件形式追加到内存缓存中，并在在 `onComplete` 时将事件批量写入 `session_events` 表
+2. **消息快照**: 事件完成后，在 `onComplete` 时将消息最终状态写入 `messages` 表
+3. **状态重建**: 通过回放 `session_events` 表中的事件，可以重建任意时刻的会话状态
+4. **进度追踪**: `sessions.last_applied_event_id` 记录已应用的事件 ID，支持断点续传
+
 
 ## 模型配置
 
