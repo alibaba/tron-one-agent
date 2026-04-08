@@ -78,7 +78,10 @@ export class SseEventSource extends EventSourceService {
             this.lastEventId = eventData.id;
             this.emitMessage(eventData);
           } catch (error) {
-            this.emitError(new Error("消息解析失败: " + event.data));
+            const parseError = new Error("消息解析失败: " + event.data);
+            this.emitError(parseError);
+            // 解析失败时抛出错误，阻止重试
+            throw parseError;
           }
         },
 
