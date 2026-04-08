@@ -21,7 +21,7 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

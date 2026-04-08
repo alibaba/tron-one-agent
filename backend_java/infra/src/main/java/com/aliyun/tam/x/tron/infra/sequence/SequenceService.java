@@ -15,7 +15,7 @@
  */
 
 
-package com.aliyun.tam.x.tron.core.domain.service;
+package com.aliyun.tam.x.tron.infra.sequence;
 
 import com.aliyun.tam.x.tron.infra.dal.dataobject.SequenceDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.SequenceMapper;

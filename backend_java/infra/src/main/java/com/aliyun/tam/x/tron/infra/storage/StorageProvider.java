@@ -15,7 +15,7 @@
  */
 
 
-package com.aliyun.tam.x.tron.core.utils.storage;
+package com.aliyun.tam.x.tron.infra.storage;
 
 import org.springframework.http.ResponseEntity;
 

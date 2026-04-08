@@ -15,7 +15,7 @@
  */
 
 
-package com.aliyun.tam.x.tron.core.utils.storage;
+package com.aliyun.tam.x.tron.infra.storage;
 
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.HttpMethod;
@@ -25,9 +25,9 @@ import com.aliyun.oss.common.auth.DefaultCredentialProvider;
 import com.aliyun.oss.common.comm.Protocol;
 import com.aliyun.oss.common.comm.SignVersion;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.OssFileDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.OssFileMapper;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.RequiredArgsConstructor;

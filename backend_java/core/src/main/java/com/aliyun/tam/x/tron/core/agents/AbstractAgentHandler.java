@@ -18,7 +18,7 @@
 package com.aliyun.tam.x.tron.core.agents;
 
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
-import com.aliyun.tam.x.tron.core.utils.storage.StorageProvider;
+import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
 import com.google.common.collect.Lists;
 import io.agentscope.core.memory.Memory;
 import io.agentscope.core.message.*;
