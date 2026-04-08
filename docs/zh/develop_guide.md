@@ -1036,7 +1036,7 @@ public class ToolRegistry {
 }
 ```
 
-**实际样例**：[CalculatorTool.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/tools/CalculatorTool.java)
+**实际样例**：[CalculatorTool.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/tools/CalculatorTool.java)
 
 ```java
 public class CalculatorTool {
@@ -1129,7 +1129,7 @@ public class MyKnowledgeBaseConfigBuilder implements KnowledgeBaseConfigBuilder 
 }
 ```
 
-**实际样例**：[ExampleKnowledgeBaseConfigBuilder.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/ExampleKnowledgeBaseConfigBuilder.java)
+**实际样例**：[ExampleKnowledgeBaseConfigBuilder.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/ExampleKnowledgeBaseConfigBuilder.java)
 
 ### 2. 在 Agent 中启用知识库
 
@@ -1189,7 +1189,7 @@ public class CustomLongTermMemoryFactory implements LongTermMemoryFactory {
 
 ### 2. 百炼长期记忆实现样例
 
-**实际样例**：[BailianLongTermMemoryFactory.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mem/BailianLongTermMemoryFactory.java)
+**实际样例**：[BailianLongTermMemoryFactory.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mem/BailianLongTermMemoryFactory.java)
 
 ```java
 @Component
@@ -1330,7 +1330,7 @@ public class CustomMcpConfigBuilder implements McpConfigBuilder {
 }
 ```
 
-**实际样例**：[WebSearchMcpConfigBuilder.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/WebSearchMcpConfigBuilder.java)
+**实际样例**：[WebSearchMcpConfigBuilder.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/WebSearchMcpConfigBuilder.java)
 
 ```java
 @Component
@@ -1405,7 +1405,7 @@ skills/weather/
 
 ### 2. 创建 SKILL.md
 
-**实际样例**：[SKILL.md](file:///Users/xien/code/opensource/tron-one-agent/backend_java/skills/weather/SKILL.md)
+**实际样例**：[SKILL.md](../../backend_java/skills/weather/SKILL.md)
 
 ```markdown
 ---
@@ -1441,7 +1441,7 @@ output:
 
 ### 3. 创建执行脚本
 
-**实际样例**：[weather.py](file:///Users/xien/code/opensource/tron-one-agent/backend_java/skills/weather/scripts/weather.py)
+**实际样例**：[weather.py](../../backend_java/skills/weather/scripts/weather.py)
 
 ```python
 import sys
