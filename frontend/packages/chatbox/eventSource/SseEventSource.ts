@@ -87,6 +87,8 @@ export class SseEventSource extends EventSourceService {
             this.emitError(error);
           }
           this.handleDisconnect();
+          // 抛出错误以阻止自动重试
+          throw error;
         },
 
         onclose: () => {

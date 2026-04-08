@@ -380,6 +380,8 @@ export const createChatStream = (
       if (error instanceof Error && error.name !== "AbortError") {
         callbacks?.onError?.(error);
       }
+      // 抛出错误以阻止自动重试
+      throw error;
     },
 
     onclose: () => {

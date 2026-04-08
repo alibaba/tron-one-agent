@@ -23,6 +23,9 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
 import io.agentscope.core.state.StateModule;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +43,18 @@ public interface AgentHandler extends StateModule {
 class AgentHandlerLoggingWrapper implements AgentHandler {
 
     private final String agentId;
+
     private final AgentHandler agentHandler;
+
     private final Logger logger;
 
-    protected AgentHandlerLoggingWrapper(String agentId, AgentHandler agentHandler) {
+    private final Tracer tracer;
+
+    protected AgentHandlerLoggingWrapper(String agentId, AgentHandler agentHandler, Tracer tracer) {
         this.agentId = agentId;
         this.agentHandler = agentHandler;
         this.logger = LoggerFactory.getLogger("agent." + agentId);
+        this.tracer = tracer;
     }
 
     @Override
@@ -66,8 +74,15 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
 
     @Override
     public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+        Span span = tracer.spanBuilder("handling input")
+                .setAttribute("agent.id", agentId)
+                .setAttribute("user.id", userMessage.getUserId())
+                .setAttribute("session.id", eventSink.getSessionId())
+                .setAttribute("user.message.id", userMessage.getId())
+                .setAttribute("agent.message.id", eventSink.getMessageId())
+                .startSpan();
         long startTime = System.currentTimeMillis();
-        try {
+        try (var ignored = span.makeCurrent()) {
             logger.info("serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
             AgentResult result = agentHandler.handleInput(userMessage, eventSink);
@@ -78,7 +93,12 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
         } catch (Exception e) {
             logger.error("Encounter exception during handling input, cost={}ms, agent_id={}, user_id={}, session_id={}, agent_message_id={}",
                     System.currentTimeMillis() - startTime, agentId, userMessage.getUserId(), userMessage.getSessionId(), eventSink.getMessageId(), e);
+
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
             throw e;
+        } finally {
+            span.end();
         }
     }
 }

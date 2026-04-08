@@ -22,6 +22,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import io.opentelemetry.api.trace.Tracer;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,10 @@ public final class AgentRegistry {
         private final String userId;
         private final String sessionId;
     }
+
     private final List<AgentBuilder> agentBuilders;
+
+    private final Tracer tracer;
 
     private final LoadingCache<CacheKey, Optional<AgentHandler>> agentCache = CacheBuilder.newBuilder()
             .build(new CacheLoader<>() {
@@ -82,7 +86,7 @@ public final class AgentRegistry {
         String agentId = agentConfig.getId();
         for (AgentBuilder agentBuilder : agentBuilders) {
             if (Objects.equals(agentBuilder.getAgentId(), agentId)) {
-                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig, userId, sessionId));
+                return new AgentHandlerLoggingWrapper(agentId, agentBuilder.build(agentId, agentConfig, userId, sessionId), tracer);
             }
         }
         return null;

@@ -26,6 +26,10 @@ import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +53,8 @@ public class RenamingService {
 
     private final SessionRepository sessionRepository;
 
+    private final Tracer tracer;
+
     public void renameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
         if (enabled) {
             Context otelContext = Context.current();
@@ -58,7 +64,12 @@ public class RenamingService {
 
     @Async
     public void doRenameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId, Context otelContext) {
-        try (Scope ignored = otelContext.makeCurrent()) {
+        Span span = tracer.spanBuilder("renaming session")
+                .setParent(otelContext)
+                .setAttribute("agent.id", agentId)
+                .setAttribute("session.id", sessionId)
+                .startSpan();
+        try (Scope ignored = span.makeCurrent()) {
             String text = "Below is the history of the conversation :\n\n";
             text += history.stream()
                     .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
@@ -86,6 +97,13 @@ public class RenamingService {
                     .reduce((s, s2) -> s + s2)
                     .block();
             sessionRepository.updateSessionName(agentId, sessionId, name);
+            span.setStatus(StatusCode.OK);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
         }
     }
 }
