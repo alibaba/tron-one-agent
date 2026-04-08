@@ -93,35 +93,186 @@ sequenceDiagram
 OneAgent具备丰富的输入和输出内容支持，并且通过最多三层嵌套结构以灵活的支持不同的场景。
 
 ```mermaid
+classDiagram
+    class Content {
+        <<abstract>>
+        +Long id
+        +getType() ContentType
+        +merge(Content c) boolean
+    }
+    
+    class TextContent {
+        +ContentType type
+        +String text
+        +merge(Content c) boolean
+    }
+    
+    class MediaContent {
+        +ContentType type
+        +String url
+        +String base64Data
+        +String mediaType
+    }
+    
+    class TaskContent {
+        +String agentId
+        +TaskStatus status
+        +String title
+        +String description
+        +String result
+        +List~Content~ contents
+        +LocalDateTime gmtCreated
+        +LocalDateTime gmtModified
+        +LocalDateTime gmtFinished
+        +findAction(Long actionId) ActionContent
+        +append(List~Content~ newContents) void
+    }
+    
+    class ActionContent {
+        +ActionStatus status
+        +Long taskId
+        +String title
+        +List~Content~ contents
+        +LocalDateTime gmtCreated
+        +LocalDateTime gmtModified
+        +LocalDateTime gmtFinished
+        +append(List~Content~ newContents) void
+    }
+    
+    class SessionEvent {
+        <<abstract>>
+        +Long id
+        +String agentId
+        +String userId
+        +String sessionId
+        +LocalDateTime gmtCreated
+        +getType() SessionEventType
+    }
+    
+    class NewUserInputEvent {
+        +UserSessionMessage msg
+    }
+    
+    class NewAgentMessageEvent {
+        +AgentSessionMessage msg
+    }
+    
+    class AgentMessageAppendContentEvent {
+        +Long messageId
+        +List~Content~ newContents
+    }
+    
+    class AgentMessageStatusChangedEvent {
+        +Long messageId
+        +SessionMessageStatus newStatus
+        +LocalDateTime gmtFinished
+    }
+    
+    class TaskAppendContentEvent {
+        +Long messageId
+        +Long taskId
+        +List~Content~ newContents
+    }
+    
+    class TaskStatusChangeEvent {
+        +Long messageId
+        +Long taskId
+        +TaskStatus newStatus
+        +String result
+        +LocalDateTime gmtFinished
+    }
+    
+    class ActionAppendContentEvent {
+        +Long messageId
+        +Long actionId
+        +List~Content~ newContents
+    }
+    
+    class ActionStatusChangeEvent {
+        +Long messageId
+        +Long actionId
+        +ActionStatus newStatus
+        +LocalDateTime gmtFinished
+    }
+    
+    Content <|-- TextContent
+    Content <|-- MediaContent
+    Content <|-- TaskContent
+    Content <|-- ActionContent
+    TaskContent *-- Content : contains
+    ActionContent *-- Content : contains
+    
+    SessionEvent <|-- NewUserInputEvent
+    SessionEvent <|-- NewAgentMessageEvent
+    SessionEvent <|-- AgentMessageAppendContentEvent
+    SessionEvent <|-- AgentMessageStatusChangedEvent
+    SessionEvent <|-- TaskAppendContentEvent
+    SessionEvent <|-- TaskStatusChangeEvent
+    SessionEvent <|-- ActionAppendContentEvent
+    SessionEvent <|-- ActionStatusChangeEvent
+    
+    AgentMessageAppendContentEvent o-- Content : newContents
+    TaskAppendContentEvent o-- Content : newContents
+    ActionAppendContentEvent o-- Content : newContents
+    TaskStatusChangeEvent --> TaskStatus
+    ActionStatusChangeEvent --> ActionStatus
 ```
 
 ### Chat 完整流程
 
 ```mermaid
 sequenceDiagram
-    participant User as User
-    participant Frontend as Frontend
-    participant Backend
-    participant Mysql as Mysql
+    participant User as 用户
+    participant Frontend as 前端
+    participant Controller as SessionController
+    participant Registry as AgentRegistry
+    participant Agent as AgentHandler
+    participant EventSink as EventSink
+    participant Mysql as MySQL
+    participant SSE as SSE Stream
 
-    Frontend ->> SessionController: /chat<br/>agentId<br/>userId<br/>sessionId
-    SessionController ->> AgentRegistry: getAgent
-    AgentRegistry ->> AgentRegistry: getAgentConfigById
-    AgentRegistry ->> AgentBuilder: getAgentConfig
-    AgentBuilder ->> Mysql: load dynamic configuration if exists
-    AgentBuilder ->> AgentBuilder: merge dynamic and default configuration
-    AgentBuilder -->> AgentRegistry: agent configuration
-    AgentRegistry ->> AgentBuilder: build
-    AgentBuilder ->> AgentBuilder: build chat model
-    AgentBuilder ->> AgentBuilder: build knowledge bases
-    AgentBuilder ->> AgentBuilder: build toolkit with code tools
-    AgentBuilder ->> AgentBuilder: register & initialize MCP clients
-    AgentBuilder ->> AgentBuilder: build skills and its execution environment
-    AgentBuilder ->> AgentBuilder: load and assemble system prompts
-    AgentBuilder ->> AgentBuilder: build long-term memory integrations
-    AgentBuilder ->> AgentBuilder: build sub-agents
-    AgentBuilder -->> AgentRegistry: AgentHandler and cache it
-    AgentRegistry -->> SessionController: AgentHandler
+    Note over User,SSE: 1. Agent 初始化（按需加载，带缓存）
+    Frontend ->> Controller: /chat (agentId, sessionId, userId, contents)
+    Controller ->> Registry: getAgent(agentId)
+    Registry -->> Controller: AgentHandler (缓存命中或新建)
+    
+    Note over Controller,Agent: 2. 会话与消息初始化
+    Controller ->> Mysql: getOrCreateSession(sessionId)
+    Mysql -->> Controller: Session
+    Controller ->> Mysql: lastMessage(sessionId)
+    Mysql -->> Controller: SessionMessage
+    
+    Note over Controller,SSE: 3. 创建事件流通道
+    Controller ->> Controller: 创建 UserSessionMessage
+    Controller ->> Controller: 创建 AgentSessionMessage
+    Controller ->> EventSink: createEventSink(agentMessage.id)
+    
+    alt SSE 模式 (accept: text/event-stream)
+        Controller ->> SSE: 返回 SseEmitter
+        Controller ->> EventSink: 包装为 SSE EventSink
+    else 异步模式
+        Controller ->> Controller: 返回 "success"
+    end
+    
+    Note over Agent,SSE: 4. Agent 处理与事件推送
+    EventSink ->> EventSink: 缓存 newUserMessage 事件
+    EventSink ->> EventSink: 缓存 newAgentMessage 事件
+    Agent ->> Agent: loadFrom(session)
+    Agent ->> Agent: handleInput(userMessage, eventSink)
+    
+    loop 流式处理
+        Agent ->> EventSink: newEvent(SessionEvent)
+        EventSink ->> EventSink: 缓存事件到内存列表
+        EventSink ->> SSE: send(event) (SSE 模式)
+    end
+    
+    Note over EventSink,Mysql: 5. 完成时批量写入
+    Agent ->> EventSink: onComplete()
+    EventSink ->> Mysql: 事务批量写入所有事件 (每批64条)
+    EventSink ->> Mysql: 保存 SessionMessage
+    EventSink ->> Mysql: 更新 Session lastAppliedEventId
+    EventSink ->> SSE: complete() (SSE 模式)
+    Agent ->> Agent: saveTo(session)
 ```
 
 ## API
