@@ -61,8 +61,7 @@ public class McpClientRegistry {
     private final McpClientRepository clientRepository;
 
     private final LoadingCache<McpClientConfig, Optional<McpClientWrapper>> mcpClientCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(10, TimeUnit.MINUTES)
-            .refreshAfterWrite(3, TimeUnit.MINUTES)
+            .expireAfterAccess(1, TimeUnit.MINUTES)
             .removalListener((RemovalListener<McpClientConfig, Optional<McpClientWrapper>>) notification -> {
                 log.info("mcp client removed: {}", notification.getKey());
                 notification.getValue().ifPresent(McpClientWrapper::close);
