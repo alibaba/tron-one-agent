@@ -911,15 +911,607 @@ OneAgent 采用 Event Sourcing 架构，核心数据流：
 
 ## 模型配置
 
+### 1. 支持的模型类型
+
+OneAgent 支持两种模型配置方式：
+
+| 类型 | 枚举值 | 说明 |
+|------|--------|------|
+| DASHSCOPE | 1 | 阿里云百炼 DashScope SDK |
+| OPENAI_COMPATIBLE | 2 | OpenAI 兼容接口（可接入任意兼容 OpenAI API 格式的服务） |
+
+### 2. 通过代码配置
+
+继承 `BaseAgentBuilder` 类，在 `defaultConfig()` 方法中配置模型：
+
+```java
+@Component
+public class MyAgentBuilder extends BaseAgentBuilder {
+    public static final String AGENT_ID = "my_agent";
+
+    @Value("${tron.dashscope.api-key}")
+    private String apiKey;
+
+    protected MyAgentBuilder() {
+        super(AGENT_ID);
+    }
+
+    @Override
+    protected AgentConfig defaultConfig() {
+        return AgentConfig.builder()
+                .name("我的智能助手")
+                .enabled(true)
+                .type(LocalAgentType.REACT)  // 或 LocalAgentType.ONE
+                .chatModel(
+                        ChatModelConfig.builder()
+                                .type(ChatModelType.DASHSCOPE)  // 或 OPENAI_COMPATIBLE
+                                .apiKey(apiKey)
+                                .modelName("qwen3-max")  // 模型名称
+                                .baseUrl(null)  // DASHSCOPE 类型不需要，OPENAI_COMPATIBLE 需要指定
+                                .stream(true)  // 启用流式输出
+                                .thinking(false)  // 是否启用深度思考
+                                .build()
+                )
+                .systemPrompt("你是一个专业的AI助手，帮助用户解决问题。")
+                .maxIters(10)  // 最大迭代次数
+                .build();
+    }
+}
+```
+
+### 3. 使用 OpenAI 兼容接口
+
+可以接入任何兼容 OpenAI API 格式的模型服务（如 Ollama、vLLM 等）：
+
+```java
+.chatModel(
+        ChatModelConfig.builder()
+                .type(ChatModelType.OPENAI_COMPATIBLE)
+                .baseUrl("http://localhost:11434/v1")  // Ollama 本地服务
+                .apiKey("ollama")  // 根据服务要求设置
+                .modelName("qwen2.5:72b")  // 模型名称
+                .stream(true)
+                .build()
+)
+```
+
+### 4. 通过 API 动态更新
+
 ## Tool开发&注册
+
+### 1. 创建 Tool 类
+
+使用 AgentScope 的 `@Tool` 和 `@ToolParam` 注解定义工具：
+
+```java
+package com.example.tools;
+
+import io.agentscope.core.tool.Tool;
+import io.agentscope.core.tool.ToolParam;
+import org.springframework.stereotype.Component;
+
+@Component
+public class WeatherTool {
+    
+    @Tool(description = "查询指定城市的天气信息")
+    public String getWeather(
+            @ToolParam(name = "city", description = "城市名称，如：北京、上海") String city
+    ) {
+        // 调用天气 API
+        String weather = callWeatherAPI(city);
+        return String.format("%s今天的天气：%s", city, weather);
+    }
+    
+    @Tool(description = "计算两个城市之间的距离")
+    public String calculateDistance(
+            @ToolParam(name = "from", description = "出发城市") String from,
+            @ToolParam(name = "to", description = "到达城市") String to
+    ) {
+        // 计算距离逻辑
+        return String.format("从%s到%s的距离约为1000公里", from, to);
+    }
+}
+```
+
+### 2. 注册到 ToolRegistry
+
+`ToolRegistry` 会自动扫描并注册所有带有 `@Component` 注解的 Tool 类：
+
+```java
+@Component
+public class ToolRegistry {
+    private final Toolkit toolkit = new Toolkit();
+    
+    @Autowired
+    public ToolRegistry(List<Object> tools) {
+        // 自动注册所有 Tool 类
+        for (Object tool : tools) {
+            toolkit.registration().tool(tool).apply();
+        }
+    }
+    
+    public Toolkit getAllTools() {
+        return toolkit;
+    }
+}
+```
+
+**实际样例**：[CalculatorTool.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/tools/CalculatorTool.java)
+
+```java
+public class CalculatorTool {
+    @Tool(description = "计算器工具，输入一个数学表达式，返回计算结果")
+    public String calculator(
+            @ToolParam(name = "expression", description = "数学表达式") String expression) {
+        try {
+            ExpressionParser parser = new SpelExpressionParser();
+            EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding()
+                    .withInstanceMethods()
+                    .build();
+
+            Expression exp = parser.parseExpression(expression);
+            Object result = exp.getValue(context);
+            return String.valueOf(result);
+        } catch (Exception e) {
+            return "计算错误: " + e.getMessage();
+        }
+    }
+}
+```
+
+### 3. 在 Agent 中启用 Tool
+
+在 Agent 配置中指定要使用的工具：
+
+```java
+@Override
+protected AgentConfig defaultConfig() {
+    return AgentConfig.builder()
+            .name("智能助手")
+            .enabled(true)
+            .chatModel(/* ... */)
+            .tools(Lists.newArrayList(
+                    AgentToolConfig.builder()
+                            .name("calculator")  // Tool 方法名
+                            .enabled(true)
+                            .build()
+            ))
+            .build();
+}
+```
+
+---
 
 ## 知识库集成
 
+### 1. 实现 KnowledgeBaseConfigBuilder
+
+创建知识库配置构建器：
+
+```java
+package com.example.rag;
+
+import com.aliyun.tam.x.tron.core.config.BailianKnowledgeBaseConfig;
+import com.aliyun.tam.x.tron.core.config.KnowledgeBaseConfig;
+import com.aliyun.tam.x.tron.core.rag.KnowledgeBaseConfigBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MyKnowledgeBaseConfigBuilder implements KnowledgeBaseConfigBuilder {
+    
+    @Value("${tron.bailian.rag.access-key-id}")
+    private String accessKeyId;
+
+    @Value("${tron.bailian.rag.access-key-secret}")
+    private String accessKeySecret;
+
+    @Override
+    public String getId() {
+        return "my_knowledge_base";
+    }
+
+    @Override
+    public KnowledgeBaseConfig getConfig() {
+        return BailianKnowledgeBaseConfig.builder()
+                .id(getId())
+                .name("产品文档知识库")
+                .accessKeyId(accessKeyId)
+                .accessKeySecret(accessKeySecret)
+                .workspaceId("your_workspace_id")  // 百炼工作空间 ID
+                .indexId("your_index_id")  // 百炼索引 ID
+                .enableRewrite(true)  // 启用查询改写
+                .enableRerank(true)  // 启用重排序
+                .rerankModelName("qwen3-rerank")  // 重排序模型
+                .rerankTopK(5)  // 重排序后返回 Top K
+                .build();
+    }
+}
+```
+
+**实际样例**：[ExampleKnowledgeBaseConfigBuilder.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/ExampleKnowledgeBaseConfigBuilder.java)
+
+### 2. 在 Agent 中启用知识库
+
+```java
+@Override
+protected AgentConfig defaultConfig() {
+    return AgentConfig.builder()
+            .name("RAG 助手")
+            .enabled(true)
+            .chatModel(/* ... */)
+            .ragMode("AGENTIC")  // 或 "GENERIC"
+            .knowledgeBases(Lists.newArrayList(
+                    AgentKnowledgeBaseConfig.builder()
+                            .knowledgeId("my_knowledge_base")
+                            .enabled(true)
+                            .mode("generic")  // generic 或 agentic
+                            .defaultLimit(10)
+                            .defaultScoreThreshold(0.7)
+                            .build()
+            ))
+            .build();
+}
+```
+
+### 3. RAG 模式说明
+
+| 模式 | 说明 |
+|------|------|
+| GENERIC | 通用模式：在每次对话前自动检索知识库，将检索结果注入上下文 |
+| AGENTIC | 智能体模式：Agent 自主决定何时使用知识库检索工具 |
+
+---
+
 ## 长期记忆集成
+
+### 1. 实现 LongTermMemoryFactory
+
+创建长期记忆工厂：
+
+```java
+package com.example.mem;
+
+import com.aliyun.tam.x.tron.core.mem.LongTermMemoryFactory;
+import io.agentscope.core.memory.LongTermMemory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomLongTermMemoryFactory implements LongTermMemoryFactory {
+    
+    @Override
+    public LongTermMemory create(String userId) {
+        // 返回自定义的长期记忆实现
+        return new MyLongTermMemory(userId);
+    }
+}
+```
+
+### 2. 百炼长期记忆实现样例
+
+**实际样例**：[BailianLongTermMemoryFactory.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mem/BailianLongTermMemoryFactory.java)
+
+```java
+@Component
+public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
+
+    @Value("${tron.dashscope.api-key}")
+    private String apiKey;
+
+    @Value("${memory.long.bailian.memory_library_id:}")
+    private String memoryLibraryId;
+
+    @Override
+    public LongTermMemory create(String userId) {
+        if (!StringUtils.hasText(memoryLibraryId)) {
+            return null;
+        }
+        
+        return new LongTermMemory() {
+            private final RestClient client = RestClient.builder()
+                    .baseUrl("https://dashscope.aliyuncs.com/api/v1")
+                    .defaultHeader("Authorization", "Bearer " + apiKey)
+                    .build();
+
+            @Override
+            public Mono<List<Msg>> retrieve(Msg query, int limit) {
+                // 从百炼记忆库检索相关记忆
+                Map<String, Object> requestBody = ImmutableMap.of(
+                        "memory_library_id", memoryLibraryId,
+                        "user_id", userId,
+                        "query", query.getTextContent().orElse(""),
+                        "limit", limit
+                );
+
+                return Mono.fromCallable(() -> {
+                    var response = client.post()
+                            .uri("/memories/retrieve")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(requestBody)
+                            .retrieve()
+                            .body(String.class);
+                    // 解析响应并转换为 Msg 列表
+                    return parseMemories(response);
+                });
+            }
+
+            @Override
+            public Mono<Void> addMessage(Msg message) {
+                // 添加消息到长期记忆
+                if (message.getRole() == MsgRole.USER) {
+                    // 只保存用户消息
+                    return saveToMemoryLibrary(userId, message);
+                }
+                return Mono.empty();
+            }
+        };
+    }
+}
+```
+
+### 3. 在 Agent 中启用长期记忆
+
+```java
+@Override
+protected AgentConfig defaultConfig() {
+    return AgentConfig.builder()
+            .name("记忆助手")
+            .enabled(true)
+            .chatModel(/* ... */)
+            .enableLongTermMemory(true)  // 启用长期记忆
+            .longTermMemoryMode("BOTH")  // RECALL（检索）或 WRITE（写入）或 BOTH
+            .build();
+}
+```
+
+### 4. 长期记忆模式
+
+| 模式 | 说明 |
+|------|------|
+| RECALL | 仅检索：在对话中检索历史记忆，但不写入新记忆 |
+| WRITE | 仅写入：写入新记忆，但不检索 |
+| BOTH | 双向：既检索又写入（推荐） |
+
+### 5. 配置记忆库 ID
+
+在 `application.yaml` 中配置：
+
+```yaml
+memory:
+  long:
+    bailian:
+      memory_library_id: "your_memory_library_id"
+```
+
+---
 
 ## MCP Server集成
 
+### 1. 实现 McpConfigBuilder
+
+创建 MCP 客户端配置构建器：
+
+```java
+package com.example.mcp;
+
+import com.aliyun.tam.x.tron.core.config.McpClientConfig;
+import com.aliyun.tam.x.tron.core.mcp.McpConfigBuilder;
+import com.google.common.collect.ImmutableMap;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomMcpConfigBuilder implements McpConfigBuilder {
+    
+    @Value("${custom.mcp.api-key}")
+    private String apiKey;
+
+    @Override
+    public String getId() {
+        return "my_mcp_server";
+    }
+
+    @Override
+    public McpClientConfig getConfig() {
+        return McpClientConfig.builder()
+                .id(getId())
+                .name("我的MCP服务")
+                .description("提供XXX功能的MCP服务")
+                .transport(McpClientConfig.TRANSPORT_HTTP)  // 或 TRANSPORT_SSE
+                .url("https://your-mcp-server.com/mcp")
+                .timeout(30)  // 请求超时（秒）
+                .initializeTimeout(10)  // 初始化超时（秒）
+                .headers(ImmutableMap.of(
+                        "Authorization", "Bearer " + apiKey,
+                        "Content-Type", "application/json"
+                ))
+                .build();
+    }
+}
+```
+
+**实际样例**：[WebSearchMcpConfigBuilder.java](file:///Users/xien/code/opensource/tron-one-agent/backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/WebSearchMcpConfigBuilder.java)
+
+```java
+@Component
+public class WebSearchMcpConfigBuilder implements McpConfigBuilder {
+
+    @Value("${tron.dashscope.api-key}")
+    private String apiKey;
+
+    @Override
+    public String getId() {
+        return "WebSearch";
+    }
+
+    @Override
+    public McpClientConfig getConfig() {
+        return McpClientConfig.builder()
+                .id(getId())
+                .name("阿里云百炼_联网搜索")
+                .description("基于通义实验室多种检索模型，提供实时互联网全栈信息检索")
+                .transport(McpClientConfig.TRANSPORT_HTTP)
+                .url("https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp")
+                .headers(ImmutableMap.of(
+                        "Authorization", "Bearer " + apiKey
+                ))
+                .build();
+    }
+}
+```
+
+### 2. 在 Agent 中启用 MCP
+
+```java
+@Override
+protected AgentConfig defaultConfig() {
+    return AgentConfig.builder()
+            .name("MCP 助手")
+            .enabled(true)
+            .chatModel(/* ... */)
+            .mcpClients(Lists.newArrayList(
+                    AgentMcpConfig.builder()
+                            .clientId("WebSearch")
+                            .enabled(true)
+                            .enableFuncs(Lists.newArrayList("search", "fetch"))  // 可选：启用特定函数
+                            .disableFuncs(Lists.newArrayList())  // 可选：禁用特定函数
+                            .build()
+            ))
+            .build();
+}
+```
+
+---
+
+| 协议 | 常量 | 说明 |
+|------|------|------|
+| HTTP | `http` | Streamable HTTP 传输（推荐） |
+| SSE | `sse` | Server-Sent Events 传输 |
+
+---
+
 ## 添加 Skills
+
+### 1. Skill 结构
+
+Skill 是一个可插拔的功能模块，包含以下文件：
+
+```
+skills/weather/
+├── SKILL.md              # Skill 描述文件（必需）
+└── scripts/
+    └── weather.py        # 执行脚本（可选）
+```
+
+### 2. 创建 SKILL.md
+
+**实际样例**：[SKILL.md](file:///Users/xien/code/opensource/tron-one-agent/backend_java/skills/weather/SKILL.md)
+
+```markdown
+---
+name: weather
+description: 用于查询某地的今天天气
+---
+
+# 天气查询技能
+
+执行以下Python代码以获取某个城市的天气信息，其中 <<city>> 为城市名称
+
+```shell
+python3 scripts/weather.py <<city>>
+```
+
+# Input Parameters
+- city: 城市名称
+
+# Examples
+## Example 1: 查询北京的天气
+```shell
+python3 scripts/weather.py 北京
+```
+
+output: 
+```shell
+北京市今天的天气晴，当前气温为24摄氏度
+```
+
+# Scripts
+- scripts/weather.py: 用于查询指定城市今天天气的Python脚本
+```
+
+### 3. 创建执行脚本
+
+**实际样例**：[weather.py](file:///Users/xien/code/opensource/tron-one-agent/backend_java/skills/weather/scripts/weather.py)
+
+```python
+import sys
+import requests
+from urllib.parse import quote
+
+resp = requests.get(
+    f"https://uapis.cn/api/v1/misc/weather?city={quote(sys.argv[1])}"
+)
+
+resp.raise_for_status()
+data = resp.json()
+print(f"{data['city']}今天的天气{data['weather']}，当前气温为{data['temperature']}摄氏度")
+```
+
+### 4. 打包 Skill
+
+将 Skill 目录打包为 ZIP 文件：
+
+```bash
+cd skills/weather
+zip -r weather.zip SKILL.md scripts/
+```
+
+### 5. 上传 Skill
+
+通过 API 上传 Skill：
+
+```bash
+curl -X POST http://localhost:8080/api/control/skills \
+  -F "file=@weather.zip"
+```
+
+响应：
+```json
+{
+  "code": 200,
+  "success": true,
+  "data": 1  // Skill ID
+}
+```
+
+### 6. 在 Agent 中启用 Skill
+
+```java
+@Override
+protected AgentConfig defaultConfig() {
+    return AgentConfig.builder()
+            .name("旅行助手")
+            .enabled(true)
+            .chatModel(/* ... */)
+            .skills(Lists.newArrayList(
+                    AgentSkillConfig.builder()
+                            .name("weather")  // Skill 名称
+                            .enabled(true)
+                            .build()
+            ))
+            .build();
+}
+```
+
+### 7. Skill 与 Tool 的区别
+
+| 特性 | Tool | Skill |
+|------|------|-------|
+| 实现方式 | Java 代码，使用 @Tool 注解 | Markdown 描述 + 任意脚本 |
+| 注册方式 | 自动扫描 @Component 类 | 上传 ZIP 包 |
+| 执行方式 | 直接调用 Java 方法 | Agent 读取 SKILL.md 并执行脚本 |
+| 适用场景 | 复杂逻辑、需要类型安全 | 快速集成、脚本工具 |
+| 代码执行 | 不依赖外部进程 | 需要代码执行环境（Python 等） |
 
 ## 多模态集成
 
