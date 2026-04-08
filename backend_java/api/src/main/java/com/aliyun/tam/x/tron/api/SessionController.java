@@ -42,6 +42,7 @@ import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.opentelemetry.context.Context;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -327,13 +328,13 @@ public class SessionController {
         if (Objects.equals("text/event-stream", accept)) {
             SseEmitter emitter = new SseEmitter(300_000L);
             Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, emitter);
-            threadPoolExecutor.submit(callable);
+            threadPoolExecutor.submit(Context.current().wrap(callable));
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.TEXT_EVENT_STREAM)
                     .body(emitter);
         } else {
             Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, contents, null);
-            threadPoolExecutor.submit(callable);
+            threadPoolExecutor.submit(Context.current().wrap(callable));
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("success");

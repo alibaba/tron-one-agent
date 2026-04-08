@@ -53,9 +53,11 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     public static class OpenTelemetryProperties {
         private boolean enabled = false;
 
-        private boolean enableGlobalTracer = true;
-
         private boolean enableAgentScopeTracing = true;
+
+        private boolean enableApiTracing = true;
+
+        private boolean enableJdbcTracing = false;
 
         private String endpoint;
 
@@ -138,22 +140,19 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
 
     @Bean
     public OpenTelemetrySdk openTelemetrySdk(SdkTracerProvider sdkTracerProvider) {
-        OpenTelemetrySdk sdk = OpenTelemetrySdk.builder()
+        return OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
                 .build();
-        if (properties.isEnableGlobalTracer()) {
-            GlobalOpenTelemetry.set(sdk);
-            log.info("OpenTelemetry registered as global");
-        }
-        return sdk;
     }
 
     @Bean
+    @ConditionalOnProperty(name = "opentelemetry.enable-api-tracing", havingValue = "true", matchIfMissing = true)
     public Filter webMvcTracingFilter(OpenTelemetry openTelemetry) {
         return SpringWebMvcTelemetry.create(openTelemetry).createServletFilter();
     }
 
     @Bean
+    @ConditionalOnProperty(name = "opentelemetry.enable-jdbc-tracing", havingValue = "true")
     static BeanPostProcessor dataSourceTracingPostProcessor(ObjectProvider<OpenTelemetry> openTelemetryProvider) {
         return new BeanPostProcessor() {
             private volatile OpenTelemetry cachedOtel;
