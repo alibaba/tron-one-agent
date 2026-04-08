@@ -19,8 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.CollectionUtils;
@@ -32,7 +34,8 @@ import java.util.Map;
 @Configuration
 @EnableConfigurationProperties(OpenTelemetryConfig.OpenTelemetryProperties.class)
 @ConditionalOnProperty(name = "opentelemetry.enabled", havingValue = "true")
-public class OpenTelemetryConfig {
+public class OpenTelemetryConfig implements ApplicationListener<ApplicationStartedEvent> {
+
 
     @Data
     @ConfigurationProperties(prefix = "opentelemetry")
@@ -62,6 +65,9 @@ public class OpenTelemetryConfig {
     @Value("${spring.application.version:1.0.0}")
     private String applicationVersion;
 
+    @Value("${spring.application.env:production}")
+    private String applicationEnv;
+
 
     @Autowired
     private OpenTelemetryProperties properties;
@@ -71,6 +77,7 @@ public class OpenTelemetryConfig {
         AttributesBuilder attributesBuilder = Attributes.builder()
                 .put("service.name", applicationName)
                 .put("service.version", applicationVersion)
+                .put("service.environment", applicationEnv)
                 .put("host.name", getHostName());
         if (!CollectionUtils.isEmpty(properties.getAttributes())) {
             for (Map.Entry<String, Object> entry : properties.getAttributes().entrySet()) {
@@ -120,21 +127,17 @@ public class OpenTelemetryConfig {
 
     @Bean
     @ConditionalOnProperty(name = "opentelemetry.enableGlobalTracer", havingValue = "true")
-    public OpenTelemetrySdk openTelemetrySdk() {
+    public OpenTelemetrySdk openTelemetrySdk(SdkTracerProvider sdkTracerProvider) {
         return OpenTelemetrySdk.builder()
-                .setTracerProvider(tracerProvider)
+                .setTracerProvider(sdkTracerProvider)
                 .buildAndRegisterGlobal();
     }
 
-    @Autowired
-    private SdkTracerProvider tracerProvider;
 
-    @Autowired
-    private Tracer defaultTracer;
-
-    @PostConstruct
-    public void init() {
+    @Override
+    public void onApplicationEvent(ApplicationStartedEvent event) {
         if (properties.isEnableAgentScopeTracing()) {
+            Tracer defaultTracer = event.getApplicationContext().getBean(Tracer.class);
             TracerRegistry.register(new TelemetryTracer(defaultTracer));
             TracerRegistry.enableTracingHook();
             log.info("AgentScope tracing initialized");
