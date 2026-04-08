@@ -2260,3 +2260,11 @@ public class AzureTtsConfig {
 3. 创建配置类注册 Bean
 4. 支持流式文本输入和流式音频输出
 5. 输出音频格式建议：24kHz PCM 16bit 单声道
+
+## 可观测
+
+### Tracing
+
+### Logging
+
+## 自动化评测
