@@ -6,6 +6,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
@@ -15,7 +16,11 @@ import io.opentelemetry.instrumentation.spring.webmvc.v6_0.SpringWebMvcTelemetry
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.LinkData;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
+import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
+import io.opentelemetry.sdk.trace.samplers.SamplingResult;
 import jakarta.servlet.Filter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +40,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.CollectionUtils;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -52,12 +58,6 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     @ConfigurationProperties(prefix = "opentelemetry")
     public static class OpenTelemetryProperties {
         private boolean enabled = false;
-
-        private boolean enableAgentScopeTracing = true;
-
-        private boolean enableApiTracing = true;
-
-        private boolean enableJdbcTracing = false;
 
         private String endpoint;
 
@@ -118,6 +118,30 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
         return SdkTracerProvider.builder()
                 .addSpanProcessor(spanProcessor)
                 .setResource(resource)
+                .setSampler(apiOnlySampler())
+                .build();
+    }
+
+    private Sampler apiOnlySampler() {
+        Sampler rootSampler = new Sampler() {
+            @Override
+            public SamplingResult shouldSample(io.opentelemetry.context.Context parentContext, String traceId, String name, SpanKind spanKind, Attributes attributes, List<LinkData> parentLinks) {
+                if (spanKind == SpanKind.SERVER) {
+                    return SamplingResult.create(SamplingDecision.RECORD_AND_SAMPLE);
+                }
+                return SamplingResult.create(SamplingDecision.DROP);
+            }
+
+            @Override
+            public String getDescription() {
+                return "ApiOnlyRootSampler";
+            }
+        };
+        return Sampler.parentBasedBuilder(rootSampler)
+                .setLocalParentSampled(Sampler.alwaysOn())
+                .setLocalParentNotSampled(Sampler.alwaysOff())
+                .setRemoteParentSampled(Sampler.alwaysOn())
+                .setRemoteParentNotSampled(Sampler.alwaysOff())
                 .build();
     }
 
@@ -146,13 +170,11 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     }
 
     @Bean
-    @ConditionalOnProperty(name = "opentelemetry.enable-api-tracing", havingValue = "true", matchIfMissing = true)
     public Filter webMvcTracingFilter(OpenTelemetry openTelemetry) {
         return SpringWebMvcTelemetry.create(openTelemetry).createServletFilter();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "opentelemetry.enable-jdbc-tracing", havingValue = "true")
     static BeanPostProcessor dataSourceTracingPostProcessor(ObjectProvider<OpenTelemetry> openTelemetryProvider) {
         return new BeanPostProcessor() {
             private volatile OpenTelemetry cachedOtel;
@@ -178,12 +200,10 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
 
     @Override
     public void onApplicationEvent(ApplicationStartedEvent event) {
-        if (properties.isEnableAgentScopeTracing()) {
-            Tracer defaultTracer = event.getApplicationContext().getBean(Tracer.class);
-            TracerRegistry.register(new TelemetryTracer(defaultTracer));
-            TracerRegistry.enableTracingHook();
-            log.info("AgentScope tracing initialized");
-        }
+        Tracer defaultTracer = event.getApplicationContext().getBean(Tracer.class);
+        TracerRegistry.register(new TelemetryTracer(defaultTracer));
+        TracerRegistry.enableTracingHook();
+        log.info("AgentScope tracing initialized");
     }
 
 }

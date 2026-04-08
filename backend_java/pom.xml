@@ -104,7 +104,6 @@
                 <version>${agentscope.version}</version>
             </dependency>
 
-
             <dependency>
                 <groupId>com.aliyun</groupId>
                 <artifactId>bailian20231229</artifactId>
