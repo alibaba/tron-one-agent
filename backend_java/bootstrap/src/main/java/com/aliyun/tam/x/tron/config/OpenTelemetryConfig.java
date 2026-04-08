@@ -3,21 +3,29 @@ package com.aliyun.tam.x.tron.config;
 import io.agentscope.core.tracing.TracerRegistry;
 import io.agentscope.core.tracing.telemetry.TelemetryTracer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporterBuilder;
+import io.opentelemetry.instrumentation.jdbc.datasource.JdbcTelemetry;
+import io.opentelemetry.instrumentation.spring.webmvc.v6_0.SpringWebMvcTelemetry;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import jakarta.annotation.PostConstruct;
+import jakarta.servlet.Filter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -29,6 +37,8 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 
 @Slf4j
 @Configuration
@@ -36,6 +46,7 @@ import java.util.Map;
 @ConditionalOnProperty(name = "opentelemetry.enabled", havingValue = "true")
 public class OpenTelemetryConfig implements ApplicationListener<ApplicationStartedEvent> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenTelemetryConfig.class);
 
     @Data
     @ConfigurationProperties(prefix = "opentelemetry")
@@ -126,11 +137,43 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     }
 
     @Bean
-    @ConditionalOnProperty(name = "opentelemetry.enableGlobalTracer", havingValue = "true")
     public OpenTelemetrySdk openTelemetrySdk(SdkTracerProvider sdkTracerProvider) {
-        return OpenTelemetrySdk.builder()
+        OpenTelemetrySdk sdk = OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
-                .buildAndRegisterGlobal();
+                .build();
+        if (properties.isEnableGlobalTracer()) {
+            GlobalOpenTelemetry.set(sdk);
+            log.info("OpenTelemetry registered as global");
+        }
+        return sdk;
+    }
+
+    @Bean
+    public Filter webMvcTracingFilter(OpenTelemetry openTelemetry) {
+        return SpringWebMvcTelemetry.create(openTelemetry).createServletFilter();
+    }
+
+    @Bean
+    static BeanPostProcessor dataSourceTracingPostProcessor(ObjectProvider<OpenTelemetry> openTelemetryProvider) {
+        return new BeanPostProcessor() {
+            private volatile OpenTelemetry cachedOtel;
+
+            private OpenTelemetry getOpenTelemetry() {
+                if (cachedOtel == null) {
+                    cachedOtel = openTelemetryProvider.getIfAvailable(GlobalOpenTelemetry::get);
+                }
+                return cachedOtel;
+            }
+
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                if (bean instanceof DataSource ds) {
+                    LOGGER.info("Wrapping DataSource [{}] with OpenTelemetry JDBC tracing", beanName);
+                    return JdbcTelemetry.create(getOpenTelemetry()).wrap(ds);
+                }
+                return bean;
+            }
+        };
     }
 
 

@@ -28,7 +28,7 @@
         <dashscope.version>2.22.11</dashscope.version>
         <jackson-bom.version>2.21.1</jackson-bom.version>
         <opentelemetry.version>1.60.1</opentelemetry.version>
-        <opentelemetry-reactor.version>2.26.0-alpha</opentelemetry-reactor.version>
+        <opentelemetry-instrumentation.version>2.26.0-alpha</opentelemetry-instrumentation.version>
     </properties>
 
     <dependencyManagement>
@@ -67,6 +67,20 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
@@ -88,19 +102,6 @@
                 <groupId>io.agentscope</groupId>
                 <artifactId>agentscope-a2a-spring-boot-starter</artifactId>
                 <version>${agentscope.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-bom</artifactId>
-                <version>${opentelemetry.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-reactor-3.1</artifactId>
-                <version>${opentelemetry-reactor.version}</version>
             </dependency>
 
 
