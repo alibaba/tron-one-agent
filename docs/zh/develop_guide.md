@@ -1,5 +1,79 @@
 # 开发指南
 
+## 目录
+
+- [核心流程](#核心流程)
+  - [ReAct Agent Loop](#react-agent-loop)
+  - [Agent 初始化](#agent-初始化)
+  - [异步事件流](#异步事件流)
+  - [Chat 完整流程](#chat-完整流程)
+- [API](#api)
+  - [创建会话](#1-创建会话)
+  - [获取会话列表](#2-获取会话列表)
+  - [获取会话详情](#3-获取会话详情)
+  - [删除会话](#4-删除会话)
+  - [获取会话消息列表](#5-获取会话消息列表)
+  - [获取会话事件列表](#6-获取会话事件列表)
+  - [发起对话（核心 API）](#7-发起对话核心-api)
+- [数据库表结构](#数据库表结构)
+  - [sequences（序列号表）](#1-sequences序列号表)
+  - [agents（Agent 配置表）](#2-agentsagent-配置表)
+  - [agent_states（Agent 状态表）](#3-agent_statesagent-状态表)
+  - [sessions（会话表）](#4-sessions会话表)
+  - [messages（消息表）](#5-messages消息表)
+  - [session_events（会话事件表）](#6-session_events会话事件表)
+  - [mcp_clients（MCP 客户端配置表）](#7-mcp_clientsmcp-客户端配置表)
+  - [knowledge_base_configs（知识库配置表）](#8-knowledge_base_configs知识库配置表)
+  - [skill_configs（技能配置表）](#9-skill_configs技能配置表)
+  - [files（文件表）](#10-files文件表)
+  - [oss_files（OSS 文件映射表）](#11-oss_filesoss-文件映射表)
+  - [Event Sourcing 数据流](#event-sourcing-数据流)
+- [模型配置](#模型配置)
+  - [支持的模型类型](#1-支持的模型类型)
+  - [通过代码配置](#2-通过代码配置)
+  - [使用 OpenAI 兼容接口](#3-使用-openai-兼容接口)
+- [Tool开发&注册](#tool开发注册)
+  - [创建 Tool 类](#1-创建-tool-类)
+  - [注册到 ToolRegistry](#2-注册到-toolregistry)
+  - [在 Agent 中启用 Tool](#3-在-agent-中启用-tool)
+- [知识库集成](#知识库集成)
+  - [内置支持：百炼知识库](#1-内置支持百炼知识库)
+  - [在 Agent 中启用知识库](#2-在-agent-中启用知识库)
+  - [RAG 模式说明](#3-rag-模式说明)
+  - [扩展其他知识库](#4-扩展其他知识库)
+- [长期记忆集成](#长期记忆集成)
+  - [内置支持：百炼长期记忆](#1-内置支持百炼长期记忆)
+  - [在 Agent 中启用长期记忆](#2-在-agent-中启用长期记忆)
+  - [长期记忆模式](#3-长期记忆模式)
+  - [配置记忆库 ID](#4-配置记忆库-id)
+  - [扩展其他长期记忆](#5-扩展其他长期记忆)
+- [MCP Server集成](#mcp-server集成)
+  - [实现 McpConfigBuilder](#1-实现-mcpconfigbuilder)
+  - [在 Agent 中启用 MCP](#2-在-agent-中启用-mcp)
+  - [MCP 传输协议](#3-mcp-传输协议)
+- [添加 Skills](#添加-skills)
+  - [Skill 结构](#1-skill-结构)
+  - [创建 SKILL.md](#2-创建-skillmd)
+  - [创建执行脚本](#3-创建执行脚本)
+  - [打包 Skill](#4-打包-skill)
+  - [在 Agent 中启用 Skill](#5-在-agent-中启用-skill)
+  - [Skill 与 Tool 的区别](#6-skill-与-tool-的区别)
+- [多模态集成](#多模态集成)
+  - [图片输入](#图片输入)
+    - [接口定义](#1-接口定义)
+    - [当前支持组件：OSS](#2-当前支持组件oss)
+    - [扩展其他存储组件](#3-扩展其他存储组件)
+  - [语音转文字（ASR）](#语音转文字asr)
+    - [接口定义](#1-接口定义-1)
+    - [当前支持组件：百炼 Qwen3-ASR-Flash-Realtime](#2-当前支持组件百炼-qwen3-asr-flash-realtime)
+    - [扩展其他 ASR 组件](#3-扩展其他-asr-组件)
+  - [文字转语音（TTS）](#文字转语音tts)
+    - [接口定义](#1-接口定义-2)
+    - [当前支持组件：百炼 Qwen3-TTS-Flash-Realtime](#2-当前支持组件百炼-qwen3-tts-flash-realtime)
+    - [扩展其他 TTS 组件](#3-扩展其他-tts-组件)
+
+---
+
 ## 核心流程
 
 OneAgent最核心的流程是Chat，以下是一次对话过程（SSE API）中的不同阶段，详细解释一下相关的过程和原理。
@@ -60,8 +134,8 @@ sequenceDiagram
     SessionController ->> AgentRegistry: getAgent
     AgentRegistry ->> AgentRegistry: getAgentConfigById
     AgentRegistry ->> AgentBuilder: getAgentConfig
-    AgentBuilder ->> Mysql: load dynamic configuration if exists
-    AgentBuilder ->> AgentBuilder: merge dynamic and default configuration
+    AgentBuilder ->> AgentBuilder: load defaultConfig() from code
+    AgentBuilder ->> AgentBuilder: merge with database config if exists
     AgentBuilder -->> AgentRegistry: agent configuration
     AgentRegistry ->> AgentBuilder: build
     AgentBuilder ->> AgentBuilder: build chat model
@@ -283,11 +357,7 @@ OneAgent 提供运行时 API 用于会话管理和对话交互。
 
 ---
 
-### 运行时 API
-
-运行时 API 用于会话管理和对话交互，路径前缀：`/agents/{agent_id}`
-
-#### 1. 创建会话
+### 1. 创建会话
 
 **Path**: `POST /agents/{agent_id}/sessions`
 
@@ -326,7 +396,7 @@ curl -X POST http://localhost:8080/api/agents/one_agent/sessions \
 "b6aa5fad7ff84271b59a897baa159d26"
 ```
 
-#### 2. 获取会话列表
+### 2. 获取会话列表
 
 **Path**: `GET /agents/{agent_id}/sessions`
 
@@ -386,7 +456,7 @@ curl http://localhost:8080/api/agents/one_agent/sessions \
 }
 ```
 
-#### 3. 获取会话详情
+### 3. 获取会话详情
 
 **Path**: `GET /agents/{agent_id}/sessions/{session_id}`
 
@@ -433,7 +503,7 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 }
 ```
 
-#### 4. 删除会话
+### 4. 删除会话
 
 **Path**: `DELETE /agents/{agent_id}/sessions/{session_id}`
 
@@ -443,7 +513,7 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 
 **请求头**: 同上
 
-#### 5. 获取会话消息列表
+### 5. 获取会话消息列表
 
 **Path**: `GET /agents/{agent_id}/sessions/{session_id}/messages`
 
@@ -458,7 +528,7 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 
 **返回值**: 分页消息列表
 
-#### 6. 获取会话事件列表
+### 6. 获取会话事件列表
 
 **Path**: `GET /agents/{agent_id}/sessions/{session_id}/events`
 
@@ -473,7 +543,7 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 
 **返回值**: 事件列表（SessionEvent 数组）
 
-#### 7. 发起对话（核心 API）
+### 7. 发起对话（核心 API）
 
 **Path**: `POST /agents/{agent_id}/sessions/{session_id}/chat`
 
@@ -572,7 +642,9 @@ OneAgent 使用 MySQL 数据库，采用 **Event Sourcing** 模式存储会话�
 
 ### 2. agents（Agent 配置表）
 
-**作用**: 存储 Agent 的动态配置，支持运行时修改配置并持久化
+**作用**: 存储 Agent 的配置信息（可选，主要用于配置覆盖）
+
+> 注：OneAgent 采用**纯代码配置**方式，Agent 的核心配置通过实现 `AgentBuilder` 接口在代码中定义。数据库中的 `agents` 表用于存储可选的配置覆盖，允许在运行时对代码配置进行微调。
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -975,7 +1047,7 @@ public class MyAgentBuilder extends BaseAgentBuilder {
 )
 ```
 
-### 4. 通过 API 动态更新
+---
 
 ## Tool开发&注册
 
@@ -1084,9 +1156,29 @@ protected AgentConfig defaultConfig() {
 
 ## 知识库集成
 
-### 1. 实现 KnowledgeBaseConfigBuilder
+### 1. 内置支持：百炼知识库
 
-创建知识库配置构建器：
+系统内置了阿里云百炼知识库的完整支持，使用 `BailianKnowledgeBaseConfig` 配置类。
+
+**支持的配置项**：
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| workspaceId | String | - | 百炼工作空间 ID |
+| indexId | String | - | 百炼索引 ID |
+| accessKeyId | String | - | 阿里云 AccessKey ID |
+| accessKeySecret | String | - | 阿里云 AccessKey Secret |
+| enableRewrite | Boolean | true | 是否启用查询改写 |
+| rewriteModelName | String | - | 改写模型名称 |
+| enableRerank | Boolean | true | 是否启用重排序 |
+| rerankModelName | String | qwen3-rerank | 重排序模型 |
+| rerankMinScore | Float | 0.2 | 重排序最低分数阈值 |
+| rerankTopK | Integer | 5 | 重排序后返回 Top K |
+| denseSimilarityTopK | Integer | 50 | 稠密向量检索 Top K |
+| sparseSimilarityTopK | Integer | 50 | 稀疏向量检索 Top K |
+| saveRetrieverHistory | Boolean | true | 是否保存检索历史 |
+
+**使用示例**：
 
 ```java
 package com.example.rag;
@@ -1108,7 +1200,7 @@ public class MyKnowledgeBaseConfigBuilder implements KnowledgeBaseConfigBuilder 
 
     @Override
     public String getId() {
-        return "my_knowledge_base";
+        return "product_docs";
     }
 
     @Override
@@ -1118,12 +1210,12 @@ public class MyKnowledgeBaseConfigBuilder implements KnowledgeBaseConfigBuilder 
                 .name("产品文档知识库")
                 .accessKeyId(accessKeyId)
                 .accessKeySecret(accessKeySecret)
-                .workspaceId("your_workspace_id")  // 百炼工作空间 ID
-                .indexId("your_index_id")  // 百炼索引 ID
-                .enableRewrite(true)  // 启用查询改写
-                .enableRerank(true)  // 启用重排序
-                .rerankModelName("qwen3-rerank")  // 重排序模型
-                .rerankTopK(5)  // 重排序后返回 Top K
+                .workspaceId("your_workspace_id")
+                .indexId("your_index_id")
+                .enableRewrite(true)
+                .enableRerank(true)
+                .rerankModelName("qwen3-rerank")
+                .rerankTopK(5)
                 .build();
     }
 }
@@ -1161,37 +1253,104 @@ protected AgentConfig defaultConfig() {
 | GENERIC | 通用模式：在每次对话前自动检索知识库，将检索结果注入上下文 |
 | AGENTIC | 智能体模式：Agent 自主决定何时使用知识库检索工具 |
 
+### 4. 扩展其他知识库
+
+系统通过 `KnowledgeBaseConfigBuilder` 接口实现知识库的可扩展性：
+
+```java
+public interface KnowledgeBaseConfigBuilder {
+    /**
+     * 获取知识库唯一标识
+     */
+    String getId();
+
+    /**
+     * 获取知识库配置
+     */
+    KnowledgeBaseConfig getConfig();
+}
+```
+
+**扩展示例（以自定义向量数据库为例）**：
+
+```java
+@Component
+@ConditionalOnProperty(name = "knowledge.base.type", havingValue = "custom_vector_db")
+public class CustomVectorKnowledgeBaseBuilder implements KnowledgeBaseConfigBuilder {
+
+    @Value("${knowledge.base.custom.url}")
+    private String url;
+
+    @Value("${knowledge.base.custom.api-key}")
+    private String apiKey;
+
+    @Override
+    public String getId() {
+        return "custom_vector_db";
+    }
+
+    @Override
+    public KnowledgeBaseConfig getConfig() {
+        return CustomVectorKnowledgeBaseConfig.builder()
+                .id(getId())
+                .name("自定义向量知识库")
+                .url(url)
+                .apiKey(apiKey)
+                .collectionName("my_collection")
+                .embeddingModel("text-embedding-3-small")
+                .topK(10)
+                .build();
+    }
+}
+```
+
+**关键要点**：
+
+1. 创建自定义的 `KnowledgeBaseConfig` 子类，定义配置字段
+2. 实现 `KnowledgeBaseConfigBuilder` 接口
+3. 使用 `@ConditionalOnProperty` 实现条件加载
+4. 在 `KnowledgeRegistry.buildKnowledge()` 方法中添加对新配置类型的支持
+5. 实现 `Knowledge` 接口，提供实际的检索逻辑
+
 ---
 
 ## 长期记忆集成
 
-### 1. 实现 LongTermMemoryFactory
+### 1. 内置支持：百炼长期记忆
 
-创建长期记忆工厂：
+系统内置了阿里云百炼长期记忆的完整支持，使用 `BailianLongTermMemoryFactory` 实现类。
+
+**工作原理**：
+
+1. 用户发送消息时，系统自动将用户消息保存到百炼记忆库
+2. 每次对话前，根据当前查询从百炼记忆库检索相关历史记忆
+3. 检索到的记忆注入到 Agent 上下文中，帮助 Agent 记住用户偏好和历史
+4. 支持跨会话的长期记忆，实现真正的个性化对话
+
+**配置参数**：
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| memory_library_id | String | - | 百炼记忆库 ID（必填） |
+| apiKey | String | ${DASHSCOPE_API_KEY} | 百炼 API Key |
+
+**使用示例**：
 
 ```java
 package com.example.mem;
 
 import com.aliyun.tam.x.tron.core.mem.LongTermMemoryFactory;
 import io.agentscope.core.memory.LongTermMemory;
+import io.agentscope.core.message.Msg;
+import io.agentscope.core.message.MsgRole;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 
-@Component
-public class CustomLongTermMemoryFactory implements LongTermMemoryFactory {
-    
-    @Override
-    public LongTermMemory create(String userId) {
-        // 返回自定义的长期记忆实现
-        return new MyLongTermMemory(userId);
-    }
-}
-```
+import java.util.List;
+import java.util.Map;
 
-### 2. 百炼长期记忆实现样例
-
-**实际样例**：[BailianLongTermMemoryFactory.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mem/BailianLongTermMemoryFactory.java)
-
-```java
 @Component
 public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
 
@@ -1204,7 +1363,7 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
     @Override
     public LongTermMemory create(String userId) {
         if (!StringUtils.hasText(memoryLibraryId)) {
-            return null;
+            return null;  // 未配置记忆库 ID，不启用长期记忆
         }
         
         return new LongTermMemory() {
@@ -1230,16 +1389,14 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
                             .body(requestBody)
                             .retrieve()
                             .body(String.class);
-                    // 解析响应并转换为 Msg 列表
                     return parseMemories(response);
                 });
             }
 
             @Override
             public Mono<Void> addMessage(Msg message) {
-                // 添加消息到长期记忆
+                // 只保存用户消息到记忆库
                 if (message.getRole() == MsgRole.USER) {
-                    // 只保存用户消息
                     return saveToMemoryLibrary(userId, message);
                 }
                 return Mono.empty();
@@ -1249,7 +1406,9 @@ public class BailianLongTermMemoryFactory implements LongTermMemoryFactory {
 }
 ```
 
-### 3. 在 Agent 中启用长期记忆
+**实际样例**：[BailianLongTermMemoryFactory.java](../../backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mem/BailianLongTermMemoryFactory.java)
+
+### 2. 在 Agent 中启用长期记忆
 
 ```java
 @Override
@@ -1282,6 +1441,123 @@ memory:
     bailian:
       memory_library_id: "your_memory_library_id"
 ```
+
+### 6. 扩展其他长期记忆
+
+系统通过 `LongTermMemoryFactory` 接口实现长期记忆的可扩展性：
+
+```java
+public interface LongTermMemoryFactory {
+    /**
+     * 创建长期记忆实例
+     * @param userId 用户 ID
+     * @return 长期记忆实例
+     */
+    LongTermMemory create(String userId);
+}
+```
+
+**AgentScope 的 LongTermMemory 接口**：
+
+```java
+public interface LongTermMemory {
+    /**
+     * 检索相关记忆
+     * @param query 查询消息
+     * @param limit 返回数量限制
+     * @return 相关记忆列表
+     */
+    Mono<List<Msg>> retrieve(Msg query, int limit);
+
+    /**
+     * 添加消息到长期记忆
+     * @param message 消息
+     * @return 异步结果
+     */
+    Mono<Void> addMessage(Msg message);
+}
+```
+
+**扩展示例（以 Redis 为例）**：
+
+```java
+@Component
+@ConditionalOnProperty(name = "memory.long.type", havingValue = "redis")
+public class RedisLongTermMemoryFactory implements LongTermMemoryFactory {
+
+    @Value("${memory.long.redis.url}")
+    private String redisUrl;
+
+    @Value("${memory.long.redis.max-messages:100}")
+    private int maxMessages;
+
+    private final RedisClient redisClient;
+
+    public RedisLongTermMemoryFactory() {
+        // 初始化 Redis 客户端
+        this.redisClient = RedisClient.create(redisUrl);
+    }
+
+    @Override
+    public LongTermMemory create(String userId) {
+        return new LongTermMemory() {
+            private final String memoryKey = "user:" + userId + ":memory";
+
+            @Override
+            public Mono<List<Msg>> retrieve(Msg query, int limit) {
+                return Mono.fromCallable(() -> {
+                    // 从 Redis 获取最近的消息
+                    List<String> messages = redisClient.lrange(memoryKey, 0, limit - 1);
+                    return messages.stream()
+                            .map(json -> Msg.fromJson(json))
+                            .collect(Collectors.toList());
+                });
+            }
+
+            @Override
+            public Mono<Void> addMessage(Msg message) {
+                return Mono.fromRunnable(() -> {
+                    // 将消息添加到 Redis 列表
+                    redisClient.lpush(memoryKey, message.toJson());
+                    // 限制列表长度
+                    redisClient.ltrim(memoryKey, 0, maxMessages - 1);
+                });
+            }
+        };
+    }
+}
+```
+
+**配置类**：
+
+```java
+@ConditionalOnProperty(name = "memory.long.type", havingValue = "redis")
+@EnableConfigurationProperties(RedisLongTermMemoryConfig.RedisLongTermMemoryProperties.class)
+public class RedisLongTermMemoryConfig {
+
+    @Data
+    @ConfigurationProperties("memory.long.redis")
+    public static class RedisLongTermMemoryProperties {
+        private String url = "redis://localhost:6379";
+        private int maxMessages = 100;
+    }
+
+    @Bean
+    public RedisLongTermMemoryFactory redisLongTermMemoryFactory(
+            RedisLongTermMemoryProperties properties) {
+        return new RedisLongTermMemoryFactory(properties);
+    }
+}
+```
+
+**关键要点**：
+
+1. 实现 `LongTermMemoryFactory` 接口，返回 `LongTermMemory` 实例
+2. 使用 `@ConditionalOnProperty` 实现条件加载
+3. 创建配置类注册 Bean
+4. `retrieve()` 方法实现记忆检索逻辑（可以基于向量相似度、时间等）
+5. `addMessage()` 方法实现记忆存储逻辑
+6. 在 `application.yml` 中配置 `memory.long.type=redis` 即可切换
 
 ---
 
@@ -1425,19 +1701,7 @@ python3 scripts/weather.py <<city>>
 - city: 城市名称
 
 # Examples
-## Example 1: 查询北京的天气
-```shell
-python3 scripts/weather.py 北京
-```
-
-output: 
-```shell
-北京市今天的天气晴，当前气温为24摄氏度
-```
-
-# Scripts
-- scripts/weather.py: 用于查询指定城市今天天气的Python脚本
-```
+---
 
 ### 3. 创建执行脚本
 
@@ -1466,25 +1730,9 @@ cd skills/weather
 zip -r weather.zip SKILL.md scripts/
 ```
 
-### 5. 上传 Skill
+> 注：Skill 需要通过 API 上传，系统会将 ZIP 包存储到文件系统中，并在 Agent 配置中启用。
 
-通过 API 上传 Skill：
-
-```bash
-curl -X POST http://localhost:8080/api/control/skills \
-  -F "file=@weather.zip"
-```
-
-响应：
-```json
-{
-  "code": 200,
-  "success": true,
-  "data": 1  // Skill ID
-}
-```
-
-### 6. 在 Agent 中启用 Skill
+### 5. 在 Agent 中启用 Skill
 
 ```java
 @Override
@@ -1517,6 +1765,498 @@ protected AgentConfig defaultConfig() {
 
 ### 图片输入
 
+#### 1. 接口定义
+
+**上传文件**：`POST /api/file`
+
+**请求头**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| X-User-Id | string | 是 | 用户 ID |
+| Content-Type | string | 是 | multipart/form-data |
+
+**请求体**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | MultipartFile | 是 | 图片文件（支持 jpg、jpeg、png） |
+
+**返回值**：HTTP 201 Created，Location 头包含文件访问 URL
+
+**获取文件**：`GET /api/file/{id}`
+
+**路径参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| id | long | 是 | 文件 ID |
+
+**返回值**：302 重定向到文件实际地址（OSS 预签名 URL）
+
+#### 2. 当前支持组件：OSS
+
+系统使用阿里云 OSS 作为图片存储后端，实现类为 `OssStorageProvider`。
+
+**配置方式**：
+
+```yaml
+tron:
+  file:
+    provider:
+      type: oss  # 存储提供者类型
+  oss:
+    bucket: your-bucket-name
+    region: oss-cn-hangzhou
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    access-key-id: ${OSS_ACCESS_KEY_ID}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET}
+```
+
+**工作原理**：
+
+1. 前端通过 `POST /api/file` 上传图片（multipart/form-data）
+2. 后端将文件上传到 OSS，路径格式：`tron/{userId}/{fileId}.{suffix}`
+3. 文件 ID 存入 `oss_files` 表
+4. 返回文件访问 URL：`/api/file/{id}`
+5. 访问时生成 OSS 预签名 URL（有效期 2 小时）并 302 重定向
+6. 前端在聊天消息中使用该 URL 作为图片输入
+
+**支持的图片格式**：jpg、jpeg、png
+
+#### 3. 扩展其他存储组件
+
+系统通过 `StorageProvider` 接口实现存储后端的可扩展性：
+
+```java
+public interface StorageProvider {
+    /**
+     * 上传文件
+     * @param userId 用户 ID
+     * @param suffix 文件后缀
+     * @param is 文件输入流
+     * @return 文件 ID
+     */
+    Long upload(String userId, String suffix, InputStream is) throws IOException;
+
+    /**
+     * 获取文件（返回 ResponseEntity）
+     */
+    ResponseEntity<?> get(String userId, Long id);
+
+    /**
+     * 转换为公开 URL
+     */
+    default String toPublicUrl(String userId, String url) {
+        return url;
+    }
+}
+```
+
+**扩展示例（以本地文件系统为例）**：
+
+```java
+@Component
+@ConditionalOnProperty(name = "tron.file.provider.type", havingValue = "local")
+public class LocalStorageProvider implements StorageProvider {
+
+    @Value("${tron.file.local.base-path:/tmp/tron-files}")
+    private String basePath;
+
+    @Override
+    public Long upload(String userId, String suffix, InputStream is) throws IOException {
+        long id = System.currentTimeMillis();
+        Path filePath = Paths.get(basePath, userId, id + "." + suffix);
+        Files.createDirectories(filePath.getParent());
+        Files.copy(is, filePath, StandardCopyOption.REPLACE_EXISTING);
+        return id;
+    }
+
+    @Override
+    public ResponseEntity<?> get(String userId, Long id) {
+        try {
+            Path filePath = Paths.get(basePath, userId, id + ".*");
+            // 使用通配符查找文件
+            Path actualPath = findFile(filePath);
+            if (actualPath == null || !Files.exists(actualPath)) {
+                return ResponseEntity.notFound().build();
+            }
+            byte[] content = Files.readAllBytes(actualPath);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(content);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+```
+
+**关键要点**：
+
+1. 使用 `@ConditionalOnProperty` 实现条件加载
+2. 实现 `StorageProvider` 接口的两个核心方法
+3. 在 `application.yml` 中配置 `tron.file.provider.type=local` 即可切换
+
+---
+
 ### 语音转文字（ASR）
 
+#### 1. 接口定义
+
+**WebSocket 端点**：`ws://host:port/api/asr`
+
+**客户端 → 服务端消息格式**：
+
+```json
+{
+  "dataBase64": "音频数据的 Base64 编码（PCM 格式）",
+  "completed": false
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| dataBase64 | string | 否 | Base64 编码的 PCM 音频数据（16kHz, 16bit, 单声道） |
+| completed | boolean | 否 | 是否完成录音，默认 false |
+
+**服务端 → 客户端消息格式**：
+
+```json
+{
+  "success": true,
+  "text": "识别出的文字",
+  "finished": false,
+  "error": null
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| success | boolean | 是 | 是否成功 |
+| text | string | 否 | 识别结果文本（中间结果或最终结果） |
+| finished | boolean | 是 | 是否识别完成 |
+| error | string | 否 | 错误信息 |
+
+#### 2. 当前支持组件：百炼 Qwen3-ASR-Flash-Realtime
+
+系统使用阿里云百炼平台的 Qwen3-ASR-Flash-Realtime 模型进行实时语音识别。
+
+**配置方式**：
+
+```yaml
+asr:
+  type: qwen  # ASR 提供者类型
+  qwen:
+    model: qwen3-asr-flash-realtime
+    url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+    apiKey: ${DASHSCOPE_API_KEY}  # 百炼 API Key
+    language: zh  # 识别语言
+    inputSampleRate: 16000  # 输入采样率
+    inputAudioFormat: pcm  # 输入音频格式
+    sessionCreateTimeoutInMills: 10000  # 会话创建超时（毫秒）
+```
+
+**工作原理**：
+
+1. 前端通过 `navigator.mediaDevices.getUserMedia` 获取麦克风权限
+2. 使用 `AudioContext` 和 `ScriptProcessorNode` 捕获 16kHz PCM 音频
+3. 建立 WebSocket 连接到 `/api/asr`
+4. 将音频分片（1024 采样点）转为 Base64 并通过 WebSocket 发送
+5. 后端通过 `AsrWsEndpoint` 接收音频数据
+6. 后端调用百炼 Qwen3-ASR 实时模型进行识别
+7. 实时返回识别结果（中间结果和最终结果）
+8. 用户松开麦克风时发送 `completed: true`，返回最终结果
+
+**音频格式要求**：
+
+- 采样率：16000 Hz
+- 位深度：16 bit
+- 声道数：单声道（Mono）
+- 编码格式：PCM
+- 传输格式：Base64 编码
+
+#### 3. 扩展其他 ASR 组件
+
+系统通过 `AsrService` 和 `AsrSession` 接口实现 ASR 服务的可扩展性：
+
+```java
+public interface AsrService {
+    interface AsrCallback {
+        void onText(String text);      // 识别结果回调
+        void onFinished();              // 完成回调
+        void onError(Throwable t);      // 错误回调
+    }
+
+    AsrSession newSession(AsrCallback callback);
+}
+
+public interface AsrSession {
+    void appendData(String dataBase64);  // 追加音频数据
+    void complete();                      // 标记完成
+    void close();                         // 关闭会话
+}
+```
+
+**扩展示例（以科大讯飞为例）**：
+
+```java
+@Component
+@ConditionalOnProperty(name = "asr.type", havingValue = "iflytek")
+public class IflytekAsrService implements AsrService {
+
+    @Value("${asr.iflytek.app-id}")
+    private String appId;
+
+    @Value("${asr.iflytek.api-key}")
+    private String apiKey;
+
+    @Override
+    public AsrSession newSession(AsrCallback callback) {
+        // 1. 建立与科大讯飞的 WebSocket 连接
+        // 2. 配置识别参数
+        // 3. 实现回调转发
+        
+        return new AsrSession() {
+            @Override
+            public void appendData(String dataBase64) {
+                // 将 Base64 音频数据发送给科大讯飞
+            }
+
+            @Override
+            public void complete() {
+                // 发送完成信号
+            }
+
+            @Override
+            public void close() {
+                // 关闭 WebSocket 连接
+            }
+        };
+    }
+}
+```
+
+**配置类**：
+
+```java
+@ConditionalOnProperty(name = "asr.type", havingValue = "iflytek")
+@EnableConfigurationProperties(IflytekAsrConfig.IflytekAsrProperties.class)
+public class IflytekAsrConfig {
+
+    @Data
+    @ConfigurationProperties("asr.iflytek")
+    public static class IflytekAsrProperties {
+        private String appId;
+        private String apiKey;
+        private String apiSecret;
+        private String language = "zh_cn";
+    }
+
+    @Bean
+    public IflytekAsrService iflytekAsrService(IflytekAsrProperties properties) {
+        return new IflytekAsrService(properties);
+    }
+}
+```
+
+**关键要点**：
+
+1. 实现 `AsrService` 和 `AsrSession` 接口
+2. 使用 `@ConditionalOnProperty` 实现条件加载
+3. 创建配置类注册 Bean
+4. 在 `application.yml` 中配置 `asr.type=iflytek` 即可切换
+5. 音频格式要求：16kHz PCM 16bit 单声道
+
+---
+
 ### 文字转语音（TTS）
+
+#### 1. 接口定义
+
+**WebSocket 端点**：`ws://host:port/api/tts`
+
+**客户端 → 服务端消息格式**：
+
+```json
+{
+  "text": "要转换为语音的文本",
+  "completed": false
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| text | string | 否 | 要合成的文本内容 |
+| completed | boolean | 否 | 是否文本流完成，默认 false |
+
+**服务端 → 客户端消息格式**：
+
+```json
+{
+  "success": true,
+  "dataBase64": "音频数据的 Base64 编码（PCM 格式）",
+  "finished": false,
+  "error": null
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| success | boolean | 是 | 是否成功 |
+| dataBase64 | string | 否 | Base64 编码的 PCM 音频数据 |
+| finished | boolean | 是 | 是否合成完成 |
+| error | string | 否 | 错误信息 |
+
+#### 2. 当前支持组件：百炼 Qwen3-TTS-Flash-Realtime
+
+系统使用阿里云百炼平台的 Qwen3-TTS-Flash-Realtime 模型进行实时语音合成。
+
+**配置方式**：
+
+```yaml
+tts:
+  type: qwen  # TTS 提供者类型
+  qwen:
+    model: qwen3-tts-flash-realtime
+    url: wss://dashscope.aliyuncs.com/api-ws/v1/realtime
+    apiKey: ${DASHSCOPE_API_KEY}  # 百炼 API Key
+    voice: Cherry  # 音色名称
+    languageType: Auto  # 语言类型（Auto/Chinese/English）
+    mode: server_commit  # 模式
+    format: PCM_24000HZ_MONO_16BIT  # 音频格式
+    instructions: ""  # 语音指令
+    optimizeInstructions: false  # 是否优化指令
+    maxChunkSize: 50  # 最大文本块大小
+    chunkIntervalInMills: 100  # 文本块间隔（毫秒）
+    sessionCreateTimeoutInMills: 10000  # 会话创建超时（毫秒）
+```
+
+**工作原理**：
+
+1. 前端建立 WebSocket 连接到 `/api/tts`
+2. 后端通过 `TtsWsEndpoint` 创建 TTS 会话
+3. 前端发送文本分片（流式传输）
+4. 后端调用百炼 Qwen3-TTS 实时模型进行合成
+5. 实时返回音频数据分片（Base64 编码的 PCM）
+6. 前端使用 `AudioContext` 缓冲并播放音频
+7. 发送 `completed: true` 标记文本流结束
+8. 后端返回 `finished: true` 并关闭连接
+
+**输出音频格式**：
+
+- 采样率：24000 Hz
+- 位深度：16 bit
+- 声道数：单声道（Mono）
+- 编码格式：PCM
+- 传输格式：Base64 编码
+
+**支持的音色**：Cherry、Ethan、Chelsie 等（详见百炼文档）
+
+#### 3. 扩展其他 TTS 组件
+
+系统通过 `TtsService` 和 `TtsSession` 接口实现 TTS 服务的可扩展性：
+
+```java
+public interface TtsService {
+    interface TtsCallback {
+        void onData(String dataBase64);  // 音频数据回调
+        void onFinished();                // 完成回调
+        void onError(Throwable t);        // 错误回调
+    }
+
+    TtsSession newSession(TtsCallback callback);
+}
+
+public interface TtsSession {
+    void appendText(String text);  // 追加文本
+    void complete();                // 标记完成
+    void close();                   // 关闭会话
+}
+```
+
+**扩展示例（以 Azure TTS 为例）**：
+
+```java
+@Component
+@ConditionalOnProperty(name = "tts.type", havingValue = "azure")
+public class AzureTtsService implements TtsService {
+
+    @Value("${tts.azure.api-key}")
+    private String apiKey;
+
+    @Value("${tts.azure.region}")
+    private String region;
+
+    @Override
+    public TtsSession newSession(TtsCallback callback) {
+        // 1. 创建 Azure Speech Synthesizer
+        // 2. 配置音频输出格式
+        // 3. 实现流式合成
+        
+        return new TtsSession() {
+            private StringBuilder textBuffer = new StringBuilder();
+
+            @Override
+            public void appendText(String text) {
+                textBuffer.append(text);
+                // 累积到一定大小后开始合成
+                if (textBuffer.length() >= 50) {
+                    synthesizeAndSend(callback);
+                }
+            }
+
+            @Override
+            public void complete() {
+                // 合成剩余文本
+                if (textBuffer.length() > 0) {
+                    synthesizeAndSend(callback);
+                }
+                callback.onFinished();
+            }
+
+            @Override
+            public void close() {
+                // 释放资源
+            }
+
+            private void synthesizeAndSend(TtsCallback callback) {
+                // 调用 Azure TTS API
+                // 将 PCM 数据转为 Base64
+                // callback.onData(base64Data)
+            }
+        };
+    }
+}
+```
+
+**配置类**：
+
+```java
+@ConditionalOnProperty(name = "tts.type", havingValue = "azure")
+@EnableConfigurationProperties(AzureTtsConfig.AzureTtsProperties.class)
+public class AzureTtsConfig {
+
+    @Data
+    @ConfigurationProperties("tts.azure")
+    public static class AzureTtsProperties {
+        private String apiKey;
+        private String region;
+        private String voice = "zh-CN-XiaoxiaoNeural";
+        private String outputFormat = "raw-24khz-16bit-mono-pcm";
+    }
+
+    @Bean
+    public AzureTtsService azureTtsService(AzureTtsProperties properties) {
+        return new AzureTtsService(properties);
+    }
+}
+```
+
+**关键要点**：
+
+1. 实现 `TtsService` 和 `TtsSession` 接口
+2. 使用 `@ConditionalOnProperty` 实现条件加载
+3. 创建配置类注册 Bean
+4. 支持流式文本输入和流式音频输出
+5. 输出音频格式建议：24kHz PCM 16bit 单声道
