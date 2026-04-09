@@ -47,3 +47,13 @@ tron:
     endpoint: ${OSS_ENDPOINT:}
     access-key-id: ${ALIBABA_CLOUD_ACCESS_KEY_ID:}
     access-key-secret: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}
+management:
+  server:
+    port: 8091
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    tags:
+      application: ${spring.application.name}
