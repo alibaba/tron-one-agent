@@ -34,6 +34,7 @@ import com.google.common.collect.Sets;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
+import io.agentscope.core.hook.Hook;
 import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;

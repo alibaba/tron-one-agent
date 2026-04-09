@@ -162,6 +162,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
             ReActAgent.Builder agentBuilder = ReActAgent.builder()
                     .name(config.getName())
+                    .description(config.getId())
                     .model(chatModel)
                     .sysPrompt(systemPrompt)
                     .toolkit(toolkit)
@@ -193,6 +194,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
             ReActAgent.Builder mainAgentBuilder = ReActAgent.builder()
                     .name(config.getName())
+                    .description(config.getId())
                     .model(chatModel)
                     .sysPrompt(systemPrompt)
                     .memory(new InMemoryMemory())
