@@ -2327,5 +2327,3 @@ OneAgent通过SpringBoot的Actuator支持了 Prometheus 的指标采集。扩展
 2. 日志文件。输出到工作目录下的 application.log 中，按日和500M大小滚动，默认最多保留50个历史文件。
 
 如果开启了Tracing能力，日志中还会输出关联的 traceId 和 spanId。
-
-## 自动化评测
