@@ -54,6 +54,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
@@ -174,6 +175,7 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     }
 
     @Bean
+    @Primary
     public Tracer defaultTracer(TracerProvider provider) {
         return provider.get(applicationName, applicationVersion);
     }
