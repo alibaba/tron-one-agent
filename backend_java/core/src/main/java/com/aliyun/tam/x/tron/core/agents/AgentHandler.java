@@ -23,6 +23,9 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
 import io.agentscope.core.state.StateModule;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
@@ -81,18 +84,45 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
                 .setAttribute("user.message.id", userMessage.getId())
                 .setAttribute("agent.message.id", eventSink.getMessageId())
                 .startSpan();
-        long startTime = System.currentTimeMillis();
+        Timer.Sample timerSample = Timer.start(Metrics.globalRegistry);
         try (var ignored = span.makeCurrent()) {
             logger.info("serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
+
             AgentResult result = agentHandler.handleInput(userMessage, eventSink);
+
             logger.info("finished serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}, result={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId(), result);
-            result.setCostInMs(System.currentTimeMillis() - startTime);
+
+            long costInNano = timerSample.stop(Timer.builder("one.agent.e2el")
+                    .tag("agent.id", agentId)
+                    .publishPercentileHistogram()
+                    .register(Metrics.globalRegistry));
+
+            DistributionSummary.builder("one.agent.ttft")
+                    .tag("agent.id", agentId)
+                    .baseUnit("milliseconds")
+                    .publishPercentileHistogram()
+                    .register(Metrics.globalRegistry)
+                    .record(result.getFirstTokenDelayInMs());
+
+            DistributionSummary.builder("one.agent.response.ttft")
+                    .tag("agent.id", agentId)
+                    .baseUnit("milliseconds")
+                    .publishPercentileHistogram()
+                    .register(Metrics.globalRegistry)
+                    .record(result.getFirstResponseTokenDelayInMs());
+
+            result.setCostInMs(costInNano / 1000);
             return result;
         } catch (Exception e) {
+            long costInNano = timerSample.stop(Timer.builder("one.agent.e2el")
+                    .tag("agent.id", agentId)
+                    .tag("error", e.getClass().getSimpleName())
+                    .publishPercentileHistogram()
+                    .register(Metrics.globalRegistry));
             logger.error("Encounter exception during handling input, cost={}ms, agent_id={}, user_id={}, session_id={}, agent_message_id={}",
-                    System.currentTimeMillis() - startTime, agentId, userMessage.getUserId(), userMessage.getSessionId(), eventSink.getMessageId(), e);
+                    costInNano / 1000, agentId, userMessage.getUserId(), userMessage.getSessionId(), eventSink.getMessageId(), e);
 
             span.setStatus(StatusCode.ERROR, e.getMessage());
             span.recordException(e);
