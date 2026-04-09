@@ -71,6 +71,10 @@
     - [Interface Definition](#1-interface-definition-2)
     - [Current Supported Component: Bailian Qwen3-TTS-Flash-Realtime](#2-current-supported-component-bailian-qwen3-tts-flash-realtime)
     - [Extend with Other TTS Components](#3-extend-with-other-tts-components)
+- [Observability](#observability)
+  - [Tracing](#tracing-1)
+  - [Metrics](#metrics-1)
+  - [Logging](#logging-1)
 
 ---
 
@@ -2260,3 +2264,66 @@ public class AzureTtsConfig {
 3. Create configuration class to register Bean
 4. Supports streaming text input and streaming audio output
 5. Recommended output audio format: 24kHz PCM 16bit mono
+
+## Observability
+
+OneAgent extends AgentScope Java to establish a comprehensive observability mechanism, which mainly includes the following:
+
+### Tracing
+
+Supports full-link tracing with OpenTelemetry, which can be enabled through configuration. Taking Alibaba Cloud CMS 2.0 Application Observability as an example:
+
+- Resource Activation. Activate [Alibaba Cloud CMS 2.0](https://help.aliyun.com/zh/cms/cloudmonitor-2-0/what-is-cloud-monitor-2-0?spm=a2c4g.11186623.0.i1). In the console, click [Access Center] - [Java], and select "Manual Installation", "OpenTelemetry", "Manual Instrumentation", and "Alibaba Cloud Internal Network/Public Network" respectively. Then fill in "Application Name (defaults to spring.application.name)", "Version (defaults to 1.0.0)", and "Deployment Environment (defaults to production)". Obtain LicenseKey, Endpoint, Workspace, and Project.
+
+![cms_opentelemetry_config](../images/cms_opentelemetry_config.jpg)
+
+- OneAgent Backend Configuration. Add the following configuration to OneAgent to integrate with CMS 2.0 OpenTelemetry service.
+
+```yaml
+opentelemetry:
+  enabled: true
+  attributes:
+    "[acs.cms.workspace]": <<Workspace obtained in previous step>>
+  headers:
+    x-arms-license-key: <<LicenseKey obtained in previous step>>
+    x-arms-project: <<Project obtained in previous step>>
+    x-cms-workspace: <<Workspace obtained in previous step>>
+  endpoint: <<Endpoint obtained in previous step>>
+```
+
+- Initiate a conversation and observe tracing results. Find the application in CMS 2.0's [Application Monitoring] and open [Trace Analysis].
+
+![cms_opentelemetry_tracing](../images/cms_opentelemetry_tracing.jpg)
+
+
+### Metrics
+
+OneAgent supports Prometheus metrics collection through SpringBoot Actuator. Extended metrics include:
+
+|Name|Labels|Type|Description|
+|----|------|----|------------|
+|one.agent.e2el|agent.id|histogram|End-to-end latency statistics for OneAgent conversations|
+|one.agent.ttft|agent.id|histogram|Time to first token latency (including thinking and reasoning) statistics for OneAgent conversations|
+|one.agent.response.ttft|agent.id|histogram|Final response time to first token latency (excluding thinking and reasoning) statistics for OneAgent conversations|
+|one.agent.times.reasoning|agent.id, model.name|counter|OneAgent reasoning times|
+|one.agent.times.acting|agent.id|counter|OneAgent action times|
+|one.agent.times.summary|agent.id, model.name|counter|OneAgent summary output times after exceeding max loops|
+|one.agent.times.error|agent.id|counter|OneAgent error times|
+|one.agent.tool.time|agent.id, tool.name|histogram|OneAgent tool invocation time statistics|
+|one.agent.model.input|agent.id, model.name|histogram|OneAgent model invocation input token statistics|
+|one.agent.model.output|agent.id, model.name|histogram|OneAgent model invocation output token statistics|
+|one.agent.model.time|agent.id, model.name|histogram|OneAgent model invocation time statistics|
+
+In addition to the extended metrics above, Actuator native metrics are also supported. Access through the following endpoints:
+
+- http://<backend-service>:8091/actuator/metrics: Get all metric names
+- http://<backend-service>:8091/actuator/prometheus: Get all metric detail data
+
+### Logging
+
+It is recommended to collect OneAgent logs through Alibaba Cloud SLS or self-built ELK. Logs are mainly output to two locations:
+
+1. Console. All logs are output to the console, which can be collected using cloud-native solutions;
+2. Log Files. Output to application.log in the working directory, rotating by day and 500MB size, with a default maximum of 50 historical files retained.
+
+If Tracing is enabled, logs will also output associated traceId and spanId.

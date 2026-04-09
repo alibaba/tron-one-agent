@@ -71,6 +71,10 @@
     - [接口定义](#1-接口定义-2)
     - [当前支持组件：百炼 Qwen3-TTS-Flash-Realtime](#2-当前支持组件百炼-qwen3-tts-flash-realtime)
     - [扩展其他 TTS 组件](#3-扩展其他-tts-组件)
+- [可观测](#可观测)
+  - [Tracing](#tracing)
+  - [Metrics](#metrics)
+  - [Logging](#logging)
 
 ---
 
@@ -2263,8 +2267,65 @@ public class AzureTtsConfig {
 
 ## 可观测
 
+OneAgent 在 AgentScope Java之上，扩展建立了完善的可观测机制，主要包括以下内容：
+
 ### Tracing
 
+支持 OpenTelemetry 进行全链路追踪，通过配置开启。以 阿里云CMS 2.0的应用观测为例：
+
+- 资源开通。开通[阿里云CMS2.0产品](https://help.aliyun.com/zh/cms/cloudmonitor-2-0/what-is-cloud-monitor-2-0?spm=a2c4g.11186623.0.i1)。在控制台，点击 [接入中心] - [Java]，分别选择“手动安装”、“OpenTelemetry”、“手动埋点”、“阿里云内网方式/公网”。然后填入“应用名（默认为 spring.application.name）”、“版本号（默认为1.0.0）”、“部署环境（默认为production）”。获得 LicenseKey、Endpoint、Workspace 和 Project
+
+![cms_opentelemetry_config](../images/cms_opentelemetry_config.jpg)
+
+- OneAgent后端配置。按照以下示例在OneAgent中添加相关配置，以接入CMS2.0的OpenTelemetry服务。
+
+```yaml
+opentelemetry:
+  enabled: true
+  attributes:
+    "[acs.cms.workspace]": <<上一步获取的 Workspace>>
+  headers:
+    x-arms-license-key: <<上一步获取的 LicenseKey>>
+    x-arms-project: <<上一步获取的 Project>>
+    x-cms-workspace: <<上一步获取的 Workspace>>
+  endpoint: <<上一步获取的 Endpoint>>
+```
+
+- 发起对话，观察Tracing结果。在CMS2.0的【应用监控】中找到应用，打开【调用链分析】
+
+![cms_opentelemetry_tracing](../images/cms_opentelemetry_tracing.jpg)]
+
+
+### Metrics
+
+OneAgent通过SpringBoot的Actuator支持了 Prometheus 的指标采集。扩展的指标包括：
+
+|Name|Labels|Type|Description|
+|----|------|----|------------|
+|one.agent.e2el|agent.id|histogram|OneAgent对话的端到端时延统计|
+|one.agent.ttft|agent.id|histogram|OneAgent对话的首Token时延（包括思考和推理）统计|
+|one.agent.response.ttft|agent.id|histogram|OneAgent对话的最终响应首Token时延（不包括思考和推理）统计|
+|one.agent.times.reasoning|agent.id, model.name|counter|OneAgent推理次数|
+|one.agent.times.acting|agent.id|counter|OneAgent行动次数|
+|one.agent.times.summary|agent.id, model.name|counter|OneAgent超出最大循环数之后的总结输出次数|
+|one.agent.times.error|agent.id|counter|OneAgent出错次数|
+|one.agent.tool.time|agent.id, tool.name|histogram|OneAgent工具调用时间统计|
+|one.agent.model.input|agent.id, model.name|histogram|OneAgent模型调用输入token输统计|
+|one.agent.model.output|agent.id, model.name|histogram|OneAgent模型调用输出token输统计|
+|one.agent.model.time|agent.id, model.name|histogram|OneAgent模型调用耗时输统计|
+
+除了以上扩展指标外，也同步支持Actuator原生指标。可通过一下 Endpoint访问：
+
+- http://<backend-service>:8091/actuator/metrics：获取所有指标名称
+- http://<backend-service>:8091/actuator/prometheus：获取所有指标详情数据
+
 ### Logging
+
+推荐通过阿里云SLS或自建ELK采集OneAgent的日志，主要输出到两个地方：
+
+1. 控制台。所有日志都会输出到控制台，可用云原生方案进行采集；
+2. 日志文件。输出到工作目录下的 application.log 中，按日和500M大小滚动，默认最多保留50个历史文件。
+
+如果开启了Tracing能力，日志中还会输出关联的 traceId 和 spanId。
 
 ## 自动化评测
