@@ -75,6 +75,74 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
 
     private static final String RESOURCE_PREFIX = "classpath:/prompts/";
 
+    public static ChatModelBase newChatModel(ChatModelConfig config) {
+        if (Objects.equals(config.getType(), ChatModelType.DASHSCOPE)) {
+            return DashScopeChatModel.builder()
+                    .apiKey(config.getApiKey())
+                    .modelName(config.getModelName())
+                    .baseUrl(config.getBaseUrl())
+                    .stream(config.getStream())
+                    .enableThinking(config.getThinking())
+                    .defaultOptions(buildGenerateOptions(config.getGenerateKwargs()))
+                    .build();
+        } else if (Objects.equals(config.getType(), ChatModelType.OPENAI_COMPATIBLE)) {
+            if (config.getThinking() != null) {
+                if (config.getGenerateKwargs() == null) {
+                    config.setGenerateKwargs(Map.of("enable_thinking", config.getThinking()));
+                }
+                else {
+                    config.getGenerateKwargs().put("enable_thinking", config.getThinking());
+                }
+            }
+            return OpenAIChatModel.builder()
+                    .apiKey(config.getApiKey())
+                    .modelName(config.getModelName())
+                    .baseUrl(config.getBaseUrl())
+                    .stream(config.getStream())
+                    .generateOptions(buildGenerateOptions(config.getGenerateKwargs()))
+                    .build();
+        } else {
+            throw new IllegalArgumentException("unknown chat model type - " + config.getType());
+        }
+    }
+
+
+    private static GenerateOptions buildGenerateOptions(Map<String, Object> kwargs) {
+        GenerateOptions.Builder builder = GenerateOptions.builder();
+        if (CollectionUtils.isEmpty(kwargs)) {
+            return builder.build();
+        }
+        kwargs = Maps.newHashMap(kwargs);
+        if (kwargs.containsKey("temperature")) {
+            builder.temperature(((Number) kwargs.remove("temperature")).doubleValue());
+        }
+        if (kwargs.containsKey("maxTokens")) {
+            builder.maxTokens(((Number) kwargs.remove("maxTokens")).intValue());
+        }
+        if (kwargs.containsKey("topP")) {
+            builder.topP(((Number) kwargs.remove("topP")).doubleValue());
+        }
+        if (kwargs.containsKey("topK")) {
+            builder.topK(((Number) kwargs.remove("topK")).intValue());
+        }
+        if (kwargs.containsKey("thinkingBudget")) {
+            builder.thinkingBudget(((Number) kwargs.remove("thinkingBudget")).intValue());
+        }
+        if (kwargs.containsKey("presencePenalty")) {
+            builder.presencePenalty(((Number) kwargs.remove("presencePenalty")).doubleValue());
+        }
+        if (kwargs.containsKey("frequencyPenalty")) {
+            builder.frequencyPenalty(((Number) kwargs.remove("frequencyPenalty")).doubleValue());
+        }
+        if (kwargs.containsKey("seed")) {
+            builder.seed((Long) kwargs.remove("seed"));
+        }
+        if (!kwargs.isEmpty()) {
+            builder.additionalBodyParams(kwargs);
+        }
+        return builder.build();
+    }
+
     @Autowired
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
 
@@ -234,74 +302,6 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
             return handler;
         }
         throw new IllegalArgumentException("Unsupported agent type " + config.getType());
-    }
-
-    private ChatModelBase newChatModel(ChatModelConfig config) {
-        if (Objects.equals(config.getType(), ChatModelType.DASHSCOPE)) {
-            return DashScopeChatModel.builder()
-                    .apiKey(config.getApiKey())
-                    .modelName(config.getModelName())
-                    .baseUrl(config.getBaseUrl())
-                    .stream(config.getStream())
-                    .enableThinking(config.getThinking())
-                    .defaultOptions(buildGenerateOptions(config.getGenerateKwargs()))
-                    .build();
-        } else if (Objects.equals(config.getType(), ChatModelType.OPENAI_COMPATIBLE)) {
-            if (config.getThinking() != null) {
-                if (config.getGenerateKwargs() == null) {
-                    config.setGenerateKwargs(Map.of("enable_thinking", config.getThinking()));
-                }
-                else {
-                    config.getGenerateKwargs().put("enable_thinking", config.getThinking());
-                }
-            }
-            return OpenAIChatModel.builder()
-                    .apiKey(config.getApiKey())
-                    .modelName(config.getModelName())
-                    .baseUrl(config.getBaseUrl())
-                    .stream(config.getStream())
-                    .generateOptions(buildGenerateOptions(config.getGenerateKwargs()))
-                    .build();
-        } else {
-            throw new IllegalArgumentException("unknown chat model type - " + config.getType());
-        }
-    }
-
-
-    private GenerateOptions buildGenerateOptions(Map<String, Object> kwargs) {
-        GenerateOptions.Builder builder = GenerateOptions.builder();
-        if (CollectionUtils.isEmpty(kwargs)) {
-            return builder.build();
-        }
-        kwargs = Maps.newHashMap(kwargs);
-        if (kwargs.containsKey("temperature")) {
-            builder.temperature(((Number) kwargs.remove("temperature")).doubleValue());
-        }
-        if (kwargs.containsKey("maxTokens")) {
-            builder.maxTokens(((Number) kwargs.remove("maxTokens")).intValue());
-        }
-        if (kwargs.containsKey("topP")) {
-            builder.topP(((Number) kwargs.remove("topP")).doubleValue());
-        }
-        if (kwargs.containsKey("topK")) {
-            builder.topK(((Number) kwargs.remove("topK")).intValue());
-        }
-        if (kwargs.containsKey("thinkingBudget")) {
-            builder.thinkingBudget(((Number) kwargs.remove("thinkingBudget")).intValue());
-        }
-        if (kwargs.containsKey("presencePenalty")) {
-            builder.presencePenalty(((Number) kwargs.remove("presencePenalty")).doubleValue());
-        }
-        if (kwargs.containsKey("frequencyPenalty")) {
-            builder.frequencyPenalty(((Number) kwargs.remove("frequencyPenalty")).doubleValue());
-        }
-        if (kwargs.containsKey("seed")) {
-            builder.seed((Long) kwargs.remove("seed"));
-        }
-        if (!kwargs.isEmpty()) {
-            builder.additionalBodyParams(kwargs);
-        }
-        return builder.build();
     }
 
     private AgentConfig merge_config(AgentConfig original, AgentConfig newConfig) {

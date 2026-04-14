@@ -29,6 +29,7 @@
         <jackson-bom.version>2.21.1</jackson-bom.version>
         <opentelemetry.version>1.60.1</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.26.0-alpha</opentelemetry-instrumentation.version>
+        <dokimos.version>0.9.0</dokimos.version>
     </properties>
 
     <dependencyManagement>
@@ -180,6 +181,12 @@
                         <artifactId>jsonschema-generator</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.dokimos</groupId>
+                <artifactId>dokimos-junit</artifactId>
+                <version>${dokimos.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

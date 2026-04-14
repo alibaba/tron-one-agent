@@ -24,6 +24,7 @@ import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
+import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
@@ -89,36 +90,14 @@ public abstract class BaseFuncTest {
 
     private String userName = userId;
 
-    private String sessionId;
-
 
     @BeforeEach
     public void prepare() throws Exception {
         prepareDbTables();
-        prepareSession();
     }
 
     public void prepareDbTables() throws Exception {
         executeSql("classpath*:schema/init.sql");
-    }
-
-    public void prepareSession() {
-        String agentId = agentId();
-        if (agentId == null) {
-            return;
-        }
-        sessionId = UUID.randomUUID().toString();
-
-        Session session = Session.builder()
-                .id(sessionId)
-                .userId(userId)
-                .agentId(agentId)
-                .name("")
-                .lastAppliedEventId(0L)
-                .gmtCreated(LocalDateTime.now())
-                .gmtModified(LocalDateTime.now())
-                .build();
-        sessionRepository.newSession(session);
     }
 
     protected String agentId() {
@@ -161,8 +140,26 @@ public abstract class BaseFuncTest {
         }
     }
 
-    protected AgentResult callAgent(List<Content> input) {
+    protected AgentResult callAgent(String sessionId, String input) {
+        return callAgent(sessionId, List.of(TextContent.builder().text(input).build()));
+    }
+
+    protected AgentResult callAgent(String sessionId, List<Content> input) {
         String agentId = agentId();
+
+        Session session = sessionRepository.getSession(agentId, sessionId);
+        if (session == null) {
+            session = Session.builder()
+                    .id(sessionId)
+                    .userId(userId)
+                    .agentId(agentId)
+                    .name("")
+                    .lastAppliedEventId(0L)
+                    .gmtCreated(LocalDateTime.now())
+                    .gmtModified(LocalDateTime.now())
+                    .build();
+            sessionRepository.newSession(session);
+        }
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
                 .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))
