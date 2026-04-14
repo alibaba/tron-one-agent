@@ -75,6 +75,7 @@
   - [Tracing](#tracing)
   - [Metrics](#metrics)
   - [Logging](#logging)
+- [评测](#评测)
 
 ---
 
@@ -2327,3 +2328,148 @@ OneAgent通过SpringBoot的Actuator支持了 Prometheus 的指标采集。扩展
 2. 日志文件。输出到工作目录下的 application.log 中，按日和500M大小滚动，默认最多保留50个历史文件。
 
 如果开启了Tracing能力，日志中还会输出关联的 traceId 和 spanId。
+
+## 评测
+
+OneAgent 集成了 [Dokimos](https://dokimos.dev/) 用以进行 Agent的评测，本地以 Junit5 + Mariadb 的方式进行运行，主要包含了以下部分：
+
+- 测试集：参考 [test-one-agent-v1.json](backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json)
+
+```json
+{
+  "name": "one-agent-test-dataset",
+  "description": "example test dataset for one agent",
+  "examples": [
+    {
+      "input": "hello"
+    },
+    {
+      "input": "What can you do for me?"
+    }
+  ]
+}
+```
+
+- 测试代码与评估器：参考 [OneAgentTest.java](backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentTest.java)
+
+```java
+        Dataset dataset = DatasetResolverRegistry.getInstance().resolve("classpath:datasets/test-one-agent-v1.json");
+
+        Task task = example -> {
+            String sessionId = UUID.randomUUID().toString();
+            AgentResult result = callAgent(sessionId, example.input());
+            return Map.of(
+                    "sessionId", sessionId,
+                    "output", result.getResponse()
+            );
+        };
+
+        List<Evaluator> evaluators = List.of(
+                LLMJudgeEvaluator.builder()
+                        .name("Relevance")
+                        .criteria("Is the answer relevant to the question?")
+                        .threshold(0.7)
+                        .evaluationParams(List.of(
+                                EvalTestCaseParam.INPUT,
+                                EvalTestCaseParam.ACTUAL_OUTPUT
+                        ))
+                        .judge(judgeLMFactory.create())
+                        .build(),
+                LLMJudgeEvaluator.builder()
+                        .name("Answer Quality")
+                        .criteria("Is the answer helpful and addresses the user's question?")
+                        .evaluationParams(List.of(
+                                EvalTestCaseParam.INPUT,
+                                EvalTestCaseParam.ACTUAL_OUTPUT
+                        ))
+                        .threshold(0.5)
+                        .judge(judgeLMFactory.create())
+                        .build()
+        );
+
+        String timestamp = Instant.now().toString();
+
+        ExperimentResult result = Experiment.builder()
+                .name("One Agent Evaluation")
+                .dataset(dataset)
+                .task(task)
+                .evaluators(evaluators)
+                .metadata("agnet", agentId())
+                .metadata("timestamp", timestamp)
+                .metadata("version", "1.0.0")
+                .runs(2)
+                .parallelism(4)
+                .build()
+                .run()
+```
+
+- 评估结果。一方面在测试用例中会根据评估器定义的阈值，判断测试是否通过；另一方面将智能体输入输出和评估器详细结果输出到：
+    
+1. 控制台
+```bash
+Experiment: One Agent Evaluation
+Description: 
+Total examples: 2
+Passed: 1.0
+Failed: 1.0
+Pass rate: 50.00%
+
+Average scores:
+Relevance: 1.0
+Answer Quality: 0.6
+
+Score stability (standard deviation):
+Relevance: 0.0
+Answer Quality: 0.0
+
+…………
+```
+2. HTML文件
+![OneAgentEvaluationResult](../images/one-agent-evaluation-result.jpg)
+
+3. Markdown文件
+```markdown
+# Experiment: One Agent Evaluation
+
+**Date:** 2026-04-14 16:01:54  
+**Pass Rate:** 50% (1/2)
+
+## Evaluator Summary
+
+| Evaluator | Avg Score | Std Dev | Pass Rate |
+|-----------|-----------|---------|----------|
+| Relevance | 1.00 | 0.00 | 100% |
+| Answer Quality | 0.60 | 0.00 | 50% |
+
+## Failed Examples
+
+### What can you do for me?
+
+**Expected:**   
+**Actual:** Hello! I am a helpful assistant designed to support you with a variety of tasks. Based on your profile and my capabilities, here is what I can do for you:
+
+…………
+```
+4. JSON文件
+```json
+{
+  "version" : 1,
+  "experimentName" : "One Agent Evaluation",
+  "timestamp" : "2026-04-14T08:01:54.565563Z",
+  "description" : "",
+  "metadata" : {
+    "timestamp" : "2026-04-14T08:01:11.801611Z",
+    "version" : "1.0.0",
+    "agnet" : "one_agent"
+  },
+  "config" : {
+    "runs" : 2
+  },
+  "summary" : {
+    "totalExamples" : 2,
+
+…………
+
+```
+
+更多使用方式，参考 Dokimos 官网。

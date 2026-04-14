@@ -75,6 +75,7 @@
   - [Tracing](#tracing-1)
   - [Metrics](#metrics-1)
   - [Logging](#logging-1)
+- [Evaluation](#evaluation)
 
 ---
 
@@ -2327,3 +2328,148 @@ It is recommended to collect OneAgent logs through Alibaba Cloud SLS or self-bui
 2. Log Files. Output to application.log in the working directory, rotating by day and 500MB size, with a default maximum of 50 historical files retained.
 
 If Tracing is enabled, logs will also output associated traceId and spanId.
+
+## Evaluation
+
+OneAgent integrates [Dokimos](https://dokimos.dev/) for Agent evaluation, running locally with JUnit5 + MariaDB. It mainly includes the following components:
+
+- Test Dataset: Refer to [test-one-agent-v1.json](backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json)
+
+```json
+{
+  "name": "one-agent-test-dataset",
+  "description": "example test dataset for one agent",
+  "examples": [
+    {
+      "input": "hello"
+    },
+    {
+      "input": "What can you do for me?"
+    }
+  ]
+}
+```
+
+- Test Code and Evaluators: Refer to [OneAgentTest.java](backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentTest.java)
+
+```java
+        Dataset dataset = DatasetResolverRegistry.getInstance().resolve("classpath:datasets/test-one-agent-v1.json");
+
+        Task task = example -> {
+            String sessionId = UUID.randomUUID().toString();
+            AgentResult result = callAgent(sessionId, example.input());
+            return Map.of(
+                    "sessionId", sessionId,
+                    "output", result.getResponse()
+            );
+        };
+
+        List<Evaluator> evaluators = List.of(
+                LLMJudgeEvaluator.builder()
+                        .name("Relevance")
+                        .criteria("Is the answer relevant to the question?")
+                        .threshold(0.7)
+                        .evaluationParams(List.of(
+                                EvalTestCaseParam.INPUT,
+                                EvalTestCaseParam.ACTUAL_OUTPUT
+                        ))
+                        .judge(judgeLMFactory.create())
+                        .build(),
+                LLMJudgeEvaluator.builder()
+                        .name("Answer Quality")
+                        .criteria("Is the answer helpful and addresses the user's question?")
+                        .evaluationParams(List.of(
+                                EvalTestCaseParam.INPUT,
+                                EvalTestCaseParam.ACTUAL_OUTPUT
+                        ))
+                        .threshold(0.5)
+                        .judge(judgeLMFactory.create())
+                        .build()
+        );
+
+        String timestamp = Instant.now().toString();
+
+        ExperimentResult result = Experiment.builder()
+                .name("One Agent Evaluation")
+                .dataset(dataset)
+                .task(task)
+                .evaluators(evaluators)
+                .metadata("agnet", agentId())
+                .metadata("timestamp", timestamp)
+                .metadata("version", "1.0.0")
+                .runs(2)
+                .parallelism(4)
+                .build()
+                .run()
+```
+
+- Evaluation Results. On one hand, test cases determine pass/fail based on thresholds defined by evaluators; on the other hand, detailed results of agent input/output and evaluators are output to:
+    
+1. Console
+```bash
+Experiment: One Agent Evaluation
+Description: 
+Total examples: 2
+Passed: 1.0
+Failed: 1.0
+Pass rate: 50.00%
+
+Average scores:
+Relevance: 1.0
+Answer Quality: 0.6
+
+Score stability (standard deviation):
+Relevance: 0.0
+Answer Quality: 0.0
+
+…………
+```
+2. HTML File
+![OneAgentEvaluationResult](../images/one-agent-evaluation-result.jpg)
+
+3. Markdown File
+```markdown
+# Experiment: One Agent Evaluation
+
+**Date:** 2026-04-14 16:01:54  
+**Pass Rate:** 50% (1/2)
+
+## Evaluator Summary
+
+| Evaluator | Avg Score | Std Dev | Pass Rate |
+|-----------|-----------|---------|----------|
+| Relevance | 1.00 | 0.00 | 100% |
+| Answer Quality | 0.60 | 0.00 | 50% |
+
+## Failed Examples
+
+### What can you do for me?
+
+**Expected:**   
+**Actual:** Hello! I am a helpful assistant designed to support you with a variety of tasks. Based on your profile and my capabilities, here is what I can do for you:
+
+…………
+```
+4. JSON File
+```json
+{
+  "version" : 1,
+  "experimentName" : "One Agent Evaluation",
+  "timestamp" : "2026-04-14T08:01:54.565563Z",
+  "description" : "",
+  "metadata" : {
+    "timestamp" : "2026-04-14T08:01:11.801611Z",
+    "version" : "1.0.0",
+    "agnet" : "one_agent"
+  },
+  "config" : {
+    "runs" : 2
+  },
+  "summary" : {
+    "totalExamples" : 2,
+
+…………
+
+```
+
+For more usage, refer to the official Dokimos website.
