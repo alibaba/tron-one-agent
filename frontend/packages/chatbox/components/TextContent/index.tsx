@@ -52,7 +52,7 @@ const TextContentRender: React.FC<TextContentProps> = ({
     </a>
   );
 
-  // 自定义标签组件
+  // Custom tag component
   const CustomTag = ({
     type,
     placeholder,

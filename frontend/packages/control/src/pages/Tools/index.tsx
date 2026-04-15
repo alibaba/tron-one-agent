@@ -27,7 +27,6 @@ const ToolsPage: React.FC = () => {
   const [tools, setTools] = useState<AgentToolConfig[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 加载工具数据
   const loadTools = async () => {
     try {
       setLoading(true);
@@ -41,7 +40,6 @@ const ToolsPage: React.FC = () => {
     }
   };
 
-  // 组件挂载时加载数据
   useEffect(() => {
     loadTools();
   }, []);

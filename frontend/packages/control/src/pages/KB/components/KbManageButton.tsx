@@ -49,10 +49,8 @@ const KbManageButton: React.FC<KbManageButtonProps> = ({
   useEffect(() => {
     if (visible) {
       if (editingKb) {
-        // 编辑模式：设置表单值
         form.setFieldsValue(editingKb);
       } else {
-        // 新增模式：设置默认值
         form.resetFields();
         form.setFieldsValue({
           type: KnowledgeBaseType.BAILIAN,
@@ -83,13 +81,10 @@ const KbManageButton: React.FC<KbManageButtonProps> = ({
         enableRerank: values.enableRerank ?? true,
       };
       
-      // 调用API
       if (editingKb) {
-        // 编辑模式
         await updateKb(editingKb.id, kbData);
         message.success('知识库更新成功');
       } else {
-        // 新增模式
         await createKb(kbData);
         message.success('知识库创建成功');
       }

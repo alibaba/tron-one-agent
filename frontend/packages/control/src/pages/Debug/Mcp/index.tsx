@@ -36,7 +36,6 @@ import Form from "@rjsf/antd/dist";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// 定义工具接口
 interface Tool {
   name: string;
   description?: string;
@@ -47,7 +46,6 @@ interface Mcp {
   description?: string;
 }
 
-// 定义 Schema 接口
 interface SchemaParameter {
   type: string;
   description?: string;
@@ -83,7 +81,6 @@ const ToolDebugger: React.FC = () => {
   const [debugResult, setDebugResult] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState<boolean>(false);
 
-  // 获取所有工具
   const fetchAllMcpList = async () => {
     setLoading(true);
     try {
@@ -135,7 +132,6 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  // 处理工具选择变化
   const handleMcpChange = (value: string) => {
     setselectedMcp(value);
     setSchema(null);
@@ -152,7 +148,6 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  // 初始化数据
   useEffect(() => {
     fetchAllMcpList();
   }, []);

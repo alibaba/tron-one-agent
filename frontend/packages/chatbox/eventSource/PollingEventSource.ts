@@ -24,7 +24,7 @@ export interface PollingEventSourceOptions extends EventSourceOptions {
     sessionId: string;
     lastEventId: number;
   }) => Promise<EventItem[]>;
-  interval?: number; // 轮询间隔，默认1000ms
+  interval?: number;
 }
 
 export class PollingEventSource extends EventSourceService {
@@ -49,7 +49,6 @@ export class PollingEventSource extends EventSourceService {
           sessionId: this.sessionId,
           lastEventId: this.lastEventId,
         });
-        // 外部突然终止，则舍弃后续事件
         if (!this.isRunning) {
           return;
         }
@@ -64,10 +63,8 @@ export class PollingEventSource extends EventSourceService {
       }
     };
 
-    // 立即执行一次
     poll();
 
-    // 设置定时轮询
     const interval = this.options.interval ?? 1000;
     this.intervalId = setInterval(poll, interval);
   }

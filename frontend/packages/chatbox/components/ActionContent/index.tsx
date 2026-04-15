@@ -32,7 +32,7 @@ const ActionContentRender: React.FC<ActionContentProps> = ({ action, onToggleExp
   const toggleExpanded = () => {
     const newExpandedState = !isExpanded;
     setIsExpanded(newExpandedState);
-    // 触发展开/收起回调
+    // Trigger expand/collapse callback
     if (onToggleExpand) {
       onToggleExpand(action.id!, newExpandedState);
     }

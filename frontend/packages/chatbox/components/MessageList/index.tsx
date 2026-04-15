@@ -33,15 +33,15 @@ export interface MessageListProps {
   style?: React.CSSProperties;
   className?: string;
   customTagMap?: Record<string, React.FC<any>>;
-  /** 是否支持 Agent TTS 功能 */
+  /** Support Agent TTS feature */
   supportAgentTTS?: boolean;
   /** TTS WebSocket URL */
   ttsWsUrl?: string;
-  /** 是否自动播放 TTS */
+  /** Auto play TTS */
   ttsAutoPlay?: boolean;
-  /** 点赞回调 */
+  /** Like callback */
   onLike?: (messageId: number) => void;
-  /** 点踩回调 */
+  /** Dislike callback */
   onDislike?: (messageId: number) => void;
 }
 
@@ -59,15 +59,15 @@ const MessageList: React.FC<MessageListProps> = ({
   onLike,
   onDislike,
 }) => {
-  // 记录初始加载的消息 ID 集合，用于区分历史消息和新消息
+  // Track initial loaded message IDs to distinguish historical vs new messages
   const initialMessageIdsRef = React.useRef<Set<number> | null>(null);
   
-  // 首次渲染时记录已有消息 ID
+  // Record existing message IDs on first render
   if (initialMessageIdsRef.current === null) {
     initialMessageIdsRef.current = new Set(messages.map(m => m.id));
   }
 
-  // 找到最后一条新增的 agent 消息 ID（不在初始集合中的）
+  // Find the last new agent message ID (not in initial set)
   const lastNewAgentMessageId = React.useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];

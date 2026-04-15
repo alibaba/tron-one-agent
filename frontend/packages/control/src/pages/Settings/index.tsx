@@ -37,7 +37,6 @@ const SettingsPage: React.FC = () => {
       setThemeConfig(values);
       message.success('主题配置保存成功！');
       
-      // 刷新页面以应用新配置
       setTimeout(() => {
         window.location.reload();
       }, 1000);

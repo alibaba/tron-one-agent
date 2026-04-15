@@ -116,5 +116,6 @@ export class EventBuff {
   destroy(): void {
     this.cancelTimeout();
     this.events = [];
+    this.eventsIdSet.clear();
   }
 }

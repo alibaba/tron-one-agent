@@ -32,7 +32,7 @@ const TaskContentRender: React.FC<TaskContentProps> = ({ task, onToggleExpand })
   const toggleExpanded = () => {
     const newExpandedState = !isExpanded;
     setIsExpanded(newExpandedState);
-    // 触发展开/收起回调
+    // Trigger expand/collapse callback
     if (onToggleExpand) {
       onToggleExpand(task.id!, newExpandedState);
     }

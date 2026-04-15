@@ -22,8 +22,8 @@ import { EventItem } from "../types";
 export interface WebSocketEventSourceOptions extends EventSourceOptions {
   urlBuilder: (params: { sessionId: string; lastEventId: number }) => string;
   protocols?: string | string[];
-  reconnectInterval?: number; // 重连间隔，默认3000ms
-  maxReconnectAttempts?: number; // 最大重连次数，默认无限
+  reconnectInterval?: number;
+  maxReconnectAttempts?: number;
 }
 
 export class WebSocketEventSource extends EventSourceService {
@@ -74,7 +74,6 @@ export class WebSocketEventSource extends EventSourceService {
     this.sessionId = sessionId;
     this.lastEventId = lastEventId;
     
-    // 如果正在运行，重新连接以使用新的session信息
     if (this.websocket) {
       this.stop();
       this.start();
@@ -114,7 +113,6 @@ export class WebSocketEventSource extends EventSourceService {
   private scheduleReconnect(): void {
     const { reconnectInterval = 3000, maxReconnectAttempts } = this.options;
     
-    // 检查是否达到最大重连次数
     if (maxReconnectAttempts && this.reconnectAttempts >= maxReconnectAttempts) {
       this.emitError(new Error('Max reconnection attempts reached'));
       return;

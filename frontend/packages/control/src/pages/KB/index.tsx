@@ -152,7 +152,6 @@ const KBPage: React.FC = () => {
     },
   ];
 
-  // 加载知识库列表
   const loadKnowledgeBases = async () => {
     try {
       setLoading(true);
@@ -166,7 +165,6 @@ const KBPage: React.FC = () => {
     }
   };
 
-  // 加载Agents列表
   const loadAgents = async () => {
     try {
       const agentsData = await getAllAgents();
@@ -177,14 +175,12 @@ const KBPage: React.FC = () => {
     }
   };
 
-  // 获取与指定知识库关联的Agents
   const getRelatedAgents = (kbId: string): AgentConfig[] => {
     return agents.filter(agent => 
       agent.knowledgeBases && agent.knowledgeBases.some(kb => kb.knowledgeId === kbId)
     );
   };
 
-  // 组件挂载时加载数据
   useEffect(() => {
     loadKnowledgeBases();
     loadAgents();
@@ -244,7 +240,6 @@ const KBPage: React.FC = () => {
   };
 
   const handleSuccess = () => {
-    // 操作成功后重新加载数据
     loadKnowledgeBases();
     loadAgents();
   };

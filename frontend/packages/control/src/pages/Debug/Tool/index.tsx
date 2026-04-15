@@ -39,13 +39,11 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// 定义工具接口
 interface Tool {
   name: string;
   description?: string;
 }
 
-// 定义 Schema 接口
 interface SchemaParameter {
   type: string;
   description?: string;
@@ -79,7 +77,6 @@ const ToolDebugger: React.FC = () => {
   const [debugResult, setDebugResult] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState<boolean>(false);
 
-  // 获取所有工具
   const fetchAllTools = async () => {
     setLoading(true);
     try {
@@ -93,7 +90,6 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  // 获取工具 Schema
   const fetchToolSchema = async (toolName: string) => {
     if (!toolName) return;
 
@@ -104,8 +100,6 @@ const ToolDebugger: React.FC = () => {
     try {
       const result = await get(`/api/debug/tools/${toolName}/schema`);
       setSchema(result);
-
-      // 根据 schema 生成默认参数
     } catch (error) {
       console.error("获取工具Schema失败:", error);
       message.error("获取工具Schema失败");
@@ -114,7 +108,6 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  // 调试工具
   const debugTool = async (shcemaData) => {
     setDebugLoading(true);
     setDebugResult(null);
@@ -132,7 +125,6 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  // 处理工具选择变化
   const handleToolChange = (value: string) => {
     setSelectedTool(value);
     setSchema(null);
@@ -140,7 +132,6 @@ const ToolDebugger: React.FC = () => {
     fetchToolSchema(value);
   };
 
-  // 初始化数据
   useEffect(() => {
     fetchAllTools();
   }, []);
