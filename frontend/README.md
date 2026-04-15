@@ -1,12 +1,11 @@
 # Tron Agent 前端
 
-Tron Agent 前端项目，基于 React 和 TypeScript 构建，采用 Yarn Workspaces 多包管理模式。项目包含多个独立的子包，每个子包都有特定的功能职责，共享通用的 UI 组件库。
+Tron Agent 前端项目，基于 React 和 TypeScript 构建，采用 Yarn Workspaces 多包管理模式。
 
 ## 简介
 
 Tron Agent 前端提供了一套完整的 AI Agent 交互界面，包括：
 
-- **client**: 客户端应用，提供用户与 Agent 交互的主要界面
 - **control**: 控制台应用，提供 Agent 配置、调试和管理功能
 - **chatbox**: 通用聊天组件库，提供可复用的聊天界面组件
 
@@ -24,7 +23,6 @@ Tron Agent 前端提供了一套完整的 AI Agent 交互界面，包括：
 ```
 ├── packages/
 │   ├── chatbox/      # 通用聊天组件库
-│   ├── client/       # 客户端应用
 │   └── control/      # 控制台应用
 ├── package.json      # 工作空间配置
 └── yarn.lock
@@ -64,9 +62,6 @@ yarn workspaces install
 ### 2. 启动开发服务器
 
 ```bash
-# 启动 client 应用
-yarn dev:client
-
 # 启动 control 应用
 yarn dev:control
 ```
@@ -74,11 +69,7 @@ yarn dev:control
 ### 3. 构建生产版本
 
 ```bash
-# 构建所有包
-yarn build
-
-# 或分别构建
-yarn workspace client build
+# 构建 control 应用
 yarn workspace control build
 ```
 
@@ -91,8 +82,8 @@ yarn workspace control build
 在相应的包目录中添加新组件或功能：
 
 ```bash
-# 在 client 包中添加新组件
-cd packages/client
+# 在 control 包中添加新组件
+cd packages/control
 # 添加你的组件代码
 ```
 
@@ -132,16 +123,6 @@ const MyComponent = () => {
 ```
 
 ### 项目结构说明
-
-#### client
-
-客户端应用，提供用户与 Agent 交互的主要界面：
-
-- **src/**: 源代码目录
-- **components/**: React 组件
-- **pages/**: 页面组件
-- **utils/**: 工具函数
-- **services/**: API 服务
 
 #### control
 
@@ -241,7 +222,7 @@ docker run -d \
 
 ```bash
 # 为特定包添加依赖
-yarn workspace client add new-package
+yarn workspace control add new-package
 
 # 为所有包添加开发依赖
 yarn add -W -D new-dev-package

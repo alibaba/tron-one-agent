@@ -1,10 +1,6 @@
 # 使用本地nginx镜像作为基础镜像
 FROM --platform=linux/amd64 repository.dayu.work/public-images/nginx:1.17.5-alpine AS production
 
-# 为 client 应用创建目录并复制构建产物
-RUN mkdir -p /usr/share/nginx/html/client
-COPY packages/client/dist /usr/share/nginx/html/client
-
 # 为 control 应用创建目录并复制构建产物
 RUN mkdir -p /usr/share/nginx/html/control
 COPY packages/control/dist /usr/share/nginx/html/control

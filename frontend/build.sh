@@ -53,10 +53,6 @@ fi
 echo "安装依赖..."
 yarn install
 
-# 构建client应用
-echo "构建client应用..."
-yarn build:client
-
 # 构建control应用
 echo "构建control应用..."
 yarn build:control
