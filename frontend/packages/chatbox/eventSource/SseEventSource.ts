@@ -35,12 +35,10 @@ export class SseEventSource extends EventSourceService {
 
   async start(): Promise<void> {
     console.log("Starting SseEventSource...");
-    // 如果已经连接或已被销毁，则不执行操作
     if (this.isConnected || this.destroyed) {
       return;
     }
 
-    // 断开现有连接（如果有）
     this.stop();
 
     const url = this.options.urlBuilder({
@@ -54,11 +52,12 @@ export class SseEventSource extends EventSourceService {
       await fetchEventSource(url, {
         signal: this.abortController.signal,
         headers: this.options.headers || {},
+        openWhenHidden: true,
 
         onopen: async (response) => {
           if (
             response.ok &&
-            response.headers.get("content-type") === "text/event-stream"
+            response.headers.get("content-type")?.includes("text/event-stream")
             // "text/event-stream; charset=utf-8
           ) {
             this.isConnected = true;
@@ -72,16 +71,13 @@ export class SseEventSource extends EventSourceService {
 
         onmessage: (event) => {
           try {
-            // 外部突然终止，则舍弃后续事件
-            if (!this.abortController === null) return;
+            if (this.abortController === null) return;
             const eventData: EventItem = JSON.parse(event.data);
             this.lastEventId = eventData.id;
             this.emitMessage(eventData);
           } catch (error) {
-            const parseError = new Error("消息解析失败: " + event.data);
-            this.emitError(parseError);
-            // 解析失败时抛出错误，阻止重试
-            throw parseError;
+            // 解析失败时抛出错误，库会传递给 onerror 统一处理
+            throw new Error("消息解析失败: " + event.data);
           }
         },
 
@@ -90,7 +86,6 @@ export class SseEventSource extends EventSourceService {
             this.emitError(error);
           }
           this.handleDisconnect();
-          // 抛出错误以阻止自动重试
           throw error;
         },
 
@@ -99,9 +94,8 @@ export class SseEventSource extends EventSourceService {
         },
       });
     } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        this.emitError(error);
-      }
+      // onerror 中已 emitError 并 handleDisconnect，此处仅兜底
+      // 处理未经 onerror 路径的异常（如 fetchEventSource 调用本身失败）
       this.handleDisconnect();
     }
   }

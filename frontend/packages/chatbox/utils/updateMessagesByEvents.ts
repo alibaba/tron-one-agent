@@ -36,7 +36,7 @@ import {
   ActionStatusChangeEvent,
   SessionMessageType,
 } from "../types";
-// 辅助函数：查找并更新消息
+
 function findAndUpdateMessage(
   messages: Array<UserSessionMessage | AgentSessionMessage>,
   messageId: number,
@@ -51,7 +51,6 @@ function findAndUpdateMessage(
   return newMessages;
 }
 
-// 辅助函数：查找并更新任务
 function findAndUpdateTask(
   message: AgentSessionMessage,
   taskId: number,
@@ -67,7 +66,6 @@ function findAndUpdateTask(
   updater(message.contents[index] as TaskContent);
 }
 
-// 辅助函数：查找并更新动作
 function findAndUpdateAction(
   message: AgentSessionMessage,
   actionId: number,
@@ -106,7 +104,6 @@ function findAndUpdateAction(
   }
 }
 
-// 事件处理器
 const eventHandlers: Record<
   SessionEventType,
   (state: ChatState, event: EventItem) => ChatState
@@ -152,7 +149,6 @@ const eventHandlers: Record<
         const contents = [...message.contents];
         e.newContents.forEach((content) => {
           if (content.type === ContentType.TEXT) {
-            // TEXT 类型：与前一个 TEXT 合并
             const lastIndex = contents.length - 1;
             if (
               lastIndex >= 0 &&

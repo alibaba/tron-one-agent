@@ -30,7 +30,7 @@ function generateUUID(): string {
 }
 
 /**
- * 获取用户ID，优先从 localStorage 读取，不存在则生成 UUID 并存储
+ * Get user ID from localStorage, generate UUID if not exists
  */
 export function getUserId(): string {
   let userId = localStorage.getItem(USER_ID_KEY);
@@ -42,8 +42,8 @@ export function getUserId(): string {
 }
 
 /**
- * 获取用户名，优先从 localStorage 读取，不存在则返回默认值"用户"
+ * Get user name from localStorage, return default if not exists
  */
 export function getUserName(): string {
-  return localStorage.getItem(USER_NAME_KEY) || "用户";
+  return localStorage.getItem(USER_NAME_KEY) || "User";
 }

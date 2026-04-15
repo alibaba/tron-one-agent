@@ -587,7 +587,8 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 **Response Modes**:
 
 1. **SSE Streaming Mode** (Recommended): Set `Accept: text/event-stream`, returns Server-Sent Events stream
-2. **Async Mode**: Do not set Accept header, immediately returns "success", processed in background
+2. **WebSocket Mode** (Low Latency): Real-time bidirectional communication via WebSocket protocol
+3. **Async Mode**: Do not set Accept header, immediately returns "success", processed in background
 
 **SSE Event Types**:
 
@@ -599,6 +600,11 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 - `TASK_STATUS_CHANGED` (31): Task status change
 - `ACTION_APPEND_CONTENT` (40): Action content append
 - `ACTION_STATUS_CHANGED` (41): Action status change
+- `TTS_RESPONSE` (1001): TTS audio data event
+
+> Note: SSE mode **does NOT support**:
+> - **Cancel**: No active interrupt API, only passive trigger by closing connection
+> - **Follow-up Suggestion**: Suggestion questions are NOT pushed in SSE mode (WebSocket only)
 
 **Example (SSE Mode)**:
 
@@ -622,6 +628,221 @@ data:{"id":3,"agentId":"one_agent","userId":"test_user","sessionId":"b6aa5fad7ff
 event:AGENT_MESSAGE_STATUS_CHANGED
 data:{"id":4,"agentId":"one_agent","userId":"test_user","sessionId":"b6aa5fad7ff84271b59a897baa159d26","messageId":2,"newStatus":"SUCCEED","gmtFinished":"2026-04-08 11:30:05","type":22}
 ```
+
+**Cancel Conversation**:
+
+SSE mode **does NOT support active cancel**, only passive trigger by closing connection:
+- Frontend calls `EventSource.stop()` or `AbortController.abort()`
+- Backend detects connection closure and automatically interrupts task
+- No additional API call needed
+
+> Note: For active cancel and Follow-up Suggestion features, please use **WebSocket mode**.
+
+```
+
+---
+
+### 8. WebSocket Protocol (Low-Latency Real-Time Communication)
+
+**Endpoint**: `ws://host:port/ws/agents/{agent_id}/sessions/{session_id}`
+
+**Purpose**: Real-time bidirectional communication via WebSocket protocol, providing lower latency and better interactive experience compared to SSE.
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|------|------|------|------|
+| agent_id | string | Yes | Agent ID |
+| session_id | string | Yes | Session ID |
+
+**Headers**:
+
+| Parameter | Type | Required | Description |
+|------|------|------|------|
+| X-User-Id | string | Yes | User ID |
+| X-User-Name | string | No | User name (optional, defaults to userId)
+
+> Note: Authentication info is preferably passed via HTTP Headers, but also supports URL query params as fallback (e.g., `?X-User-Id=test_user`)
+
+**JSON-RPC 2.0 Protocol**:
+
+WebSocket communication is based on JSON-RPC 2.0 protocol, all messages are in JSON format.
+
+**Client Request Message Format**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "chat",
+  "id": 1,
+  "params": {
+    "input": [{"type": 1, "text": "Hello"}],
+    "enableTts": false
+  }
+}
+```
+
+**Server Response Message Format**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "success"
+}
+```
+
+**Server Push Event Format**:
+
+Server pushes events via JSON-RPC Notification (no id field):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "id": 1,
+    "agentId": "one_agent",
+    "userId": "test_user",
+    "sessionId": "session_123",
+    "type": 20,
+    "msg": {...}
+  }
+}
+```
+
+**Supported Methods**:
+
+| Method | Description |
+|------|------|
+| `chat` | Start conversation |
+| `cancel` | Cancel ongoing conversation |
+
+**Cancel Functionality**:
+
+Users can interrupt ongoing Agent tasks at any time:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "cancel",
+  "id": 2,
+  "params": []
+}
+```
+
+> Note: `params` is optional, can pass cancel reason (string) or empty array `[]`.
+
+> ⚠️ **Important**: Cancel functionality is **only available in WebSocket mode**, SSE mode does not support active cancel.
+
+**Follow-up Suggestion Event**:
+
+After Agent completes conversation, it may push suggestion questions:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "type": 2002,
+    "data": ["Suggestion 1", "Suggestion 2", "Suggestion 3"]
+  }
+}
+```
+
+> ⚠️ **Important**: Follow-up Suggestion is **only available in WebSocket mode**, SSE mode will NOT push this event.
+
+**TTS Audio Event**:
+
+When TTS is enabled (`enableTts: true`), TTS audio data will be pushed:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "type": 1001,
+    "needPersistent": false,
+    "data": {
+      "success": true,
+      "dataBase64": "Audio data Base64 encoded",
+      "finished": false,
+      "error": null
+    }
+  }
+}
+```
+
+> Note: TTS event uses `CustomEvent` wrapper, `data` field is `TtsResponse` object. `finished: true` indicates TTS completion.
+
+**WebSocket Example**:
+
+```javascript
+// Establish connection
+const ws = new WebSocket(
+  `ws://localhost:8080/ws/agents/one_agent/sessions/session_123`,
+  {
+    headers: {
+      'X-User-Id': 'test_user',
+      'X-User-Name': 'Test User'
+    }
+  }
+);
+
+ws.onopen = () => {
+  console.log('WebSocket connection established');
+  
+  // Send chat message
+  ws.send(JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'chat',
+    id: 1,
+    params: {
+      input: [{type: 1, text: 'Hello'}],
+      enableTts: false
+    }
+  }));
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  if (message.method === 'session') {
+    // Handle session info pushed on connection
+    console.log('Session info:', message.params);
+  } else if (message.method === 'event') {
+    // Handle server-pushed events
+    console.log('Received event:', message.params);
+  } else if (message.result) {
+    // Handle method response
+    console.log('Response:', message.result);
+  } else if (message.error) {
+    // Handle errors
+    console.error('Error:', message.error);
+  }
+};
+
+// Cancel conversation
+function cancelConversation() {
+  ws.send(JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'cancel',
+    id: 2
+  }));
+}
+```
+
+**WebSocket vs SSE Comparison**:
+
+| Feature | WebSocket | SSE |
+|------|-----------|-----|
+| Latency | Lower (bidirectional) | Higher (unidirectional stream) |
+| Communication | Bidirectional | Unidirectional (server→client) |
+| Cancel Support | ✅ Real-time interrupt | ❌ Not supported (passive close only) |
+| Follow-up Suggestion | ✅ Supported | ❌ Not supported |
+| TTS Support | ✅ Supported | ✅ Supported |
+| Use Cases | Low latency, complex interactions, full features | Simple streaming, basic chat |
+| Browser Compatibility | Modern browsers | Modern browsers |
 
 ---
 

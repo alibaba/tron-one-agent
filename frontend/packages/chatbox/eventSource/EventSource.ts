@@ -18,7 +18,6 @@
 import { EventItem } from "../types/event";
 
 export interface EventSourceOptions {
-  // 可根据需要添加通用选项
 }
 
 export abstract class EventSourceService {
@@ -26,14 +25,12 @@ export abstract class EventSourceService {
   protected errorListeners: Array<(error: any) => void> = [];
   protected connectionChangeListeners: Array<(connected: boolean) => void> = [];
 
-  // 添加 sessionId 和 lastEventId 属性
   protected _sessionId: string = "";
   protected _lastEventId: number = 0;
   protected destroyed: boolean = false;
 
   constructor(protected options?: EventSourceOptions) {}
 
-  // 提供 getter 方法供外部访问
   get sessionId(): string {
     return this._sessionId;
   }
@@ -42,7 +39,6 @@ export abstract class EventSourceService {
     return this._lastEventId;
   }
 
-  // 提供 setter 方法供外部更新
   set sessionId(id: string) {
     this._sessionId = id;
   }
@@ -51,11 +47,9 @@ export abstract class EventSourceService {
     this._lastEventId = id;
   }
 
-  // 抽象方法，子类必须实现
   abstract start(): void;
   abstract stop(): void;
 
-  // 事件监听方法
   onMessage(callback: (event: EventItem) => void): () => void {
     this.messageListeners.push(callback);
     return () => {
@@ -81,7 +75,6 @@ export abstract class EventSourceService {
     };
   }
 
-  // 保护方法，供子类调用触发事件
   protected emitMessage(event: EventItem): void {
     this.messageListeners.forEach((callback) => callback(event));
   }

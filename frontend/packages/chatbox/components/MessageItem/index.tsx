@@ -29,59 +29,58 @@ import {
 import { useTTS } from "../../hooks/useTTS";
 
 /**
- * 从 markdown 文本中提取纯文本，排除 HTML 标签及其内容
- * 支持流式场景：未闭合的标签会被截断
+ * Extract plain text from markdown, excluding HTML tags and their content
+ * Supports streaming: unclosed tags will be truncated
  */
 const extractTextForTTS = (markdown: string): string => {
   if (!markdown) return "";
 
   let result = markdown;
 
-  // 1. 移除已闭合的 HTML 标签及其内容 (e.g., <customtag>...</customtag>)
+  // 1. Remove closed HTML tags and their content
   result = result.replace(/<([a-zA-Z][a-zA-Z0-9-]*)[^>]*>[\s\S]*?<\/\1>/g, "");
 
-  // 2. 流式场景：移除未闭合的标签开始部分 (e.g., <customtag>...未闭合)
-  //    匹配从 <tag 开始到字符串末尾，且中间没有对应的闭合标签
+  // 2. Streaming: remove unclosed tag start parts
   const unclosedTagMatch = result.match(/<([a-zA-Z][a-zA-Z0-9-]*)[^>]*>(?:(?!<\/\1>)[\s\S])*$/);
   if (unclosedTagMatch) {
     result = result.slice(0, unclosedTagMatch.index);
   }
 
-  // 3. 移除剩余的独立 HTML 标签 (e.g., <br/>, <img .../>)
+  // 3. Remove remaining standalone HTML tags
   result = result.replace(/<[^>]+\/>/g, "");
 
-  // 4. 移除 markdown 代码块
+  // 4. Remove markdown code blocks
   result = result.replace(/```[\s\S]*?```/g, "");
-  // 流式场景：未闭合的代码块
+  // Streaming: unclosed code blocks
   const unclosedCodeBlock = result.match(/```[\s\S]*$/);
   if (unclosedCodeBlock) {
     result = result.slice(0, unclosedCodeBlock.index);
   }
 
-  // 5. 移除行内代码
+  // 5. Remove inline code
   result = result.replace(/`[^`]+`/g, "");
 
-  // 6. 移除 markdown 链接，保留文本
+  // 6. Remove markdown links, keep text
   result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 
-  // 7. 移除 markdown 标题符号
+  // 7. Remove markdown heading symbols
   result = result.replace(/^#{1,6}\s+/gm, "");
 
-  // 8. 移除加粗、斜体符号
+  // 8. Remove bold and italic symbols
   result = result.replace(/\*\*([^*]+)\*\*/g, "$1");
   result = result.replace(/\*([^*]+)\*/g, "$1");
   result = result.replace(/__([^_]+)__/g, "$1");
   result = result.replace(/_([^_]+)_/g, "$1");
 
-  // 9. 移除 markdown 分隔线 (---, ***, ___)
+  // 9. Remove markdown dividers
   result = result.replace(/^[-*_]{3,}$/gm, "");
 
-  // 10. 移除 markdown 表格分隔行 (|---|---|)
+  // 10. Remove markdown table divider rows
   result = result.replace(/\|?[\s]*[-:]+[\s]*\|[\s\-:|]+\|?/g, "");
-  // 移除表格单元格分隔符 |
+  // Remove table cell dividers
   result = result.replace(/\|/g, " ");
 
-  // 11. 移除列表符号
+  // 11. Remove list symbols
   result = result.replace(/^[\s]*[-*+]\s+/gm, "");
   result = result.replace(/^[\s]*\d+\.\s+/gm, "");
 

@@ -37,7 +37,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// 定义知识库接口
 interface KnowledgeBase {
   id: string;
   name: string;
@@ -52,7 +51,6 @@ const KbDebugger: React.FC = () => {
   const [debugLoading, setDebugLoading] = useState<boolean>(false);
   const [form] = Form.useForm();
 
-  // 获取所有知识库
   const fetchAllKbs = async () => {
     setLoading(true);
     try {
@@ -66,7 +64,6 @@ const KbDebugger: React.FC = () => {
     }
   };
 
-  // 调试知识库
   const debugKb = async () => {
     if (!selectedKb) {
       message.warning("请先选择知识库");
@@ -91,13 +88,11 @@ const KbDebugger: React.FC = () => {
     }
   };
 
-  // 处理知识库选择变化
   const handleKbChange = (value: string) => {
     setSelectedKb(value);
     setDebugResult(null);
   };
 
-  // 初始化数据
   useEffect(() => {
     fetchAllKbs();
   }, []);
@@ -113,7 +108,6 @@ const KbDebugger: React.FC = () => {
         }}
       >
         <Row gutter={16} style={{ width: "100%" }}>
-          {/* 左侧卡片：知识库信息和调试结果 */}
           <Col span={12}>
             <Card title="知识库信息">
               {selectedKb ? (

@@ -129,16 +129,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const isInitialLoadRef = useRef(true);
   const lastEventIdRef = useRef(0);
 
-  // 从 URL 参数读取初始值
   const initialSessionId = searchParams.get("sessionId") || generateSessionId();
-  const initialTts = searchParams.get("tts") !== "false"; // 默认 true
+  const initialTts = searchParams.get("tts") !== "false";
   const initialProtocol = (searchParams.get("protocol") === "ws" ? "ws" : "sse") as "sse" | "ws";
   const initialAgentId = searchParams.get("agentId") || "";
 
   const [sessionId, setSessionId] = useState<string>(initialSessionId);
   const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(initialTts);
 
-  // 聊天状态管理（替代 useChatModel）
   const [chatState, setChatState] = useState<ChatState>({
     sessionId: initialSessionId,
     sessionName: "新会话",
@@ -152,7 +150,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
-  // ========== Inline TTS 音频播放 ==========
+  // ========== Inline TTS Audio Playback ==========
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingAudioRef = useRef(false);
@@ -238,7 +236,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     }
   }, [ttsAutoPlay, playNextAudio]);
 
-  // 同步状态到 URL 参数
   const updateUrlParams = useCallback((updates: Record<string, string>) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -249,21 +246,18 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
   const agentIdChanged = Form.useWatch("agentId", form);
 
-  // agentId 变化时同步到 URL
   useEffect(() => {
     if (agentIdChanged) {
       updateUrlParams({ agentId: agentIdChanged });
     }
   }, [agentIdChanged, updateUrlParams]);
 
-  // sessionId 变化时同步到 URL
   useEffect(() => {
     if (sessionId) {
       updateUrlParams({ sessionId });
     }
   }, [sessionId, updateUrlParams]);
 
-  // 首次挂载时确保 URL 参数完整
   useEffect(() => {
     const params: Record<string, string> = {};
     if (!searchParams.get("sessionId")) params.sessionId = initialSessionId;
@@ -281,17 +275,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       if (result.success === true) {
         setAgentsOptions(result.data || []);
 
-        // 优先使用 URL 参数中的 agentId，否则使用第一个
         const urlAgentId = initialAgentId;
         const targetAgentId = (urlAgentId && result.data.some((a: AgentConfig) => a.id === urlAgentId))
           ? urlAgentId
           : result.data[0]?.id;
 
-        // 初始加载时跳过 configValuesChanged 的重置逻辑
         isInitialLoadRef.current = true;
         form.setFieldValue("agentId", targetAgentId);
 
-        // 初始加载完成
         isInitialLoadRef.current = false;
       } else {
         message.error(result.message);
@@ -301,9 +292,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     }
   };
 
-  // 连接 / 断开 WebSocket
   const connectWebSocket = useCallback((agentId: string, sid: string) => {
-    // 先关闭旧连接
     if (wsConnectionRef.current) {
       wsConnectionRef.current.close();
       wsConnectionRef.current = null;
@@ -323,7 +312,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
             sessionId: sessionInfo.id || sid,
             sessionName: sessionInfo.name || prev.sessionName,
           }));
-          // 如果带有历史消息，加载它们
           if (sessionInfo.messages?.records?.length > 0) {
             const loadedMessages = [...sessionInfo.messages.records].reverse();
             setChatState((prev) => ({
@@ -334,12 +322,10 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }
       },
       onEvent: (event: EventItem) => {
-        // 处理 TTS_RESPONSE 事件（inline TTS）
         if ((event as any).type === SessionEventType.TTS_RESPONSE) {
           handleTtsResponse((event as any).data);
           return;
         }
-        // 处理建议问题事件
         if ((event as any).type === SessionEventType.SUGGESTIONS) {
           const data = (event as any).data;
           if (Array.isArray(data)) {
@@ -395,19 +381,15 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         lastEventIdRef.current = sessionDetail.lastAppliedEventId;
       }
     } catch (err) {
-      // 新会话可能还不存在，忽略错误
-      console.debug("加载会话详情失败 (可能是新会话):", err);
+      console.debug("Failed to load session details (may be a new session):", err);
     }
   }, []);
 
-  // 切换协议时，自动连接/断开 WebSocket，并重新初始化会话数据
   useEffect(() => {
     if (chatProtocol === "ws" && agentIdChanged && sessionId) {
       connectWebSocket(agentIdChanged, sessionId);
-      // WS 模式下会话元信息和历史消息由 onSessionInfo 回调自动加载
     } else if (chatProtocol === "sse" && agentIdChanged && sessionId) {
       disconnectWebSocket();
-      // SSE 模式下通过 API 加载会话元信息和历史消息
       loadSessionByApi(agentIdChanged, sessionId);
     } else {
       disconnectWebSocket();
@@ -419,10 +401,8 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
   const handleSendMessage = useCallback(
     async (inputStr: string, attachments?: AttachmentItem[]) => {
-      // 发送消息时清除建议列表
       setSuggestions([]);
 
-      // WS 模式下未连接时禁止发送
       if (chatProtocol === "ws" && !wsConnected) {
         message.warning("WebSocket 未连接，请等待连接建立后再发送");
         return false;
@@ -430,7 +410,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
       const newMessageId = new Date().getTime();
 
-      // 如果 sessionId 为空，先创建 session
       let currentSessionId = sessionId;
       if (!currentSessionId) {
         try {
@@ -440,12 +419,8 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           lastEventIdRef.current = 0;
           setChatState((prev) => ({ ...prev, sessionId: newSessionId }));
 
-          // WebSocket 模式下需要等连接建立后才能发消息，先标记 session
           if (chatProtocol === "ws") {
-            // 连接会由 useEffect 自动触发，这里等连接就绪
-            // 但 useEffect 不是同步的，所以我们手动连接
             connectWebSocket(agentIdChanged, newSessionId);
-            // 给一点时间让连接建立
             await new Promise((resolve) => setTimeout(resolve, 500));
           } else {
             // SSE 模式需要通过 API 创建 session
@@ -464,7 +439,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }
       }
 
-      // 构建用户消息内容（包含文本和附件预览）
       const userContents: any[] = [];
       if (inputStr.trim()) {
         userContents.push({ type: ContentType.TEXT, text: inputStr });
@@ -478,7 +452,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         });
       }
 
-      // 添加用户消息到列表
       const userMessage = {
         id: newMessageId,
         type: SessionMessageType.USER,
@@ -489,7 +462,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       } as UserSessionMessage;
       setChatState((prev) => ({ ...prev, messages: [...prev.messages, userMessage] }));
 
-      // 构建请求 input
       const inputContents: any[] = [];
       if (inputStr.trim()) {
         inputContents.push({ type: ContentType.TEXT, text: inputStr });
@@ -523,17 +495,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }
 
         setRunning(true);
-        // 新对话开始时停止上一轮 TTS 播放
         stopInlineTts();
         wsConnectionRef.current.sendChat(inputContents, ttsAutoPlay);
       } else {
         // ========== SSE 流式模式 ==========
         try {
           setRunning(true);
-          // 新对话开始时停止上一轮 TTS 播放
           stopInlineTts();
           
-          // 取消之前的请求
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
           }
@@ -544,25 +513,20 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
             { data: { input: inputContents, enableTts: ttsAutoPlay } },
             {
               onEvent: (event: EventItem) => {
-                // 处理 TTS_RESPONSE 事件（inline TTS）
                 if ((event as any).type === SessionEventType.TTS_RESPONSE) {
                   handleTtsResponse((event as any).data);
                   return;
                 }
-                // 更新事件列表用于调试面板
                 setEvents((prev) => [...prev, event]);
                 lastEventIdRef.current = event.id;
 
-                // 更新消息列表
                 setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
 
-                // 检查是否需要停止运行
                 if (
                   event.type === SessionEventType.AGENT_MESSAGE_STATUS_CHANGED &&
                   (event as any).newStatus !== SessionMessageStatus.EXECUTING
                 ) {
                   setRunning(false);
-                  // 更新用户消息状态为成功
                   setChatState((prev) => ({
                     ...prev,
                     messages: prev.messages.map((msg) =>
@@ -576,7 +540,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
               onError: (error: Error) => {
                 console.error("SSE 错误:", error);
                 setRunning(false);
-                // 更新用户消息状态为失败
                 setChatState((prev) => ({
                   ...prev,
                   messages: prev.messages.map((msg) =>
@@ -590,7 +553,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
               onComplete: () => {
                 console.log("SSE 连接完成");
                 setRunning(false);
-                // 确保用户消息状态更新为成功
                 setChatState((prev) => ({
                   ...prev,
                   messages: prev.messages.map((msg) =>
@@ -631,12 +593,10 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       messages: [],
       lastEventId: 0,
     });
-    // 取消正在进行的请求
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    // WebSocket 模式下重连新 session
     if (chatProtocol === "ws" && agentIdChanged) {
       connectWebSocket(agentIdChanged, newId);
     }
@@ -645,18 +605,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   }, [chatProtocol, agentIdChanged, connectWebSocket, updateUrlParams]);
 
   const configValuesChanged = (changedValues: any, allValues: any) => {
-    // 初始加载时跳过重置逻辑
     if (isInitialLoadRef.current) return;
     
-    // 仅当 agentId 变化时才重置会话
     if (!changedValues.agentId) return;
 
-    // 断开旧 WebSocket
     disconnectWebSocket();
     
     console.log("Agent 切换，重置会话:", changedValues, allValues);
     
-    // 停止当前运行中的对话
     if (running) {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -665,7 +621,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       setRunning(false);
     }
     
-    // 生成新 sessionId
     const newId = generateSessionId();
     setSessionId(newId);
     
@@ -691,7 +646,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     return agentsOptions.find((item) => item.id === agentIdChanged)?.supportInputTypes;
   }, [agentsOptions, agentIdChanged]);
 
-  // 拉取会话列表
   const fetchSessions = useCallback(async (page: number = 1) => {
     if (!agentIdChanged) return;
     setSessionsLoading(true);
@@ -701,24 +655,21 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       setSessionsTotal(result.totalRecords || 0);
       setSessionsPage(page);
     } catch (err) {
-      console.error("拉取会话列表失败:", err);
+      console.error("Failed to fetch session list:", err);
     } finally {
       setSessionsLoading(false);
     }
   }, [agentIdChanged]);
 
-  // 切换会话
   const handleSwitchSession = useCallback(async (targetSessionId: string) => {
     if (targetSessionId === sessionId) return;
     
-    // 取消正在进行的请求
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setRunning(false);
     
-    // 重置状态
     setEvents([]);
     lastEventIdRef.current = 0;
     setSessionId(targetSessionId);
@@ -779,6 +730,13 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
   useEffect(() => {
     getAgentsOptions();
+    return () => {
+      // 组件卸载时清理 SSE 连接
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, []);
 
   return (

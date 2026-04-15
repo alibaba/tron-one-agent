@@ -587,7 +587,8 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 **响应模式**:
 
 1. **SSE 流式模式**（推荐）: 设置 `Accept: text/event-stream`，返回 Server-Sent Events 流
-2. **异步模式**: 不设置 Accept 头，立即返回 "success"，后台处理
+2. **WebSocket 模式**（低延迟）: 通过 WebSocket 协议进行实时双向通信
+3. **异步模式**: 不设置 Accept 头，立即返回 "success"，后台处理
 
 **SSE 事件类型**:
 
@@ -599,6 +600,11 @@ curl http://localhost:8080/api/agents/one_agent/sessions/b6aa5fad7ff84271b59a897
 - `TASK_STATUS_CHANGED` (31): 任务状态变更
 - `ACTION_APPEND_CONTENT` (40): 动作内容追加
 - `ACTION_STATUS_CHANGED` (41): 动作状态变更
+- `TTS_RESPONSE` (1001): TTS 音频数据事件
+
+> 注：SSE 模式下**不支持**以下功能：
+> - **Cancel**：SSE 没有主动中断 API，只能通过关闭连接被动触发
+> - **Follow-up Suggestion**：SSE 模式下不会推送建议问题（仅 WebSocket 模式支持）
 
 **示例（SSE 模式）**:
 
@@ -622,6 +628,219 @@ data:{"id":3,"agentId":"one_agent","userId":"test_user","sessionId":"b6aa5fad7ff
 event:AGENT_MESSAGE_STATUS_CHANGED
 data:{"id":4,"agentId":"one_agent","userId":"test_user","sessionId":"b6aa5fad7ff84271b59a897baa159d26","messageId":2,"newStatus":"SUCCEED","gmtFinished":"2026-04-08 11:30:05","type":22}
 ```
+
+**中断对话**:
+
+SSE 模式下**不支持主动中断**，只能通过关闭连接被动触发：
+- 前端调用 `EventSource.stop()` 或 `AbortController.abort()`
+- 后端检测到连接关闭后自动中断任务
+- 无需调用额外的 API
+
+> 注：如果需要主动中断和 Follow-up Suggestion 功能，请使用 **WebSocket 模式**。
+
+---
+
+### 8. WebSocket 协议（低延迟实时通信）
+
+**端点**: `ws://host:port/ws/agents/{agent_id}/sessions/{session_id}`
+
+**用途**: 通过 WebSocket 协议进行实时双向通信，相比 SSE 提供更低的延迟和更好的交互体验。
+
+**路径参数**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| agent_id | string | 是 | Agent ID |
+| session_id | string | 是 | 会话 ID |
+
+**请求头**:
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| X-User-Id | string | 是 | 用户 ID |
+| X-User-Name | string | 否 | 用户名称（可选，默认使用 userId） |
+
+> 注：认证信息优先通过 HTTP Headers 传递，也支持通过 URL 查询参数作为 fallback（例如 `?X-User-Id=test_user`）
+
+**JSON-RPC 2.0 协议**:
+
+WebSocket 通信基于 JSON-RPC 2.0 协议，所有消息均为 JSON 格式。
+
+**客户端发送消息格式**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "chat",
+  "id": 1,
+  "params": {
+    "input": [{"type": 1, "text": "你好"}],
+    "enableTts": false
+  }
+}
+```
+
+**服务端响应消息格式**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": "success"
+}
+```
+
+**服务端推送事件格式**:
+
+服务端通过 JSON-RPC Notification 推送事件（无 id 字段）：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "id": 1,
+    "agentId": "one_agent",
+    "userId": "test_user",
+    "sessionId": "session_123",
+    "type": 20,
+    "msg": {...}
+  }
+}
+```
+
+**支持的方法**:
+
+| 方法 | 说明 |
+|------|------|
+| `chat` | 发起对话 |
+| `cancel` | 中断当前对话 |
+
+**Cancel 功能**:
+
+用户可随时中断正在执行的 Agent 任务：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "cancel",
+  "id": 2,
+  "params": []
+}
+```
+
+> 注：`params` 为可选参数，可传入取消原因（字符串），也可以传空数组 `[]`。
+
+> ⚠️ **注意**：Cancel 功能**仅在 WebSocket 模式下可用**，SSE 模式不支持主动中断。
+
+**Follow-up Suggestion 事件**:
+
+当 Agent 完成对话后，可能推送建议问题：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "type": 2002,
+    "data": ["建议问题1", "建议问题2", "建议问题3"]
+  }
+}
+```
+
+> ⚠️ **注意**：Follow-up Suggestion **仅在 WebSocket 模式下可用**，SSE 模式不会推送此事件。
+
+**TTS 音频事件**:
+
+当启用 TTS 功能时（`enableTts: true`），会推送 TTS 音频数据：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "event",
+  "params": {
+    "type": 1001,
+    "needPersistent": false,
+    "data": {
+      "success": true,
+      "dataBase64": "音频数据 Base64 编码",
+      "finished": false,
+      "error": null
+    }
+  }
+}
+```
+
+> 注：TTS 事件使用 `CustomEvent` 包装，`data` 字段为 `TtsResponse` 对象。`finished: true` 表示 TTS 完成。
+
+**WebSocket 示例**:
+
+```javascript
+// 建立连接
+const ws = new WebSocket(
+  `ws://localhost:8080/ws/agents/one_agent/sessions/session_123`,
+  {
+    headers: {
+      'X-User-Id': 'test_user',
+      'X-User-Name': 'Test User'
+    }
+  }
+);
+
+ws.onopen = () => {
+  console.log('WebSocket 连接已建立');
+  
+  // 发送对话消息
+  ws.send(JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'chat',
+    id: 1,
+    params: {
+      input: [{type: 1, text: '你好'}],
+      enableTts: false
+    }
+  }));
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  if (message.method === 'session') {
+    // 处理连接时的会话信息推送
+    console.log('会话信息:', message.params);
+  } else if (message.method === 'event') {
+    // 处理服务端推送的事件
+    console.log('收到事件:', message.params);
+  } else if (message.result) {
+    // 处理方法响应
+    console.log('响应:', message.result);
+  } else if (message.error) {
+    // 处理错误
+    console.error('错误:', message.error);
+  }
+};
+
+// 中断对话
+function cancelConversation() {
+  ws.send(JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'cancel',
+    id: 2
+  }));
+}
+```
+
+**WebSocket vs SSE 对比**:
+
+| 特性 | WebSocket | SSE |
+|------|-----------|-----|
+| 延迟 | 更低（双向通信） | 较高（单向流） |
+| 通信方式 | 双向 | 单向（服务端→客户端） |
+| Cancel 支持 | ✅ 实时中断 | ❌ 不支持（仅被动关闭） |
+| Follow-up Suggestion | ✅ 支持 | ❌ 不支持 |
+| TTS 支持 | ✅ 支持 | ✅ 支持 |
+| 适用场景 | 低延迟要求、复杂交互、需要完整功能 | 简单流式输出、基础对话 |
+| 浏览器兼容 | 现代浏览器 | 现代浏览器 |
 
 ---
 

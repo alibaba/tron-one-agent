@@ -358,6 +358,7 @@ export const createChatStream = (
     headers: headers,
     body: JSON.stringify(body),
     signal: abortController.signal,
+    openWhenHidden: true,
 
     onopen: async (response) => {
       if (
@@ -374,28 +375,26 @@ export const createChatStream = (
         const eventData: EventItem = JSON.parse(msg.data);
         callbacks?.onEvent?.(eventData);
       } catch (error) {
-        const parseError = new Error("消息解析失败: " + msg.data);
-        callbacks?.onError?.(parseError);
-        // 解析失败时抛出错误，阻止重试
-        throw parseError;
+        // 解析失败时抛出错误，库会传递给 onerror 处理回调
+        throw new Error("消息解析失败: " + msg.data);
       }
     },
 
     onerror: (error) => {
-      if (error instanceof Error && error.name !== "AbortError") {
-        callbacks?.onError?.(error);
+      // 抛出错误以阻止自动重试，AbortError 不触发回调
+      if (error instanceof Error && error.name === "AbortError") {
+        throw error;
       }
-      // 抛出错误以阻止自动重试
+      callbacks?.onError?.(error);
       throw error;
     },
 
     onclose: () => {
       callbacks?.onComplete?.();
     },
-  }).catch((error) => {
-    if (error instanceof Error && error.name !== "AbortError") {
-      callbacks?.onError?.(error);
-    }
+  }).catch(() => {
+    // onerror 中已处理过错误并调用了 callbacks.onError
+    // 这里只捕获 onerror throw 传播出的异常，不再重复回调
   });
 
   return abortController;

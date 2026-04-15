@@ -106,6 +106,9 @@ public class QwenRealtimeTtsService implements TtsService {
             return new TtsSession() {
                 @Override
                 public synchronized void appendText(String text) {
+                    if (text == null || text.isBlank()) {
+                        return;
+                    }
                     for (int i = 0; i < text.length(); i += properties.getMaxChunkSize()) {
                         String chunk = text.substring(i, Math.min(i + properties.getMaxChunkSize(), text.length()));
                         realtime.appendText(chunk);

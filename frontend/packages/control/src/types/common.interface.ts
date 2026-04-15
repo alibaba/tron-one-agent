@@ -39,7 +39,6 @@ export const SubAgentTypeNameMap = {
   [SubAgentType.A2A]: 'A2A Agent',
 }
 
-// 通用API响应类型定义
 export interface ApiResponse<T = any> {
   code: number;
   message: string;
