@@ -1,7 +1,12 @@
 package com.aliyun.tam.x.tron.ws.jsonrpc;
 
 
+import java.io.Serial;
+
 public class JsonRpcException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID = 1870763915083895024L;
+
     private final Object id;
 
     private final int code;

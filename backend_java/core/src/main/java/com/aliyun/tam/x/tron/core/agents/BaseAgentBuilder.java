@@ -63,6 +63,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,11 +89,10 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
         } else if (Objects.equals(config.getType(), ChatModelType.OPENAI_COMPATIBLE)) {
             if (config.getThinking() != null) {
                 if (config.getGenerateKwargs() == null) {
-                    config.setGenerateKwargs(Map.of("enable_thinking", config.getThinking()));
+                    config.setGenerateKwargs(new HashMap<>());
                 }
-                else {
-                    config.getGenerateKwargs().put("enable_thinking", config.getThinking());
-                }
+
+                config.getGenerateKwargs().put("enable_thinking", config.getThinking());
             }
             return OpenAIChatModel.builder()
                     .apiKey(config.getApiKey())
