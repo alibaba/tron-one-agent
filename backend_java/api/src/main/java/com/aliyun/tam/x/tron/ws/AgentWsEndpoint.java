@@ -97,6 +97,8 @@ public class AgentWsEndpoint {
 
     private volatile boolean chatting = false;
 
+    private final Object wsSendLock = new Object();
+
     @OnOpen
     public void onOpen(Session wsSession,
                        EndpointConfig config,
@@ -273,21 +275,23 @@ public class AgentWsEndpoint {
                 if (!wsSession.isOpen()) {
                     return;
                 }
-                try {
-                    wsSession.getBasicRemote().sendText(
-                            jsonRpcHelper.serialize(
-                                    JsonRpcNotification.builder()
-                                            .method("event")
-                                            .params(event)
-                                            .build()
-                            )
-                    );
-                } catch (IOException e) {
-                    log.warn("Failed to send notification to client", e);
+                synchronized (wsSendLock) {
                     try {
-                        wsSession.close();
-                    } catch (IOException ex) {
-                        // ignore
+                        wsSession.getBasicRemote().sendText(
+                                jsonRpcHelper.serialize(
+                                        JsonRpcNotification.builder()
+                                                .method("event")
+                                                .params(event)
+                                                .build()
+                                )
+                        );
+                    } catch (IOException e) {
+                        log.warn("Failed to send notification to client", e);
+                        try {
+                            wsSession.close();
+                        } catch (IOException ex) {
+                            // ignore
+                        }
                     }
                 }
             }
@@ -328,25 +332,27 @@ public class AgentWsEndpoint {
                         return;
                     }
 
-                    try {
-                        wsSession.getBasicRemote().sendText(
-                                jsonRpcHelper.serialize(
-                                        JsonRpcNotification.builder()
-                                                .method("event")
-                                                .params(CustomEvent.builder()
-                                                        .type(SessionEventType.TTS_RESPONSE)
-                                                        .needPersistent(false)
-                                                        .data(response)
-                                                        .build())
-                                                .build()
-                                )
-                        );
-                    } catch (IOException e) {
-                        log.warn("Failed to send notification to client", e);
+                    synchronized (wsSendLock) {
                         try {
-                            wsSession.close();
-                        } catch (IOException ex) {
-                            // ignore
+                            wsSession.getBasicRemote().sendText(
+                                    jsonRpcHelper.serialize(
+                                            JsonRpcNotification.builder()
+                                                    .method("event")
+                                                    .params(CustomEvent.builder()
+                                                            .type(SessionEventType.TTS_RESPONSE)
+                                                            .needPersistent(false)
+                                                            .data(response)
+                                                            .build())
+                                                    .build()
+                                    )
+                            );
+                        } catch (IOException e) {
+                            log.warn("Failed to send notification to client", e);
+                            try {
+                                wsSession.close();
+                            } catch (IOException ex) {
+                                // ignore
+                            }
                         }
                     }
                 }

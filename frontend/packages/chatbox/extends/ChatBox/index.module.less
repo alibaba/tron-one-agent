@@ -81,8 +81,9 @@
 .suggestionsWrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 4px 24px 8px;
+  gap: 4px;
+  padding: 0 24px 4px;
+  margin-top: -12px;
   // 左侧对齐消息内容（avatar 40px + gap 12px = 52px）
   padding-left: calc(24px + 52px);
 }
@@ -90,11 +91,11 @@
 .suggestionItem {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 5px 12px;
   font-size: 13px;
-  color: #1677ff;
-  background: #f0f5ff;
-  border: 1px solid #d6e4ff;
+  color: #7c3aed;
+  background: #ede9fe;
+  border: 1px solid #ddd6fe;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -102,7 +103,7 @@
   width: fit-content;
 
   &:hover {
-    background: #d6e4ff;
-    border-color: #adc6ff;
+    background: #ddd6fe;
+    border-color: #c4b5fd;
   }
 }
