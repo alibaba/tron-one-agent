@@ -29,6 +29,8 @@ export function NormalMessageInput({
   onChange,
   onSend,
   disabled = false,
+  running = false,
+  onStop,
   placeholder,
   voiceInput,
 }: NormalMessageInputProps) {
@@ -125,11 +127,13 @@ export function NormalMessageInput({
           disabled={disabled || isRecording}
         />
         <button
-          onClick={handleSend}
-          disabled={!value.trim() || disabled || isRecording}
-          className={styles.sendButton}
+          onClick={running && onStop ? onStop : handleSend}
+          disabled={running ? !onStop : (!value.trim() || disabled || isRecording)}
+          className={`${styles.sendButton}${running && onStop ? ` ${styles.stopButton}` : ''}`}
         >
-          {disabled ? (
+          {running && onStop ? (
+            <i className="fas fa-stop"></i>
+          ) : disabled ? (
             <i className="fas fa-spinner fa-spin"></i>
           ) : (
             <i className="fas fa-paper-plane"></i>

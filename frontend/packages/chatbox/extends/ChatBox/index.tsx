@@ -45,6 +45,8 @@ export interface ChatBoxProps {
   messages?: Array<AgentSessionMessage | UserSessionMessage>;
   running: boolean;
   handleSendMessage?: (message: string, attachments?: AttachmentItem[]) => Promise<boolean>;
+  /** 中断回调，当 running 时显示中断按钮 */
+  onStop?: () => void;
   mardkownComponents?: Record<string, React.ComponentType<any>>;
   supportInputTypes?: ContentType[];
 
@@ -271,6 +273,8 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               onChange={setInputValue}
               onSend={handleMessageSendWithAttachments}
               disabled={sending || running}
+              running={running}
+              onStop={props.onStop}
               placeholder={
                 sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
               }
@@ -283,6 +287,8 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               onChange={setInputValue}
               onSend={handleMessageSendWithAttachments}
               disabled={sending || running}
+              running={running}
+              onStop={props.onStop}
               voiceInput={voiceInput}
               placeholder={
                 sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"

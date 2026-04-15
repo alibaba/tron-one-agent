@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aliyun.tam.x.tron.core.utils.AgentHelper.convertToBlocks;
@@ -60,6 +61,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
     private final ReActAgent mainAgent;
 
     private final List<SubAgentHandler> subAgents;
+
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     @Autowired
     private ToolFormatter toolFormatter;
@@ -123,6 +126,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
         Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
         mainAgent.stream(msg)
+                .doFirst(() -> cancelled.set(false))
                 .doOnEach(s -> {
                     Event event = s.get();
                     if (event == null) {
@@ -225,11 +229,8 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         }
                     }
                 })
-                .doOnCancel(() -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.CANCELLED);
-                })
                 .doOnComplete(() -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                    eventSink.changeMessageStatus(cancelled.get() ? SessionMessageStatus.CANCELLED : SessionMessageStatus.SUCCEED);
                 })
                 .doOnError(throwable -> {
                     eventSink.changeMessageStatus(SessionMessageStatus.FAILED);
@@ -259,5 +260,6 @@ public class OneAgentHandler extends AbstractAgentHandler {
         } else {
             mainAgent.interrupt();
         }
+        cancelled.set(true);
     }
 }

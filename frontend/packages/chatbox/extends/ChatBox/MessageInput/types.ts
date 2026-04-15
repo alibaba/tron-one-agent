@@ -52,6 +52,10 @@ export interface BaseMessageInputProps {
   /** 发送音频数据（预留接口，用于 audio 模式） */
   onSendAudio?: (audioData: Blob) => void;
   disabled?: boolean;
+  /** Agent 正在回复中 */
+  running?: boolean;
+  /** 中断回调 */
+  onStop?: () => void;
   placeholder?: string;
   supportInputTypes?: ContentType[];
   options?: {

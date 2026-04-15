@@ -33,6 +33,8 @@ export function MultiModeMessageInput({
   onSend,
   onSendAudio: _onSendAudio, // 预留接口，用于 audio 模式
   disabled = false,
+  running = false,
+  onStop,
   placeholder,
   supportInputTypes,
   voiceInput,
@@ -179,12 +181,14 @@ export function MultiModeMessageInput({
           disabled={disabled || isRecording}
         />
         <button
-          onClick={handleSend}
-          disabled={(!value.trim() && attachments.length === 0) || disabled || isUploading || isRecording}
-          className={styles.sendButton}
-          title={isUploading ? '文件上传中...' : undefined}
+          onClick={running && onStop ? onStop : handleSend}
+          disabled={running ? !onStop : ((!value.trim() && attachments.length === 0) || disabled || isUploading || isRecording)}
+          className={`${styles.sendButton}${running && onStop ? ` ${styles.stopButton}` : ''}`}
+          title={isUploading ? '文件上传中...' : running && onStop ? '中断' : undefined}
         >
-          {disabled ? (
+          {running && onStop ? (
+            <i className="fas fa-stop"></i>
+          ) : disabled ? (
             <i className="fas fa-spinner fa-spin"></i>
           ) : (
             <i className="fas fa-paper-plane"></i>

@@ -30,6 +30,7 @@ export enum SessionMessageStatus {
   EXECUTING = 2,
   SUCCEED = 3,
   FAILED = 4,
+  CANCELLED = 5,
 }
 
 export enum SessionEventType {

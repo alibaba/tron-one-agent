@@ -44,6 +44,7 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aliyun.tam.x.tron.core.utils.AgentHelper.*;
@@ -52,6 +53,8 @@ public class ReActAgentHandler extends AbstractAgentHandler {
     private final String id;
 
     private final ReActAgent agent;
+
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     @Autowired
     private ToolFormatter toolFormatter;
@@ -108,6 +111,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
         Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
         agent.stream(msg)
+                .doFirst(() -> cancelled.set(false))
                 .doOnEach(s -> {
                     Event event = s.get();
                     if (event == null) {
@@ -205,7 +209,9 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                         }
                     }
                 })
-                .doOnComplete(() -> eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED))
+                .doOnComplete(() -> {
+                    eventSink.changeMessageStatus(cancelled.get() ? SessionMessageStatus.CANCELLED : SessionMessageStatus.SUCCEED);
+                })
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
@@ -227,5 +233,6 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         } else {
             agent.interrupt();
         }
+        cancelled.set(true);
     }
 }
