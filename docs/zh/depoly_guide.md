@@ -1,6 +1,6 @@
 # Tron One-Agent K8S 部署指南
 
-本文档介绍如何在 Kubernetes 环境中部署 Tron One-Agent 系统，包括后端服务和前端应用（client 和 control）。
+本文档介绍如何在 Kubernetes 环境中部署 Tron One-Agent 系统，包括后端服务和前端应用。
 
 ## 目录
 
@@ -108,7 +108,6 @@ cd frontend
 
 该脚本会自动：
 - 安装依赖（yarn install）
-- 构建 client 应用（yarn build:client）
 - 构建 control 应用（yarn build:control）
 - 打包 Docker 镜像（one-agent-frontend:<version>）
 
@@ -123,7 +122,6 @@ cd frontend
 yarn install
 
 # 构建前端应用
-yarn build:client
 yarn build:control
 
 # 构建 Docker 镜像
@@ -360,7 +358,7 @@ kubectl apply -f one-agent-frontend-deployment.yaml
 
 推荐使用阿里云 ALB 或 API Gateway 作为Ingress路由前后端服务，支持以下两种方式：
 
-- **（推荐）** 配置三个路由规则，将 /client、/control 开头的流量路由到 one-agent-frontend-service，将 /api 开头的流量路由到 one-agent-backend-service
+- **（推荐）** 配置两个路由规则，将 /control 开头的流量路由到 one-agent-frontend-service，将 /api 开头的流量路由到 one-agent-backend-service
 - 所有流量都代理到 one-agent-frontend-service，它会根据路径前缀进行流量分发。
 
 （可选）在 ALB 或 API Gateway 中配置自定义域名和SSL卸载等能力。
@@ -394,7 +392,6 @@ kubectl get svc -n default
 使用 Ingress 直接访问对应的服务
 
 ```
-http://your-domain.com/client/      # Client 应用
 http://your-domain.com/control/     # Control 控制台
 ```
 

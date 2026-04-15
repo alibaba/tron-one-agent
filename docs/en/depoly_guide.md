@@ -1,6 +1,6 @@
 # Tron One-Agent K8S Deployment Guide
 
-This document describes how to deploy the Tron One-Agent system in a Kubernetes environment, including backend services and frontend applications (client and control).
+This document describes how to deploy the Tron One-Agent system in a Kubernetes environment, including backend services and frontend applications.
 
 ## Table of Contents
 
@@ -108,7 +108,6 @@ cd frontend
 
 The script will automatically:
 - Install dependencies (yarn install)
-- Build client application (yarn build:client)
 - Build control application (yarn build:control)
 - Package Docker image (one-agent-frontend:<version>)
 
@@ -123,7 +122,6 @@ cd frontend
 yarn install
 
 # Build frontend applications
-yarn build:client
 yarn build:control
 
 # Build Docker image
@@ -360,7 +358,7 @@ kubectl apply -f one-agent-frontend-deployment.yaml
 
 It is recommended to use Alibaba Cloud ALB or API Gateway as an Ingress router for frontend and backend services, supporting the following two approaches:
 
-- **(Recommended)** Configure three routing rules: route traffic starting with /client and /control to one-agent-frontend-service, and route traffic starting with /api to one-agent-backend-service
+- **(Recommended)** Configure two routing rules: route traffic starting with /control to one-agent-frontend-service, and route traffic starting with /api to one-agent-backend-service
 - Proxy all traffic to one-agent-frontend-service, which will distribute traffic based on path prefixes.
 
 (Optional) Configure custom domains and SSL termination capabilities in ALB or API Gateway.
@@ -394,7 +392,6 @@ kubectl get svc -n default
 Use Ingress to directly access the corresponding services:
 
 ```
-http://your-domain.com/client/      # Client Application
 http://your-domain.com/control/     # Control Console
 ```
 

@@ -5,9 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:control": "yarn workspace control dev ",
-    "dev:client": "yarn workspace client dev ",
-    "build:control": "yarn workspace control build",
-    "build:client": "yarn workspace client build"
+    "dev": "yarn workspace control dev ",
+    "build": "yarn workspace control build"
   }
 }
