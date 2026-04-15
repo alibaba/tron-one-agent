@@ -37,6 +37,8 @@ public enum SessionEventType {
     ACTION_STATUS_CHANGED(41),
 
     TTS_RESPONSE(1001),
+
+    FOLLOW_UP_SUGGESTION(2002),
     ;
 
     private final int value;

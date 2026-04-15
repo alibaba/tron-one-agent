@@ -23,6 +23,7 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
 import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,9 +60,11 @@ public class ReActAgentHandler extends AbstractAgentHandler {
     @Autowired
     private ToolFormatter toolFormatter;
 
-
     @Autowired
     private RenamingService renamingService;
+
+    @Autowired
+    private FollowupSuggestionService followupSuggestionService;
 
     public ReActAgentHandler(String id, ReActAgent agent, Collection<ContentType> supportedInputTypes) {
         super(supportedInputTypes);
@@ -215,6 +218,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
+                    followupSuggestionService.suggest(getFastChatModel(), agent.getMemory().getMessages(), eventSink);
                 })
                 .blockLast();
         result.setCostInMs(System.currentTimeMillis() - startTime);

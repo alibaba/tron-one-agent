@@ -97,6 +97,7 @@ public class RenamingService {
                     .reduce((s, s2) -> s + s2)
                     .block();
             sessionRepository.updateSessionName(agentId, sessionId, name);
+            span.setAttribute("session.name", name);
             span.setStatus(StatusCode.OK);
         } catch (Exception e) {
             span.setStatus(StatusCode.ERROR, e.getMessage());

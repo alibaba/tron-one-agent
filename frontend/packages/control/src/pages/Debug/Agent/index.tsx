@@ -150,6 +150,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const wsConnectionRef = useRef<WsChatConnection | null>(null);
   const [chatProtocol, setChatProtocol] = useState<"sse" | "ws">(initialProtocol);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // ========== Inline TTS 音频播放 ==========
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -338,6 +339,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           handleTtsResponse((event as any).data);
           return;
         }
+        // 处理建议问题事件
+        if ((event as any).type === SessionEventType.SUGGESTIONS) {
+          const data = (event as any).data;
+          if (Array.isArray(data)) {
+            setSuggestions(data);
+          }
+          return;
+        }
         setEvents((prev) => [...prev, event]);
         lastEventIdRef.current = event.id;
         setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
@@ -410,6 +419,15 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
   const handleSendMessage = useCallback(
     async (inputStr: string, attachments?: AttachmentItem[]) => {
+      // 发送消息时清除建议列表
+      setSuggestions([]);
+
+      // WS 模式下未连接时禁止发送
+      if (chatProtocol === "ws" && !wsConnected) {
+        message.warning("WebSocket 未连接，请等待连接建立后再发送");
+        return false;
+      }
+
       const newMessageId = new Date().getTime();
 
       // 如果 sessionId 为空，先创建 session
@@ -491,8 +509,8 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
       if (chatProtocol === "ws") {
         // ========== WebSocket JSON-RPC 模式 ==========
-        if (!wsConnectionRef.current) {
-          message.error("WebSocket 未连接，请稍后重试");
+        if (!wsConnectionRef.current || !wsConnected) {
+          message.warning("WebSocket 未连接，请等待连接建立后再发送");
           setChatState((prev) => ({
             ...prev,
             messages: prev.messages.map((msg) =>
@@ -600,7 +618,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       }
       return true;
     },
-    [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse]
+    [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected]
   );
   const onCreateSessionClick = useCallback(() => {
     const newId = generateSessionId();
@@ -796,6 +814,12 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
             wsUrl: `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/asr`,
           }}
           headerRender={() => null}
+          suggestions={suggestions}
+          onSuggestionClick={(text) => {
+            setSuggestions([]);
+            // 将建议内容填充到输入框并自动发送
+            handleSendMessage(text);
+          }}
         />
         <Card
           className={styles.operateWrap}

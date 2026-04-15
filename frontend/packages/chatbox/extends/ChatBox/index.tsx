@@ -68,6 +68,10 @@ export interface ChatBoxProps {
   onDislike?: (messageId: number) => void;
   /** 语音输入配置 */
   voiceInput?: VoiceInputConfig;
+  /** 建议问题列表 */
+  suggestions?: string[];
+  /** 点击建议问题回调 */
+  onSuggestionClick?: (suggestion: string) => void;
 }
 
 // 显示回到底部按钮的阈值
@@ -96,6 +100,8 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
     onLike,
     onDislike,
     voiceInput,
+    suggestions,
+    onSuggestionClick,
   } = props;
 
   // 只有 TEXT 时使用文本模式，包含 IMAGE/VIDEO/AUDIO 时使用多模式
@@ -253,6 +259,20 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
             onLike={onLike}
             onDislike={onDislike}
           />
+          {/* 建议问题列表 */}
+          {suggestions && suggestions.length > 0 && (
+            <div className={styles.suggestionsWrap}>
+              {suggestions.map((text, idx) => (
+                <div
+                  key={idx}
+                  className={styles.suggestionItem}
+                  onClick={() => onSuggestionClick?.(text)}
+                >
+                  {text}
+                </div>
+              ))}
+            </div>
+          )}
           <div ref={bottomRef} style={{ height: 1 }} />
         </div>
         {showBackToBottom && (

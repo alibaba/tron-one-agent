@@ -1,6 +1,11 @@
 package com.aliyun.tam.x.tron.core.domain.service;
 
+import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
+import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
+import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -15,6 +20,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -24,6 +30,7 @@ import reactor.core.publisher.Flux;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FollowupSuggestionService {
@@ -33,23 +40,27 @@ public class FollowupSuggestionService {
     @Value("${tron.suggection.history.limit:10}")
     private int historyLimit;
 
-    private final SessionRepository sessionRepository;
+    private final ObjectMapper objectMapper;
 
     private final Tracer tracer;
 
-    public void suggest(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
+    public void suggest(Model model, List<Msg> history, EventSink eventSink) {
         if (enabled) {
             Context otelContext = Context.current();
-            doSuggest(model, msg, history, agentId, sessionId, otelContext);
+            try {
+                doSuggest(model, history, eventSink, otelContext);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to process suggestions", e);
+            }
         }
     }
 
     @Async
-    public void doSuggest(Model model, Msg msg, List<Msg> history, String agentId, String sessionId, Context otelContext) {
+    public void doSuggest(Model model, List<Msg> history, EventSink eventSink, Context otelContext) throws JsonProcessingException {
         Span span = tracer.spanBuilder("followup suggestion")
                 .setParent(otelContext)
-                .setAttribute("agent.id", agentId)
-                .setAttribute("session.id", sessionId)
+                .setAttribute("agent.id", eventSink.getAgentId())
+                .setAttribute("session.id", eventSink.getSessionId())
                 .startSpan();
         try (Scope ignored = span.makeCurrent()) {
             String text = "Below is the history of the conversation :\n\n";
@@ -61,15 +72,13 @@ public class FollowupSuggestionService {
                     .map(m -> {
                         return String.format("%s: %s", m.getRole(), m.getTextContent());
                     }).collect(Collectors.joining("\n"));
-            text += String.format("\n%s: %s", msg.getRole(), msg.getTextContent());
-            text += "\n\nFrom user's perspective, summarize and generate a concise session name (within 20 characters, excluding the word \"session\") based on the history, latest input, and user's language.";
+            text += "\n\nFrom user's perspective, give at most 3 follow-up questions based on the history and latest input. Each question should be a complete sentence and stand alone as a valid question. \nOutput in JSON format(without any description and annotation, just the JSON content): \n Example:\n[\"content of suggestion 1\", \"content of suggestion 2\", \"content of suggestion 3\"]";
 
             Msg prompt = Msg.builder()
-                    .name(msg.getName())
                     .role(MsgRole.USER)
                     .textContent(text)
                     .build();
-            String name = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
+            String suggestionContent = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
                             .build())
                     .map(ChatResponse::getContent)
                     .flatMap(Flux::fromIterable)
@@ -78,7 +87,15 @@ public class FollowupSuggestionService {
                     .map(TextBlock::getText)
                     .reduce((s, s2) -> s + s2)
                     .block();
-            sessionRepository.updateSessionName(agentId, sessionId, name);
+            span.setAttribute("suggestions", suggestionContent);
+            List<String> suggestions = objectMapper.readValue(suggestionContent, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+            eventSink.newEvent(
+                    CustomEvent.builder()
+                            .type(SessionEventType.FOLLOW_UP_SUGGESTION)
+                            .needPersistent(false)
+                            .data(suggestions)
+                            .build()
+            );
             span.setStatus(StatusCode.OK);
         } catch (Exception e) {
             span.setStatus(StatusCode.ERROR, e.getMessage());

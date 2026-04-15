@@ -25,6 +25,7 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
 import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,6 +73,9 @@ public class OneAgentHandler extends AbstractAgentHandler {
 
     @Autowired
     private RenamingService renamingService;
+
+    @Autowired
+    private FollowupSuggestionService followupSuggestionService;
 
     public OneAgentHandler(String id, ReActAgent.Builder mainAgentBuilder, List<SubAgentHandler> subAgents, Collection<ContentType> supportedInputTypes) {
         super(supportedInputTypes);
@@ -237,6 +241,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 })
                 .doFinally(s -> {
                     eventSink.onComplete();
+                    followupSuggestionService.suggest(getFastChatModel(), mainAgent.getMemory().getMessages(), eventSink);
                 })
                 .blockLast();
 
