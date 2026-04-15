@@ -108,7 +108,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
 
         msg = buildRuntimeContext(msg);
 
-        renamingService.renameSession(mainAgent.getModel(), msg, mainAgent.getMemory().getMessages(),
+        renamingService.renameSession(getFastChatModel(), msg, mainAgent.getMemory().getMessages(),
                 eventSink.getAgentId(), eventSink.getSessionId());
 
         Set<String> subAgentTools = Sets.newHashSet();

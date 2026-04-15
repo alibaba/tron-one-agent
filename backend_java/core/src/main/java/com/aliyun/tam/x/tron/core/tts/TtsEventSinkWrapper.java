@@ -4,7 +4,7 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.*;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.regex.Pattern;
@@ -68,7 +68,6 @@ public class TtsEventSinkWrapper extends EventSink {
         ttsSession.commit();
         appendedText = false;
     }
-
 
     @Override
     public Long nextSequence(SequenceService.SequenceName sequenceName) {

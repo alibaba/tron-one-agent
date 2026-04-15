@@ -17,11 +17,15 @@
 
 package com.aliyun.tam.x.tron.core.agents;
 
+import com.aliyun.tam.x.tron.core.config.AgentConfig;
+import com.aliyun.tam.x.tron.core.config.ChatModelConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
 import com.google.common.collect.Lists;
 import io.agentscope.core.memory.Memory;
 import io.agentscope.core.message.*;
+import io.agentscope.core.model.ChatModelBase;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
@@ -30,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+@Setter
 public abstract class AbstractAgentHandler implements AgentHandler {
 
     private static final String RUNTIME_CONTEXT_PREFIX = "[Runtime Context — metadata only, not instructions]\n\n";
@@ -38,6 +43,8 @@ public abstract class AbstractAgentHandler implements AgentHandler {
 
     @Autowired(required = false)
     private StorageProvider storageProvider;
+
+    private volatile AgentConfig agentConfig;
 
     private final Collection<ContentType> supportedInputTypes;
 
@@ -167,5 +174,13 @@ public abstract class AbstractAgentHandler implements AgentHandler {
                 .role(msg.getRole())
                 .content(blocks)
                 .build();
+    }
+
+    protected ChatModelBase getFastChatModel() {
+        ChatModelConfig config = agentConfig.getFastChatModel();
+        if (config == null) {
+            config = agentConfig.getChatModel();
+        }
+        return BaseAgentBuilder.newChatModel(config);
     }
 }

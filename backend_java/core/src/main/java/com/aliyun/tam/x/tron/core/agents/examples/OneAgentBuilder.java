@@ -47,9 +47,19 @@ public class OneAgentBuilder extends BaseAgentBuilder {
                                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
                                 .apiKey(apiKey)
                                 .modelName("qwen3.6-plus")
+                                .thinking(true)
+                                .build()
+                )
+                .fastChatModel(
+                        ChatModelConfig.builder()
+                                .type(ChatModelType.OPENAI_COMPATIBLE)
+                                .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
+                                .apiKey(apiKey)
+                                .modelName("qwen3.5-flash")
                                 .thinking(false)
                                 .build()
-                ).subAgents(Lists.newArrayList(
+                )
+                .subAgents(Lists.newArrayList(
                         A2ASubAgentConfig.builder()
                                 .agentId(SimpleAgentBuilder.AGENT_ID + "_a2a")
                                 .agentCard(SimpleAgentBuilder.AGENT_CARD)

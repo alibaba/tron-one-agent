@@ -42,7 +42,6 @@ import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
 import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
 import com.aliyun.tam.x.tron.core.tts.TtsService;
 import com.aliyun.tam.x.tron.api.response.TtsResponse;

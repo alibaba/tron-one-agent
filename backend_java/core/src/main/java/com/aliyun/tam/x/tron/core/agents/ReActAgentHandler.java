@@ -101,7 +101,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
 
         msg = buildRuntimeContext(msg);
 
-        renamingService.renameSession(agent.getModel(), msg, agent.getMemory().getMessages(),
+        renamingService.renameSession(getFastChatModel(), msg, agent.getMemory().getMessages(),
                 eventSink.getAgentId(), eventSink.getSessionId());
 
         AgentResult result = AgentResult.builder().build();

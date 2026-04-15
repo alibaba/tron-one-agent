@@ -244,8 +244,9 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                 agentBuilder.longTermMemory(longTermMemoryFactory.create(userId))
                         .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
             }
-            AgentHandler handler = new ReActAgentHandler(agentId, agentBuilder.build(), config.getSupportInputTypes());
+            ReActAgentHandler handler = new ReActAgentHandler(agentId, agentBuilder.build(), config.getSupportInputTypes());
             autowireCapableBeanFactory.autowireBean(handler);
+            handler.setAgentConfig(config);
             return handler;
         } else if (config.getType() == LocalAgentType.ONE) {
             List<Knowledge> knowledges = buildKnowledgeBases(config);
@@ -297,8 +298,9 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     subAgents.add(subAgentHandler);
                 }
             }
-            AgentHandler handler = new OneAgentHandler(config.getId(), mainAgentBuilder, subAgents, config.getSupportInputTypes());
+            OneAgentHandler handler = new OneAgentHandler(config.getId(), mainAgentBuilder, subAgents, config.getSupportInputTypes());
             autowireCapableBeanFactory.autowireBean(handler);
+            handler.setAgentConfig(config);
             return handler;
         }
         throw new IllegalArgumentException("Unsupported agent type " + config.getType());

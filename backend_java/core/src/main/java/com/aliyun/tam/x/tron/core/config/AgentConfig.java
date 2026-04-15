@@ -63,6 +63,11 @@ public class AgentConfig {
     private ChatModelConfig chatModel;
 
     /**
+     * (Optional) Fast chat model configuration
+     */
+    private ChatModelConfig fastChatModel;
+
+    /**
      * System prompt
      */
     private String systemPrompt;
