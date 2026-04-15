@@ -218,7 +218,9 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
                 .doFinally(s -> {
                     eventSink.onComplete();
-                    followupSuggestionService.suggest(getFastChatModel(), agent.getMemory().getMessages(), eventSink);
+                    if (!cancelled.get()) {
+                        followupSuggestionService.suggest(getFastChatModel(), agent.getMemory().getMessages(), eventSink);
+                    }
                 })
                 .blockLast();
         result.setCostInMs(System.currentTimeMillis() - startTime);
