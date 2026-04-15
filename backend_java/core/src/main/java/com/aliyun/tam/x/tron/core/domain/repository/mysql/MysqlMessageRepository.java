@@ -20,7 +20,7 @@ package com.aliyun.tam.x.tron.core.domain.repository.mysql;
 import com.aliyun.tam.x.tron.core.domain.models.PageResult;
 import com.aliyun.tam.x.tron.core.domain.models.messages.*;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.MessageDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.MessageMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;

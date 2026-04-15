@@ -26,6 +26,12 @@ import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -39,39 +45,65 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class RenamingService {
-    @Value("${tron.renaming.history.limit: 2}")
+    @Value("${tron.renaming.enabled:true}")
+    private boolean enabled;
+
+    @Value("${tron.renaming.history.limit:2}")
     private int historyLimit;
 
     private final SessionRepository sessionRepository;
 
-    @Async
-    public void renameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
-        String text = "Below is the history of the conversation :\n\n";
-        text += history.stream()
-                .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
-                .filter(h -> CollectionUtils.isEmpty(h.getContentBlocks(ToolUseBlock.class)))
-                .filter(h -> h.getTextContent() != null)
-                .limit(historyLimit)
-                .map(m -> {
-                    return String.format("%s: %s", m.getRole(), m.getTextContent());
-                }).collect(Collectors.joining("\n"));
-        text += String.format("\n%s: %s", msg.getRole(), msg.getTextContent());
-        text += "\n\nFrom user's perspective, summarize and generate a concise session name (within 20 characters, excluding the word \"session\") based on the history, latest input, and user's language.";
+    private final Tracer tracer;
 
-        Msg prompt = Msg.builder()
-                .name(msg.getName())
-                .role(MsgRole.USER)
-                .textContent(text)
-                .build();
-        String name = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
-                        .build())
-                .map(ChatResponse::getContent)
-                .flatMap(Flux::fromIterable)
-                .filter(c -> c instanceof TextBlock)
-                .map(c -> (TextBlock) c)
-                .map(TextBlock::getText)
-                .reduce((s, s2) -> s + s2)
-                .block();
-        sessionRepository.updateSessionName(agentId, sessionId, name);
+    public void renameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
+        if (enabled) {
+            Context otelContext = Context.current();
+            doRenameSession(model, msg, history, agentId, sessionId, otelContext);
+        }
+    }
+
+    @Async
+    public void doRenameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId, Context otelContext) {
+        Span span = tracer.spanBuilder("renaming session")
+                .setParent(otelContext)
+                .setAttribute("agent.id", agentId)
+                .setAttribute("session.id", sessionId)
+                .startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            String text = "Below is the history of the conversation :\n\n";
+            text += history.stream()
+                    .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
+                    .filter(h -> CollectionUtils.isEmpty(h.getContentBlocks(ToolUseBlock.class)))
+                    .filter(h -> h.getTextContent() != null)
+                    .limit(historyLimit)
+                    .map(m -> {
+                        return String.format("%s: %s", m.getRole(), m.getTextContent());
+                    }).collect(Collectors.joining("\n"));
+            text += String.format("\n%s: %s", msg.getRole(), msg.getTextContent());
+            text += "\n\nFrom user's perspective, summarize and generate a concise session name (within 20 characters, excluding the word \"session\") based on the history, latest input, and user's language.";
+
+            Msg prompt = Msg.builder()
+                    .name(msg.getName())
+                    .role(MsgRole.USER)
+                    .textContent(text)
+                    .build();
+            String name = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
+                            .build())
+                    .map(ChatResponse::getContent)
+                    .flatMap(Flux::fromIterable)
+                    .filter(c -> c instanceof TextBlock)
+                    .map(c -> (TextBlock) c)
+                    .map(TextBlock::getText)
+                    .reduce((s, s2) -> s + s2)
+                    .block();
+            sessionRepository.updateSessionName(agentId, sessionId, name);
+            span.setStatus(StatusCode.OK);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
+        }
     }
 }

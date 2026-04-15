@@ -17,6 +17,8 @@
 
 package com.aliyun.tam.x.tron.core.domain.models.contents;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -40,6 +42,16 @@ import java.util.function.BiConsumer;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type", visible = true)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = TextContent.class, name = "1"),
+        @JsonSubTypes.Type(value = TextContent.class, name = "2"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "3"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "4"),
+        @JsonSubTypes.Type(value = MediaContent.class, name = "5"),
+        @JsonSubTypes.Type(value = TaskContent.class, name = "100"),
+        @JsonSubTypes.Type(value = ActionContent.class, name = "200"),
+})
 public abstract class Content {
     private Long id;
 
@@ -58,7 +70,7 @@ public abstract class Content {
     public static class ContentDeserializer extends JsonDeserializer<List<Content>> {
 
         private static ObjectMapper mapper;
-        
+
         static {
             mapper = new ObjectMapper();
             com.fasterxml.jackson.datatype.jsr310.JavaTimeModule javaTimeModule = new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule();
@@ -73,7 +85,7 @@ public abstract class Content {
         @Override
         public List<Content> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode arrayNode = p.getCodec().readTree(p);
-            
+
             if (arrayNode == null || arrayNode.isNull()) {
                 return null;
             }
@@ -96,7 +108,7 @@ public abstract class Content {
             if (node == null || node.isNull()) {
                 return null;
             }
-            
+
             int typeValue = node.get("type").asInt();
             ContentType contentType = ContentType.fromValue(typeValue);
 
@@ -114,11 +126,11 @@ public abstract class Content {
             if (contentsArray == null || contentsArray.isNull() || contentsArray.isEmpty()) {
                 return mapper.treeToValue(node, cls);
             }
-            
+
             JsonNode nodeCopy = node.deepCopy();
             ((com.fasterxml.jackson.databind.node.ObjectNode) nodeCopy).remove("contents");
             T inst = mapper.treeToValue(nodeCopy, cls);
-            
+
             List<Content> contents = new ArrayList<>();
             for (JsonNode contentNode : contentsArray) {
                 Content content = parseContent(contentNode);

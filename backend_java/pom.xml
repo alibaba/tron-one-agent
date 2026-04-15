@@ -19,13 +19,17 @@
     <properties>
         <java.version>17</java.version>
         <spring-boot.version>3.5.9</spring-boot.version>
-        <agentscope.version>1.0.9</agentscope.version>
+        <agentscope.version>1.0.11</agentscope.version>
         <openai.version>4.13.0</openai.version>
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <guava.version>33.5.0-jre</guava.version>
         <a2a.sdk.version>0.3.2.Final</a2a.sdk.version>
         <dashscope.version>2.22.11</dashscope.version>
+        <jackson-bom.version>2.21.1</jackson-bom.version>
+        <opentelemetry.version>1.60.1</opentelemetry.version>
+        <opentelemetry-instrumentation.version>2.26.0-alpha</opentelemetry-instrumentation.version>
+        <dokimos.version>0.9.0</dokimos.version>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +61,27 @@
 
             <!-- dependencies -->
             <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
+                <version>${opentelemetry-instrumentation.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
@@ -67,6 +92,16 @@
             <dependency>
                 <groupId>io.agentscope</groupId>
                 <artifactId>agentscope</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-extensions-studio</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-a2a-spring-boot-starter</artifactId>
                 <version>${agentscope.version}</version>
             </dependency>
 
@@ -147,6 +182,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>dev.dokimos</groupId>
+                <artifactId>dokimos-junit</artifactId>
+                <version>${dokimos.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -185,9 +226,7 @@
                     <encoding>UTF-8</encoding>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
+                    <parameters>true</parameters>
                     <buildDirectory>${project.build.directory}</buildDirectory>
                     <annotationProcessorPaths>
                         <path>

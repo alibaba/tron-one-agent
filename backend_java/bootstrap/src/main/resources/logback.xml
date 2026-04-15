@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE configuration>
 <configuration>
-    <variable name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <conversionRule conversionWord="traceSpanId" class="com.aliyun.tam.x.tron.infra.trace.TraceSpanIdConverter"/>
+
+    <variable name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} %traceSpanId - %msg%n"/>
     <variable name="LOG_FILE" value="application.log"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -32,8 +34,4 @@
     </root>
 
     <logger name="com.aliyun.tam.x.tron" level="INFO"/>
-    <logger name="org.springframework" level="WARN"/>
-    <logger name="com.mysql" level="WARN"/>
-    <logger name="org.mybatis" level="WARN"/>
-    <logger name="org.apache.ibatis" level="WARN"/>
 </configuration>

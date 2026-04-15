@@ -27,7 +27,7 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.SessionEventDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.SessionEventMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -37,7 +37,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;

@@ -23,5 +23,6 @@ build/
 
 logs/
 *.log
+*.xlsx
 
-**/results/
+results/

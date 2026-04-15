@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.agents.one;
 
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.A2ASubAgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TaskStatus;
@@ -44,6 +45,7 @@ import reactor.core.publisher.Mono;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,6 +72,8 @@ public class A2ASubAgentHandler extends SubAgentHandler {
     private final A2ASubAgentConfig subAgentConfig;
 
     private final A2aAgent a2aAgent;
+
+    private final List<AgentResult.Task> executedTasks = Lists.newCopyOnWriteArrayList();
 
     @Autowired
     private AgentStateRepository agentStateRepository;
@@ -112,8 +116,11 @@ public class A2ASubAgentHandler extends SubAgentHandler {
 
                 @Override
                 public Mono<ToolResultBlock> callAsync(ToolCallParam param) {
-                    ToolUseBlock toolUse = param.getToolUseBlock();
 
+                    long startTime = System.currentTimeMillis();
+                    AgentResult.Task task = AgentResult.Task.builder().agentId(subAgentConfig.getAgentId()).build();
+
+                    ToolUseBlock toolUse = param.getToolUseBlock();
                     Long taskId = null;
                     try {
                         String taskName = (String) param.getInput().get(PARAM_TASK_NAME);
@@ -124,6 +131,8 @@ public class A2ASubAgentHandler extends SubAgentHandler {
 
                         Long finalTaskId = eventSink.newTask(eventSink.getAgentId(), taskName, String.format("%s (%s)", taskDetail, agentId()));
                         taskId = finalTaskId;
+                        task.setId(finalTaskId);
+                        task.setName(taskName);
 
                         Session subSession = agentStateRepository.agentSessionsOf(agentId(), userId);
                         try {
@@ -158,11 +167,15 @@ public class A2ASubAgentHandler extends SubAgentHandler {
                             e.printStackTrace(new PrintWriter(sw));
                             eventSink.changeTaskStatus(taskId, TaskStatus.FAILED, sw.toString());
                         }
+                        task.setSuccess(false);
                         return Mono.just(
                                 ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
                                         .text("failed to process this task temporarily, try it again next time please")
                                         .build())
                         );
+                    } finally {
+                        task.setCostInMs(System.currentTimeMillis() - startTime);
+                        executedTasks.add(task);
                     }
                 }
             };
@@ -171,5 +184,15 @@ public class A2ASubAgentHandler extends SubAgentHandler {
             toolNames.add(agentTool.getName());
         }
         return toolNames;
+    }
+
+    @Override
+    public void resetExecutedTasks() {
+        executedTasks.clear();
+    }
+
+    @Override
+    public List<AgentResult.Task> getExecutedTasks() {
+        return executedTasks;
     }
 }

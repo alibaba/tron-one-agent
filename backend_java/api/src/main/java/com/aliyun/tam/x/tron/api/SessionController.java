@@ -24,6 +24,7 @@ import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.api.request.CreateSessionRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
@@ -39,11 +40,14 @@ import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
 import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
 import com.aliyun.tam.x.tron.core.tts.TtsService;
 import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.opentelemetry.context.Context;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -88,6 +92,8 @@ public class SessionController {
     private final SequenceService sequenceService;
 
     private final AgentStateRepository agentStateRepository;
+
+    private final ObjectMapper objectMapper;
 
     private final TtsService ttsService;
 
@@ -322,13 +328,13 @@ public class SessionController {
 
         if (Objects.equals("text/event-stream", accept)) {
             SseEmitter emitter = new SseEmitter(300_000L);
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, emitter);
+            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, emitter);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.TEXT_EVENT_STREAM)
                     .body(emitter);
         } else {
-            Callable<String> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, null);
+            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, null);
             threadPoolExecutor.submit(callable);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -336,7 +342,7 @@ public class SessionController {
         }
     }
 
-    private Callable<String> doChat(
+    private Callable<AgentResult> doChat(
             AgentHandler agentHandler,
             String agentId,
             String userId,

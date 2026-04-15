@@ -31,10 +31,9 @@ import com.google.common.collect.Maps;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
-import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.MsgRole;
-import io.agentscope.core.message.ToolResultBlock;
-import io.agentscope.core.message.ToolUseBlock;
+import io.agentscope.core.chat.completions.model.ToolCall;
+import io.agentscope.core.message.*;
+import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +82,9 @@ public class ReActAgentHandler extends AbstractAgentHandler {
     }
 
     @Override
-    public String handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+        long startTime = System.currentTimeMillis();
+
         Msg msg = Msg.builder()
                 .role(MsgRole.USER)
                 .name(userMessage.getName())
@@ -103,27 +104,58 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         renamingService.renameSession(agent.getModel(), msg, agent.getMemory().getMessages(),
                 eventSink.getAgentId(), eventSink.getSessionId());
 
-        AtomicReference<String> result = new AtomicReference<>();
+        AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
+        Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
         agent.stream(msg)
                 .doOnEach(s -> {
                     Event event = s.get();
                     if (event == null) {
                         return;
                     }
+
+                    if (result.getFirstTokenDelayInMs() == null) {
+                        result.setFirstTokenDelayInMs(System.currentTimeMillis() - startTime);
+                    }
+
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
-                        result.set(event.getMessage().getTextContent());
-                    } else if (event.getType() == EventType.REASONING) {
+                        result.setResponse(event.getMessage().getTextContent());
+                        return;
+                    }
+
+                    if (event.isLast() && event.getMessage() != null && event.getMessage().getChatUsage() != null) {
+                        ChatUsage usage = event.getMessage().getChatUsage();
+                        result.getUsage().increment(usage);
+                    }
+
+                    if (event.getType() == EventType.REASONING) {
                         Msg eventMsg = event.getMessage();
                         if (eventMsg.getRole() != MsgRole.ASSISTANT) {
                             return;
                         }
+
                         List<ToolUseBlock> toolUseBlocks = eventMsg.getContentBlocks(ToolUseBlock.class);
                         if (CollectionUtils.isEmpty(toolUseBlocks)) {
                             if (!event.isLast()) {
-                                eventSink.appendContentToMessage(convertFromBlocks(eventMsg.getContent()));
+                                List<ThinkingBlock> thinkingBlocks = event.getMessage().getContentBlocks(ThinkingBlock.class);
+                                if (!CollectionUtils.isEmpty(thinkingBlocks)) {
+                                    String content = thinkingBlocks.stream().map(ThinkingBlock::getThinking).reduce("", String::concat);
+                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().type(ContentType.THINKING).text(content).build()));
+                                }
+
+                                List<TextBlock> textBlocks = eventMsg.getContentBlocks(TextBlock.class);
+                                if (!CollectionUtils.isEmpty(textBlocks)) {
+                                    if (result.getFirstResponseTokenDelayInMs() == null) {
+                                        result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
+                                    }
+
+                                    String content = textBlocks.stream().map(TextBlock::getText).reduce("", String::concat);
+                                    eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
+                                }
                             }
                         } else if (event.isLast()) {
+                            result.setFirstResponseTokenDelayInMs(null);
+
                             for (ToolUseBlock toolUseBlock : toolUseBlocks) {
                                 String toolName = toolUseBlock.getName();
                                 Long actionId = null;
@@ -139,6 +171,8 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                                                     .build()
                                             )
                                     );
+                                    ongoingToolUses.put(toolUseBlock.getId(), actionId);
+                                    actions.put(actionId, AgentResult.Action.builder().id(actionId).name(toolName).costInMs(System.currentTimeMillis()).build());
                                 } catch (Exception e) {
                                     if (actionId != null) {
                                         eventSink.appendContentToAction(actionId,
@@ -149,10 +183,11 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                                         );
                                     }
                                 }
-                                ongoingToolUses.put(toolUseBlock.getId(), actionId);
                             }
                         }
                     } else if (event.getType() == EventType.TOOL_RESULT) {
+                        result.setFirstResponseTokenDelayInMs(null);
+
                         for (ToolResultBlock block : event.getMessage().getContentBlocks(ToolResultBlock.class)) {
                             Long actionId = ongoingToolUses.remove(block.getId());
                             if (actionId == null) {
@@ -162,6 +197,11 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                                     toolFormatter.formatToolResult(block.getOutput(), block.getName())
                             );
                             eventSink.changeActionStatus(actionId, ActionStatus.SUCCEED);
+                            AgentResult.Action action = actions.remove(actionId);
+                            if (action != null) {
+                                action.setCostInMs(System.currentTimeMillis() - action.getCostInMs());
+                                result.getActions().add(action);
+                            }
                         }
                     }
                 })
@@ -171,7 +211,8 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                     eventSink.onComplete();
                 })
                 .blockLast();
-        return result.get();
+        result.setCostInMs(System.currentTimeMillis() - startTime);
+        return result;
     }
 
     @Override

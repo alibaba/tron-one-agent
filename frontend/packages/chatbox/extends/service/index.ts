@@ -372,7 +372,10 @@ export const createChatStream = (
         const eventData: EventItem = JSON.parse(msg.data);
         callbacks?.onEvent?.(eventData);
       } catch (error) {
-        callbacks?.onError?.(new Error("消息解析失败: " + msg.data));
+        const parseError = new Error("消息解析失败: " + msg.data);
+        callbacks?.onError?.(parseError);
+        // 解析失败时抛出错误，阻止重试
+        throw parseError;
       }
     },
 
@@ -380,6 +383,8 @@ export const createChatStream = (
       if (error instanceof Error && error.name !== "AbortError") {
         callbacks?.onError?.(error);
       }
+      // 抛出错误以阻止自动重试
+      throw error;
     },
 
     onclose: () => {

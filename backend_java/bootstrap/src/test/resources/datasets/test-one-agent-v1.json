@@ -1,0 +1,12 @@
+{
+  "name": "one-agent-test-dataset",
+  "description": "example test dataset for one agent",
+  "examples": [
+    {
+      "input": "hello"
+    },
+    {
+      "input": "What can you do for me?"
+    }
+  ]
+}

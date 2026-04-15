@@ -21,8 +21,9 @@ import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
-import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
+import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
@@ -30,8 +31,7 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
-import com.google.common.collect.Lists;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -59,6 +60,7 @@ public abstract class BaseFuncTest {
         DB db = DB.newEmbeddedDB(configBuilder.build());
         db.start();
         db.createDB("tron_agent_java");
+        db.source("schema/init.sql");
 
         System.setProperty("spring.datasource.url", String.format("jdbc:mysql://localhost:%d/tron_agent_java?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false", configBuilder.getPort()));
         System.setProperty("spring.datasource.username", "root");
@@ -88,36 +90,14 @@ public abstract class BaseFuncTest {
 
     private String userName = userId;
 
-    private String sessionId;
-
 
     @BeforeEach
     public void prepare() throws Exception {
         prepareDbTables();
-        prepareSession();
     }
 
     public void prepareDbTables() throws Exception {
         executeSql("classpath*:schema/init.sql");
-    }
-
-    public void prepareSession() {
-        String agentId = agentId();
-        if (agentId == null) {
-            return;
-        }
-        sessionId = UUID.randomUUID().toString();
-
-        Session session = Session.builder()
-                .id(sessionId)
-                .userId(userId)
-                .agentId(agentId)
-                .name("")
-                .lastAppliedEventId(0L)
-                .gmtCreated(LocalDateTime.now())
-                .gmtModified(LocalDateTime.now())
-                .build();
-        sessionRepository.newSession(session);
     }
 
     protected String agentId() {
@@ -160,8 +140,26 @@ public abstract class BaseFuncTest {
         }
     }
 
-    protected String callAgent(String input) {
+    protected AgentResult callAgent(String sessionId, String input) {
+        return callAgent(sessionId, List.of(TextContent.builder().text(input).build()));
+    }
+
+    protected AgentResult callAgent(String sessionId, List<Content> input) {
         String agentId = agentId();
+
+        Session session = sessionRepository.getSession(agentId, sessionId);
+        if (session == null) {
+            session = Session.builder()
+                    .id(sessionId)
+                    .userId(userId)
+                    .agentId(agentId)
+                    .name("")
+                    .lastAppliedEventId(0L)
+                    .gmtCreated(LocalDateTime.now())
+                    .gmtModified(LocalDateTime.now())
+                    .build();
+            sessionRepository.newSession(session);
+        }
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
                 .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))
@@ -170,9 +168,7 @@ public abstract class BaseFuncTest {
                 .userId(userId)
                 .status(SessionMessageStatus.SUCCEED)
                 .name(userName)
-                .contents(Lists.newArrayList(
-                        new TextContent(ContentType.TEXT, input)
-                ))
+                .contents(input)
                 .gmtCreate(LocalDateTime.now())
                 .gmtModified(LocalDateTime.now())
                 .build();

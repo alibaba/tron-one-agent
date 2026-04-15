@@ -135,7 +135,7 @@ public class SkillConfigService {
                 .build();
     }
 
-    @Scheduled(fixedDelay = 3_000)
+    @Scheduled(fixedDelay = 60_000)
     public void syncSkills() {
         for (SkillConfig skillConfig : skillConfigRepository.list()) {
             try {

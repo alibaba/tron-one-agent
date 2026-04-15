@@ -1,39 +1,96 @@
+<div align="center">
+
 # Tron OneAgent
 
-Tron OneAgent 是一个企业级 AI Agent 开发平台，提供完整的后端服务框架和前端交互界面，帮助开发者快速构建生产级 AI Agent 应用。
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/alibaba/tron-one-agent)
+[![Jdk](https://img.shields.io/badge/JDK-17%2B-green)]()
+[![Node](https://img.shields.io/badge/Node-18%2B-green)]()
+[![License](https://img.shields.io/badge/license-Apache%202.0-red.svg?logo=apache&label=License)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/alibaba/tron-one-agent?style=flat&logo=github&color=yellow&label=Stars)](https://github.com/alibaba/tron-one-agent/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/alibaba/tron-one-agent?style=flat&logo=github&color=purple&label=Forks)](https://github.com/alibaba/tron-one-agent/network)
 
-## 项目简介
 
-Tron OneAgent 基于 [Alibaba AgentScope](https://java.agentscope.io/zh/intro.html) 和 Spring Boot 3 构建，采用前后端分离架构，提供了从 Agent 构建、事件溯源、动态配置到可视化交互的一站式解决方案。
+<p align="center">
+  <a href="README_en.md">English</a>
+</p>
+</div>
 
-### 主要解决的问题
+## 简介
 
-- **复杂的会话状态管理**：提供完整的会话生命周期管理和历史记录追溯
-- **多模型集成困难**：支持阿里云百炼、OpenAI 等多种 LLM 模型的统一接入
-- **调试和监控挑战**：基于事件溯源的全流程可观测性，支持实时事件流监控
-- **动态配置需求**：无需重启服务即可动态调整 Agent 配置、工具、知识库等
-- **前端交互复杂**：提供开箱即用的现代化 UI 界面和丰富的交互组件
-- **多 Agent 协作**：支持本地和远程（A2A 协议）多智能体编排与协作
+Tron OneAgent 是一个企业级 AI Agent 高代码开发框架，提供开箱即用的后端服务与前端交互能力，涵盖 Agent 构建的完整流程。
 
-## 核心特性
+### 核心特性
 
-### 🏗️ 后端能力
+- **多智能体架构**：面向业务划分的多智能体架构，支持本地与远程子智能体集成
+- **异步事件驱动**：基于异步事件驱动的交互协议，实现纯异步流式输出
+- **会话级持久化**：按 Agent → User → Session 三层隔离，提供完整的会话生命周期管理
+- **动态配置能力**：无需重启服务即可动态调整配置、工具、MCP、知识库、长期记忆和技能
+- **现代化前端**：开箱即用的现代化 UI 界面和丰富的交互组件
+- **多模态支持**：除多模态大模型外，还支持外挂 TTS、ASR 功能
 
-- **模块化分层架构**：API 层、核心业务层、基础设施层清晰分离
-- **Event Sourcing 事件溯源**：完整的对话历史可追溯，支持事件回放和状态重建
-- **动态配置系统**：支持运行时动态修改 Agent、MCP、知识库、Skill 配置
-- **强大的调试能力**：提供工具、MCP、知识库、事件流等多维度调试接口
-- **Skill 技能系统**：支持 zip 格式技能包，让 Agent 自主执行代码完成任务
-- **灵活的扩展能力**：支持多模型、多工具、MCP 协议、A2A 协议等
+Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/intro.html) 构建，完全兼容其生态能力。
 
-### 🎨 前端能力
+## 为什么选择 Tron OneAgent
 
-- **React + TypeScript**：现代化的前端技术栈，类型安全
-- **Yarn Workspaces**：多包管理模式，包含 client、control、chatbox 三个子包
-- **可复用组件库**：chatbox 提供完整的聊天界面组件库
-- **响应式设计**：适配不同设备尺寸，流畅的用户体验
-- **实时事件监控**：通过 SSE 实时展示 Agent 执行过程
-- **可视化管理后台**：提供 Agent 配置、调试和管理的完整界面
+- **开箱即用的企业级特性**：开发者无需从零构建智能体，显著降低开发门槛，提升开发效率
+- **多 Agent 协作**：支持 ReAct 单 Agent 模式，同时支持本地和远程（A2A 协议）多智能体编排，适用于企业多部门协作的复杂场景
+- **完善的会话状态管理**：提供完整的会话生命周期管理和纯异步流式输出
+- **动态配置与调试**：支持热更新配置，便于开发调试和生产环境应急处理
+- **丰富的前端交互**：提供开箱即用的现代化 UI 界面和丰富的交互组件
+- **多模态能力**：支持语音交互（TTS/ASR），扩展 Agent 的适用场景
+
+## 应用场景
+
+- **企业智能助手**：支持多智能体协作、工具调用、知识库检索的企业级 AI 助手
+- **智能客服系统**：支持用户会话隔离、长期记忆、业务系统 API 接入的智能客服解决方案
+
+## 架构
+
+```mermaid
+graph TB
+  EndUser((终端用户))
+  subgraph Client["Client (Node)"]
+    Session[会话管理]
+    Chat[聊天对话]
+  end
+
+  Developer((开发者))
+  subgraph Control["Client (Node)"]
+    Config[动态配置]
+    Debugger[开发调试]
+  end
+
+  subgraph Backend["Backend (Java)"]
+    AgentScope[AgentScope]
+  end
+
+  subgraph Infrastruture
+    Mysql[(MySQL)]
+    OSS[(文件存储)]
+    RAG[(知识库)]
+    LongTermMemory[(长期记忆)]
+    ModelAPI[模型API]
+    McpServer["MCP Server"]
+  end
+
+  RemoteSubAgent[远程子Agent]
+
+  EndUser --> Client
+  Developer --> Control
+
+  Config --> Backend
+  Debugger --> Backend
+  Session --> Backend
+  Chat --> Backend
+
+  Backend --> Mysql
+  Backend --> OSS
+  Backend --> ModelAPI
+  Backend --> RAG
+  Backend --> LongTermMemory
+  Backend --> McpServer
+  Backend --> RemoteSubAgent
+```
 
 ## 技术栈
 
@@ -43,7 +100,7 @@ Tron OneAgent 基于 [Alibaba AgentScope](https://java.agentscope.io/zh/intro.ht
 |------|------|------|
 | Spring Boot | 3.5.9 | Web 框架 |
 | JDK | 17 | Java 运行环境 |
-| AgentScope | 1.0.8 | AI Agent 框架 |
+| AgentScope | 1.0.11 | AI Agent 框架 |
 | MyBatis-Plus | 3.5.15 | ORM 框架 |
 | MySQL | 5.7+ / 8.0+ | 数据库 |
 | A2A SDK | 0.3.2 | Agent-to-Agent 协议 |
@@ -59,29 +116,9 @@ Tron OneAgent 基于 [Alibaba AgentScope](https://java.agentscope.io/zh/intro.ht
 | Webpack | 5.x | 模块打包器 |
 | Yarn | 1.x/2.x | 包管理器 |
 
-## 项目结构
+## 快速开始（本地部署）
 
-```
-tron-one-agent/
-├── backend_java/          # 后端服务
-│   ├── api/              # REST API 层
-│   ├── core/             # 核心业务逻辑
-│   ├── infra/            # 基础设施层（数据持久化）
-│   ├── bootstrap/        # 启动配置
-│   └── utils/            # 工具类
-├── frontend/             # 前端应用
-│   ├── packages/
-│   │   ├── chatbox/     # 通用聊天组件库
-│   │   ├── client/      # 客户端应用
-│   │   └── control/     # 控制台应用
-│   └── ...
-├── LICENSE               # Apache 2.0 许可证
-└── README.md            # 本文件
-```
-
-## 快速开始
-
-### 后端启动
+### 启动后端服务
 
 ```bash
 cd backend_java
@@ -103,9 +140,9 @@ mvn clean package -DskipTests
 java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
 ```
 
-服务将在 `http://localhost:8080` 启动。
+服务启动后访问：`http://localhost:8080`
 
-### 前端启动
+### 启动前端应用
 
 ```bash
 cd frontend
@@ -118,63 +155,14 @@ yarn dev:client    # 启动客户端应用
 yarn dev:control   # 启动控制台应用
 ```
 
-客户端将在 `http://localhost:3000` 启动。
+客户端启动后访问：`http://localhost:3000`
 
-## 适用场景
+## 文档
 
-- **企业智能助手**：构建支持工具调用、知识库检索的企业级 AI 助手
-- **多 Agent 协作系统**：需要多个专业 Agent 协同完成复杂任务
-- **对话机器人**：需要管理用户会话、支持长期记忆的对话系统
-- **AI 工作流编排**：需要将 AI 能力与业务系统深度集成
-- **智能客服系统**：需要可视化配置和监控的客服解决方案
-
-## 详细文档
-
-- **[后端详细文档](backend_java/README.MD)**
-  - 完整的 API 文档
-  - 开发指南和最佳实践
-  - 数据库表结构说明
-  - 常见问题解答
-
-- **[前端详细文档](frontend/README.md)**
-  - 组件库使用指南
-  - 开发和构建说明
-  - 部署和配置指南
-  - 常见问题解答
-
-## Docker 部署
-
-### 后端 Docker 部署
-
-```bash
-# 构建镜像
-docker build -f backend_java/Dockerfile -t tron-agent-java:latest .
-
-# 运行容器
-docker run -d \
-  --name tron-agent \
-  -p 8080:8080 \
-  -e DB_HOST=mysql_host \
-  -e DB_PORT=3306 \
-  -e DB_NAME=tron_agent_java \
-  -e DB_USER=root \
-  -e DB_PASS=password \
-  -e DASHSCOPE_API_KEY=your_api_key \
-  tron-agent-java:latest
-```
-
-### 前端 Docker 部署
-
-```bash
-# 构建镜像
-docker build -f frontend/Dockerfile -t tron-agent-frontend:latest .
-
-# 运行容器
-docker run -d \
-  --name tron-frontend \
-  -p 80:80 \
-  tron-agent-frontend:latest
-```
+| 主题                                                      | 说明                                 |
+| --------------------------------------------------------- | ------------------------------------ |
+| [开发指南](docs/zh/develop_guide.md) | 针对企业特定业务的前后端定制开发 |
+| [部署指南](docs/zh/deploy_guide.md) | 通过虚拟机机或者K8S部署到生产环境 |
 
 ## 开源许可
 
@@ -195,16 +183,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-
-## 社区与支持
-
-- **问题反馈**：请通过 Issue 提交问题和建议
-- **贡献代码**：欢迎提交 Pull Request
-- **技术咨询**：请通过 Issue 联系
-
-## 相关资源
-
-- [Alibaba AgentScope 官方文档](https://java.agentscope.io/zh/intro.html)
-- [Spring Boot 官方文档](https://spring.io/projects/spring-boot)
-- [React 官方文档](https://react.dev/)
-- [Ant Design 官方文档](https://ant.design/)

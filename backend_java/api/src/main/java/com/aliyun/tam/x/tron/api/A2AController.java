@@ -20,6 +20,7 @@ package com.aliyun.tam.x.tron.api;
 import com.aliyun.tam.x.tron.core.agents.AgentBuilder;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
@@ -30,7 +31,7 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
-import com.aliyun.tam.x.tron.core.domain.service.SequenceService;
+import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -196,11 +197,11 @@ public class A2AController {
             io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentBuilder.getAgentId(), userId);
             try {
                 agentHandler.loadFrom(session, sessionId);
-                String result = agentHandler.handleInput(userMsg, eventSink);
+                AgentResult result = agentHandler.handleInput(userMsg, eventSink);
                 eventQueue.enqueueEvent(
                         new Message.Builder()
                                 .role(Message.Role.AGENT)
-                                .parts(new TextPart(result))
+                                .parts(new TextPart(result.getResponse()))
                                 .messageId(UUID.randomUUID().toString())
                                 .taskId(context.getTaskId())
                                 .contextId(context.getContextId())
