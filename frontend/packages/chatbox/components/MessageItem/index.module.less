@@ -116,7 +116,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 6px;
   font-size: 11px;
   color: #8c8c8c;
 
@@ -127,6 +126,13 @@
   i {
     font-size: 11px;
   }
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 // 功能按钮区域
@@ -171,110 +177,43 @@
   }
 }
 
-// TTS 播放器样式
-.ttsPlayer {
-  display: flex;
-  align-items: center;
-  min-width: 260px;
-  max-width: 360px;
-  height: 48px;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 24px;
-  gap: 12px;
-}
-
-.ttsWaveform {
-  flex: 1;
-  display: flex;
+// TTS 播放图标按钮
+.ttsIconBtn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
-}
-
-.waveStatic {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
-
-  i {
-    font-size: 16px;
-  }
-}
-
-.waveAnimating {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  height: 24px;
-
-  span {
-    display: inline-block;
-    width: 4px;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 2px;
-    animation: wave 1.2s ease-in-out infinite;
-
-    &:nth-child(1) { animation-delay: 0s; }
-    &:nth-child(2) { animation-delay: 0.1s; }
-    &:nth-child(3) { animation-delay: 0.2s; }
-    &:nth-child(4) { animation-delay: 0.3s; }
-    &:nth-child(5) { animation-delay: 0.4s; }
-  }
-}
-
-@keyframes wave {
-  0%, 100% {
-    transform: scaleY(0.4);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
-
-.ttsControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ttsButton {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  width: 22px;
+  height: 22px;
   border: none;
-  border-radius: 16px;
-  font-size: 12px;
+  background: transparent;
+  border-radius: 50%;
   cursor: pointer;
+  color: #8c8c8c;
+  padding: 0;
   transition: all 0.2s ease;
 
-  i {
-    font-size: 12px;
-  }
-
-  &.playBtn {
-    background: rgba(255, 255, 255, 0.95);
+  &:hover {
     color: #667eea;
+    background: #f0f0f0;
+  }
+
+  &.ttsPlaying {
+    color: #667eea;
+    animation: ttsPulse 1.5s ease-in-out infinite;
 
     &:hover {
-      background: #fff;
+      color: #ff4d4f;
     }
   }
 
-  &.cancelBtn {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
+  i {
+    font-size: 15px;
   }
+}
+
+@keyframes ttsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 // Thinking 内容样式

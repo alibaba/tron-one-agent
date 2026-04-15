@@ -415,6 +415,24 @@ const MessageItem: React.FC<MessageItemProps> = ({
     return null;
   }, [message.status, isUser, isAgent]);
 
+  // TTS 播放图标
+  const ttsButton = useMemo(() => {
+    if (!isAgent || !supportAgentTTS || !textContent) return null;
+    return (
+      <button
+        className={`${styles.ttsIconBtn}${isPlaying ? ` ${styles.ttsPlaying}` : ''}`}
+        onClick={handleTTSClick}
+        title={isPlaying ? '停止播放' : '语音播放'}
+      >
+        {isPlaying ? (
+          <i className="fas fa-stop-circle"></i>
+        ) : (
+          <i className="fas fa-volume-up"></i>
+        )}
+      </button>
+    );
+  }, [isAgent, supportAgentTTS, textContent, isPlaying, handleTTSClick]);
+
   return (
     <div
       className={`${styles.messageItem} ${isUser ? styles.user : styles.agent}`}
@@ -446,42 +464,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         ) : null}
 
-        {statusElement}
-
-        {/* Agent 消息功能按钮区域 */}
-        {isAgent && supportAgentTTS && textContent && (
-          <div className={styles.ttsPlayer}>
-            <div className={styles.ttsWaveform}>
-              {isPlaying ? (
-                <div className={styles.waveAnimating}>
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-              ) : (
-                <div className={styles.waveStatic}>
-                  <i className="fas fa-volume-up"></i>
-                  <span>语音播放</span>
-                </div>
-              )}
-            </div>
-            <div className={styles.ttsControls}>
-              {isPlaying ? (
-                <button
-                  className={`${styles.ttsButton} ${styles.cancelBtn}`}
-                  onClick={handleTTSClick}
-                >
-                  <i className="fas fa-stop"></i>
-                  <span>取消</span>
-                </button>
-              ) : (
-                <button
-                  className={`${styles.ttsButton} ${styles.playBtn}`}
-                  onClick={handleTTSClick}
-                >
-                  <i className="fas fa-play"></i>
-                  <span>播放</span>
-                </button>
-              )}
-            </div>
+        {(statusElement || ttsButton) && (
+          <div className={styles.statusRow}>
+            {statusElement}
+            {ttsButton}
           </div>
         )}
       </div>
