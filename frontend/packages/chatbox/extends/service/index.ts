@@ -431,7 +431,7 @@ type JsonRpcMessage = JsonRpcResponse | JsonRpcNotification;
  */
 export interface WsChatConnection {
   /** 发送聊天消息 */
-  sendChat: (input: any[]) => void;
+  sendChat: (input: any[], enableTts?: boolean) => void;
   /** 发送取消请求 */
   sendCancel: () => Promise<void>;
   /** 关闭连接 */
@@ -558,8 +558,8 @@ export const createWsChatConnection = (
   connect();
 
   return {
-    sendChat: (input: any[]) => {
-      sendRequest("chat", [{ input }]).then((response) => {
+    sendChat: (input: any[], enableTts?: boolean) => {
+      sendRequest("chat", [{ input, enableTts: enableTts || false }]).then((response) => {
         if (response.error) {
           callbacks?.onError?.(new Error(response.error.message));
         } else if (response.result !== undefined) {

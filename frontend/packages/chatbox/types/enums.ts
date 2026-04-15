@@ -47,6 +47,8 @@ export enum SessionEventType {
 
   ACTION_APPEND_CONTENT = 40,
   ACTION_STATUS_CHANGED = 41,
+
+  TTS_RESPONSE = 1001,
 }
 
 export enum SessionMessageType {

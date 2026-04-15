@@ -1,20 +1,3 @@
-/*
- * Copyright 2026 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
 package com.aliyun.tam.x.tron.core.domain.service;
 
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
@@ -26,7 +9,6 @@ import io.agentscope.core.message.ToolUseBlock;
 import io.agentscope.core.model.ChatResponse;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.Model;
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
@@ -44,27 +26,27 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class RenamingService {
-    @Value("${tron.renaming.enabled:true}")
+public class FollowupSuggestionService {
+    @Value("${tron.suggection.enabled:true}")
     private boolean enabled;
 
-    @Value("${tron.renaming.history.limit:10}")
+    @Value("${tron.suggection.history.limit:10}")
     private int historyLimit;
 
     private final SessionRepository sessionRepository;
 
     private final Tracer tracer;
 
-    public void renameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
+    public void suggest(Model model, Msg msg, List<Msg> history, String agentId, String sessionId) {
         if (enabled) {
             Context otelContext = Context.current();
-            doRenameSession(model, msg, history, agentId, sessionId, otelContext);
+            doSuggest(model, msg, history, agentId, sessionId, otelContext);
         }
     }
 
     @Async
-    public void doRenameSession(Model model, Msg msg, List<Msg> history, String agentId, String sessionId, Context otelContext) {
-        Span span = tracer.spanBuilder("renaming session")
+    public void doSuggest(Model model, Msg msg, List<Msg> history, String agentId, String sessionId, Context otelContext) {
+        Span span = tracer.spanBuilder("followup suggestion")
                 .setParent(otelContext)
                 .setAttribute("agent.id", agentId)
                 .setAttribute("session.id", sessionId)

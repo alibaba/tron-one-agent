@@ -151,6 +151,92 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const [chatProtocol, setChatProtocol] = useState<"sse" | "ws">(initialProtocol);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
 
+  // ========== Inline TTS 音频播放 ==========
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioQueueRef = useRef<AudioBuffer[]>([]);
+  const isPlayingAudioRef = useRef(false);
+  const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
+  const playNextAudio = useCallback(() => {
+    if (!audioContextRef.current || audioQueueRef.current.length === 0) {
+      if (audioQueueRef.current.length === 0) {
+        isPlayingAudioRef.current = false;
+      }
+      return;
+    }
+    isPlayingAudioRef.current = true;
+    const audioBuffer = audioQueueRef.current.shift();
+    if (!audioBuffer) return;
+    try {
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      source.onended = () => {
+        currentAudioSourceRef.current = null;
+        playNextAudio();
+      };
+      currentAudioSourceRef.current = source;
+      source.start(0);
+    } catch (error) {
+      console.error("播放音频失败:", error);
+    }
+  }, []);
+
+  const stopInlineTts = useCallback(() => {
+    if (currentAudioSourceRef.current) {
+      try { currentAudioSourceRef.current.stop(); } catch (_) {}
+      currentAudioSourceRef.current = null;
+    }
+    audioQueueRef.current = [];
+    isPlayingAudioRef.current = false;
+  }, []);
+
+  /** PCM Base64 → WAV → AudioBuffer → 播放队列 */
+  const handleTtsResponse = useCallback(async (data: any) => {
+    if (!ttsAutoPlay) return;
+    if (data.success === false) {
+      console.error("TTS error:", data.error);
+      return;
+    }
+    if (data.finished === true) {
+      console.log("TTS stream finished");
+      return;
+    }
+    const base64Data = data.dataBase64;
+    if (!base64Data) return;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    // Decode base64 to PCM bytes
+    const binaryString = atob(base64Data);
+    const pcmBytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      pcmBytes[i] = binaryString.charCodeAt(i);
+    }
+    // PCM → WAV (24000Hz, mono, 16bit)
+    const sampleRate = 24000, numChannels = 1, bitsPerSample = 16;
+    const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+    const blockAlign = (numChannels * bitsPerSample) / 8;
+    const dataSize = pcmBytes.length;
+    const wavBuf = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(wavBuf);
+    const writeStr = (offset: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i)); };
+    writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); writeStr(8, "WAVE");
+    writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true); view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeStr(36, "data"); view.setUint32(40, dataSize, true);
+    new Uint8Array(wavBuf, 44).set(pcmBytes);
+
+    const audioBuffer = await audioContextRef.current.decodeAudioData(wavBuf);
+    audioQueueRef.current.push(audioBuffer);
+    if (!isPlayingAudioRef.current) {
+      playNextAudio();
+    }
+  }, [ttsAutoPlay, playNextAudio]);
+
   // 同步状态到 URL 参数
   const updateUrlParams = useCallback((updates: Record<string, string>) => {
     setSearchParams((prev) => {
@@ -247,6 +333,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }
       },
       onEvent: (event: EventItem) => {
+        // 处理 TTS_RESPONSE 事件（inline TTS）
+        if ((event as any).type === SessionEventType.TTS_RESPONSE) {
+          handleTtsResponse((event as any).data);
+          return;
+        }
         setEvents((prev) => [...prev, event]);
         lastEventIdRef.current = event.id;
         setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
@@ -267,7 +358,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       },
     });
     wsConnectionRef.current = conn;
-  }, []);
+  }, [handleTtsResponse]);
 
   const disconnectWebSocket = useCallback(() => {
     if (wsConnectionRef.current) {
@@ -414,11 +505,15 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         }
 
         setRunning(true);
-        wsConnectionRef.current.sendChat(inputContents);
+        // 新对话开始时停止上一轮 TTS 播放
+        stopInlineTts();
+        wsConnectionRef.current.sendChat(inputContents, ttsAutoPlay);
       } else {
         // ========== SSE 流式模式 ==========
         try {
           setRunning(true);
+          // 新对话开始时停止上一轮 TTS 播放
+          stopInlineTts();
           
           // 取消之前的请求
           if (abortControllerRef.current) {
@@ -428,9 +523,14 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           abortControllerRef.current = createChatStream(
             agentIdChanged,
             currentSessionId,
-            { data: { input: inputContents } },
+            { data: { input: inputContents, enableTts: ttsAutoPlay } },
             {
               onEvent: (event: EventItem) => {
+                // 处理 TTS_RESPONSE 事件（inline TTS）
+                if ((event as any).type === SessionEventType.TTS_RESPONSE) {
+                  handleTtsResponse((event as any).data);
+                  return;
+                }
                 // 更新事件列表用于调试面板
                 setEvents((prev) => [...prev, event]);
                 lastEventIdRef.current = event.id;
@@ -500,7 +600,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       }
       return true;
     },
-    [sessionId, agentIdChanged, chatProtocol, connectWebSocket]
+    [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse]
   );
   const onCreateSessionClick = useCallback(() => {
     const newId = generateSessionId();
@@ -687,7 +787,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           supportInputTypes={agentSupportInputTypes}
           supportAgentTTS={true}
           ttsWsUrl={`${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/chatApi/api/tts`}
-          ttsAutoPlay={ttsAutoPlay}
+          ttsAutoPlay={false}
           onLike={(messageId) => console.log("点赞消息:", messageId)}
           onDislike={(messageId) => console.log("点踩消息:", messageId)}
           voiceInput={{
