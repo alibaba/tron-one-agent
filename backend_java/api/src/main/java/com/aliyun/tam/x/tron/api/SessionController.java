@@ -71,6 +71,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @RestController
@@ -385,7 +387,7 @@ public class SessionController {
                 sessionId,
                 agentMessage.getId()
         );
-        EventSink eventSink = wrapEventSink(rawEventSink, chatRequest, sseEmitter);
+        EventSink eventSink = wrapEventSink(agentHandler, rawEventSink, chatRequest, sseEmitter);
 
         eventSink.newUserMessage(userMessage);
         eventSink.newAgentMessage(agentMessage);
@@ -400,20 +402,29 @@ public class SessionController {
         };
     }
 
-    private EventSink wrapEventSink(EventSink rawEventSink, ChatRequest chatRequest, SseEmitter sseEmitter) {
+    private EventSink wrapEventSink(AgentHandler handler, EventSink rawEventSink, ChatRequest chatRequest, SseEmitter sseEmitter) {
         EventSink eventSink;
         if (sseEmitter == null) {
             eventSink = rawEventSink;
         } else {
+            AtomicBoolean completed = new AtomicBoolean(false);
             eventSink = new EventSink() {
                 @Override
                 public void newEvent(SessionEvent event) {
                     rawEventSink.newEvent(event);
+                    if (completed.get()) {
+                        return;
+                    }
                     try {
                         sseEmitter.send(event);
+                    } catch (IllegalStateException e) {
+                        log.warn("SseEmitter is closed");
+                        handler.cancel(null);
+                        completed.set(true);
                     } catch (Exception e) {
                         try {
                             sseEmitter.completeWithError(e);
+                            completed.set(true);
                         } catch (Exception ex) {
                         }
                     }

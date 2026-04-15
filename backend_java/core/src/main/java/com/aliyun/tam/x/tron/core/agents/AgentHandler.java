@@ -101,19 +101,23 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
                     .publishPercentileHistogram()
                     .register(Metrics.globalRegistry));
 
-            DistributionSummary.builder("one.agent.ttft")
-                    .tag("agent.id", agentId)
-                    .baseUnit("milliseconds")
-                    .publishPercentileHistogram()
-                    .register(Metrics.globalRegistry)
-                    .record(result.getFirstTokenDelayInMs());
+            if (result.getFirstTokenDelayInMs() != null) {
+                DistributionSummary.builder("one.agent.ttft")
+                        .tag("agent.id", agentId)
+                        .baseUnit("milliseconds")
+                        .publishPercentileHistogram()
+                        .register(Metrics.globalRegistry)
+                        .record(result.getFirstTokenDelayInMs());
+            }
 
-            DistributionSummary.builder("one.agent.response.ttft")
-                    .tag("agent.id", agentId)
-                    .baseUnit("milliseconds")
-                    .publishPercentileHistogram()
-                    .register(Metrics.globalRegistry)
-                    .record(result.getFirstResponseTokenDelayInMs());
+            if (result.getFirstResponseTokenDelayInMs() != null) {
+                DistributionSummary.builder("one.agent.response.ttft")
+                        .tag("agent.id", agentId)
+                        .baseUnit("milliseconds")
+                        .publishPercentileHistogram()
+                        .register(Metrics.globalRegistry)
+                        .record(result.getFirstResponseTokenDelayInMs());
+            }
 
             result.setCostInMs(costInNano / 1000);
             return result;

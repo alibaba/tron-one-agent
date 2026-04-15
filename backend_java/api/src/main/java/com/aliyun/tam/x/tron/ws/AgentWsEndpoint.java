@@ -1,5 +1,8 @@
 package com.aliyun.tam.x.tron.ws;
 
+import com.aliyun.tam.x.tron.api.dto.PageResultDTO;
+import com.aliyun.tam.x.tron.api.dto.SessionDTO;
+import com.aliyun.tam.x.tron.api.dto.SessionMessageDTO;
 import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
@@ -14,6 +17,7 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
+import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
 import com.aliyun.tam.x.tron.core.tts.TtsService;
@@ -28,7 +32,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestAttributes;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -49,6 +52,8 @@ public class AgentWsEndpoint {
     private final AgentRegistry agentRegistry;
 
     private final SessionRepository sessionRepository;
+
+    private final MessageRepository messageRepository;
 
     private final AgentStateRepository agentStateRepository;
 
@@ -110,6 +115,38 @@ public class AgentWsEndpoint {
         this.agentHandler = agentHandler;
         this.session = getOrCreateSession(agentId, sessionId, userId);
 
+        threadPoolExecutor.submit(() -> {
+            if (!wsSession.isOpen()) {
+                return;
+            }
+
+            PageResultDTO<SessionMessageDTO> messages = PageResultDTO.from(
+                    messageRepository.listMessages(agentId, sessionId, 1, 100),
+                    SessionMessageDTO::from
+            );
+
+            SessionDTO sessionDTO = SessionDTO.builder()
+                    .id(session.getId())
+                    .userId(userId)
+                    .agentId(agentId)
+                    .name(session.getName())
+                    .lastAppliedEventId(session.getLastAppliedEventId())
+                    .gmtCreated(session.getGmtCreated())
+                    .gmtModified(session.getGmtModified())
+                    .messages(messages)
+                    .build();
+
+            try {
+                wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
+                        JsonRpcNotification.builder()
+                                .method("session")
+                                .params(sessionDTO)
+                                .build()
+                ));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
         log.info("Open session for agent {} and session {}", agentId, sessionId);
     }
 
@@ -207,7 +244,6 @@ public class AgentWsEndpoint {
 
         EventSink eventSink = buildEventSink(agentMessage, request, wsSession);
 
-        chatting = true;
         threadPoolExecutor.submit(() -> {
             eventSink.newUserMessage(userMessage);
             eventSink.newAgentMessage(agentMessage);
@@ -217,7 +253,6 @@ public class AgentWsEndpoint {
                 log.warn("Error handling input for session {}", session.getId(), e);
             } finally {
                 saveAgent();
-                chatting = false;
             }
         });
         return agentMessage.getId();
@@ -326,9 +361,8 @@ public class AgentWsEndpoint {
     }
 
     private void handleCancel(String message) {
-        if (chatting) {
-            agentHandler.cancel(message);
-        }
+        agentHandler.cancel(message);
+        log.info("Cancelled chat for session {} with message {}", session.getId(), message);
     }
 
     private void register(String rpcMethod, String methodName) throws NoSuchMethodException {
@@ -341,26 +375,56 @@ public class AgentWsEndpoint {
     }
 
     private String getRequiredHeader(EndpointConfig config, String name) {
+        // 优先从 HTTP headers 获取
         Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
-        List<String> headerValues = headers.get(name);
-        if (headerValues == null || headerValues.isEmpty()) {
-            throw new RuntimeException("Missing required header: " + name);
-        } else if (headerValues.size() > 1) {
-            throw new RuntimeException("Multiple values for header: " + name);
+        if (headers != null) {
+            List<String> headerValues = headers.get(name);
+            if (headerValues != null && !headerValues.isEmpty()) {
+                if (headerValues.size() > 1) {
+                    throw new RuntimeException("Multiple values for header: " + name);
+                }
+                return headerValues.get(0);
+            }
         }
-        return headerValues.get(0);
+        // 降级从 query params 获取（WebSocket 不支持自定义 headers）
+        Map<String, List<String>> params = (Map<String, List<String>>) config.getUserProperties().get("params");
+        if (params != null) {
+            List<String> paramValues = params.get(name);
+            if (paramValues != null && !paramValues.isEmpty()) {
+                if (paramValues.size() > 1) {
+                    throw new RuntimeException("Multiple values for param: " + name);
+                }
+                return paramValues.get(0);
+            }
+        }
+        throw new RuntimeException("Missing required header/param: " + name);
     }
 
 
     private String getOptionalHeader(EndpointConfig config, String name, String defaultValue) {
+        // 优先从 HTTP headers 获取
         Map<String, List<String>> headers = (Map<String, List<String>>) config.getUserProperties().get("headers");
-        List<String> headerValues = headers.get(name);
-        if (headerValues == null || headerValues.isEmpty()) {
-            return defaultValue;
-        } else if (headerValues.size() > 1) {
-            throw new RuntimeException("Multiple values for header: " + name);
+        if (headers != null) {
+            List<String> headerValues = headers.get(name);
+            if (headerValues != null && !headerValues.isEmpty()) {
+                if (headerValues.size() > 1) {
+                    throw new RuntimeException("Multiple values for header: " + name);
+                }
+                return headerValues.get(0);
+            }
         }
-        return headerValues.get(0);
+        // 降级从 query params 获取
+        Map<String, List<String>> params = (Map<String, List<String>>) config.getUserProperties().get("params");
+        if (params != null) {
+            List<String> paramValues = params.get(name);
+            if (paramValues != null && !paramValues.isEmpty()) {
+                if (paramValues.size() > 1) {
+                    throw new RuntimeException("Multiple values for param: " + name);
+                }
+                return paramValues.get(0);
+            }
+        }
+        return defaultValue;
     }
 
     private com.aliyun.tam.x.tron.core.domain.models.Session getOrCreateSession(String agentId, String sessionId, String userId) {

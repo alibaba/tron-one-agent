@@ -25,6 +25,8 @@ interface RequestConfig {
 
 interface ServiceConfig {
   apiPrefix?: string;
+  /** WebSocket 代理前缀（如 /chatApi），默认与 apiPrefix 相同 */
+  wsPrefix?: string;
   origin?: string;
   authorizationHeader?: Record<string, string>;
 }
@@ -397,5 +399,190 @@ export const createChatStream = (
   });
 
   return abortController;
+};
+
+/**
+ * JSON-RPC 消息类型定义
+ */
+interface JsonRpcRequest {
+  jsonrpc: "2.0";
+  id: number | string;
+  method: string;
+  params?: any;
+}
+
+interface JsonRpcResponse {
+  jsonrpc: "2.0";
+  id: number | string;
+  result?: any;
+  error?: { code: number; message: string };
+}
+
+interface JsonRpcNotification {
+  jsonrpc: "2.0";
+  method: string;
+  params?: any;
+}
+
+type JsonRpcMessage = JsonRpcResponse | JsonRpcNotification;
+
+/**
+ * WebSocket JSON-RPC 聊天连接管理器
+ */
+export interface WsChatConnection {
+  /** 发送聊天消息 */
+  sendChat: (input: any[]) => void;
+  /** 发送取消请求 */
+  sendCancel: () => Promise<void>;
+  /** 关闭连接 */
+  close: () => void;
+  /** 获取 WebSocket 实例 */
+  getWebSocket: () => WebSocket | null;
+}
+
+export interface WsChatCallbacks {
+  onSessionInfo?: (session: any) => void;
+  onEvent?: (event: EventItem) => void;
+  onChatResult?: (messageId: number) => void;
+  onError?: (error: Error) => void;
+  onClose?: () => void;
+  onOpen?: () => void;
+}
+
+/**
+ * 创建 WebSocket JSON-RPC 聊天连接
+ * @param agentId Agent ID
+ * @param sessionId Session ID
+ * @param callbacks 回调函数
+ * @returns WsChatConnection 连接管理器
+ */
+export const createWsChatConnection = (
+  agentId: string,
+  sessionId: string,
+  callbacks?: WsChatCallbacks
+): WsChatConnection => {
+  let ws: WebSocket | null = null;
+  let requestIdCounter = 1;
+  const pendingRequests = new Map<number | string, (response: JsonRpcResponse) => void>();
+
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = serviceConfig.origin
+    ? serviceConfig.origin.replace(/^https?:\/\//, "")
+    : window.location.host;
+  // wsPrefix: 代理前缀（如 /chatApi），用于匹配 webpack-dev-server 的 ws 代理
+  // apiPrefix: 后端 context-path（如 /api），代理转发后保留
+  const wsProxy = serviceConfig.wsPrefix || "";
+  const contextPath = serviceConfig.apiPrefix || "";
+
+  // WebSocket 不支持自定义 header，通过 query params 传递认证信息
+  const authParams = new URLSearchParams();
+  if (serviceConfig.authorizationHeader) {
+    Object.entries(serviceConfig.authorizationHeader).forEach(([key, value]) => {
+      authParams.append(key, value);
+    });
+  }
+  const queryString = authParams.toString() ? `?${authParams.toString()}` : "";
+
+  const url = `${protocol}//${host}${wsProxy}${contextPath}/ws/agents/${agentId}/sessions/${sessionId}${queryString}`;
+
+  const connect = () => {
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      console.log("[WS-JSONRPC] 连接已建立");
+      callbacks?.onOpen?.();
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg: JsonRpcMessage = JSON.parse(event.data);
+
+        // 判断是否是 Response（有 id 字段）
+        if ("id" in msg && msg.id !== undefined) {
+          const response = msg as JsonRpcResponse;
+          const resolver = pendingRequests.get(response.id);
+          if (resolver) {
+            resolver(response);
+            pendingRequests.delete(response.id);
+          }
+          return;
+        }
+
+        // 否则是 Notification
+        const notification = msg as JsonRpcNotification;
+        if (notification.method === "session") {
+          callbacks?.onSessionInfo?.(notification.params);
+        } else if (notification.method === "event") {
+          callbacks?.onEvent?.(notification.params as EventItem);
+        }
+      } catch (error) {
+        console.error("[WS-JSONRPC] 消息解析失败:", event.data);
+        callbacks?.onError?.(new Error("消息解析失败: " + event.data));
+      }
+    };
+
+    ws.onerror = (event) => {
+      console.error("[WS-JSONRPC] WebSocket 错误", event);
+      callbacks?.onError?.(new Error("WebSocket 连接错误"));
+    };
+
+    ws.onclose = () => {
+      console.log("[WS-JSONRPC] 连接已关闭");
+      // 拒绝所有待处理请求
+      pendingRequests.forEach((resolver) => {
+        resolver({ jsonrpc: "2.0", id: 0, error: { code: -1, message: "连接已关闭" } });
+      });
+      pendingRequests.clear();
+      callbacks?.onClose?.();
+    };
+  };
+
+  const sendRequest = (method: string, params?: any): Promise<JsonRpcResponse> => {
+    return new Promise((resolve, reject) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        reject(new Error("WebSocket 未连接"));
+        return;
+      }
+      const id = requestIdCounter++;
+      const request: JsonRpcRequest = {
+        jsonrpc: "2.0",
+        id,
+        method,
+        params,
+      };
+      pendingRequests.set(id, resolve);
+      ws.send(JSON.stringify(request));
+    });
+  };
+
+  connect();
+
+  return {
+    sendChat: (input: any[]) => {
+      sendRequest("chat", [{ input }]).then((response) => {
+        if (response.error) {
+          callbacks?.onError?.(new Error(response.error.message));
+        } else if (response.result !== undefined) {
+          callbacks?.onChatResult?.(response.result as number);
+        }
+      }).catch((error) => {
+        callbacks?.onError?.(error);
+      });
+    },
+    sendCancel: () => {
+      return sendRequest("cancel", []).then(() => {}).catch(() => {});
+    },
+    close: () => {
+      if (ws) {
+        // 清除回调，防止关闭旧连接时异步触发 onClose 覆盖新连接的状态
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
+        ws.close();
+        ws = null;
+      }
+    },
+    getWebSocket: () => ws,
+  };
 };
 

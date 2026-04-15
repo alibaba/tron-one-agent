@@ -225,8 +225,15 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         }
                     }
                 })
-                .doOnComplete(() -> eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED))
-                .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
+                .doOnCancel(() -> {
+                    eventSink.changeMessageStatus(SessionMessageStatus.CANCELLED);
+                })
+                .doOnComplete(() -> {
+                    eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                })
+                .doOnError(throwable -> {
+                    eventSink.changeMessageStatus(SessionMessageStatus.FAILED);
+                })
                 .doFinally(s -> {
                     eventSink.onComplete();
                 })

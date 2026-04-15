@@ -26,7 +26,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum SessionMessageStatus {
     EXECUTING(2),
     SUCCEED(3),
-    FAILED(4);
+    FAILED(4),
+    CANCELLED(5),
+    ;
 
     private final int value;
 

@@ -401,6 +401,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
               <span>消息获取失败，请稍后重试或者刷新页面尝试获取消息</span>
             </div>
           );
+        case SessionMessageStatus.CANCELLED:
+          return (
+            <div className={styles.messageStatus} style={{ color: "#faad14" }}>
+              <i className="fas fa-ban"></i>
+              <span>已取消</span>
+            </div>
+          );
         default:
           return null;
       }

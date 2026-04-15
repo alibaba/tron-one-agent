@@ -91,9 +91,9 @@ public class AgentResult {
 
     private String response;
 
-    private Long firstTokenDelayInMs;
+    private Long firstTokenDelayInMs = 0L;
 
-    private Long firstResponseTokenDelayInMs;
+    private Long firstResponseTokenDelayInMs = 0L;
 
     private Long costInMs;
 
