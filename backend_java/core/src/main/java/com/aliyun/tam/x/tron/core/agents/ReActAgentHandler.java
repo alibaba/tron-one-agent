@@ -17,22 +17,19 @@
 
 package com.aliyun.tam.x.tron.core.agents;
 
+import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ActionStatus;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
-import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
-import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
-import io.agentscope.core.chat.completions.model.ToolCall;
 import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
@@ -40,18 +37,14 @@ import io.agentscope.core.state.SessionKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Mono;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aliyun.tam.x.tron.core.utils.AgentHelper.*;
 
 public class ReActAgentHandler extends AbstractAgentHandler {
-    private final String id;
 
     private final ReActAgent agent;
 
@@ -60,16 +53,10 @@ public class ReActAgentHandler extends AbstractAgentHandler {
     @Autowired
     private ToolFormatter toolFormatter;
 
-    @Autowired
-    private RenamingService renamingService;
-
-    @Autowired
-    private FollowupSuggestionService followupSuggestionService;
-
-    public ReActAgentHandler(String id, ReActAgent agent, Collection<ContentType> supportedInputTypes) {
-        super(supportedInputTypes);
-        this.id = id;
+    public ReActAgentHandler(AgentConfig config, ReActAgent agent) {
+        super(config);
         this.agent = agent;
+        registerQuestionTool(agent);
     }
 
     @Override
@@ -82,10 +69,6 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         agent.loadFrom(session, sessionKey);
     }
 
-    @Override
-    public String getId() {
-        return id;
-    }
 
     @Override
     public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
@@ -107,8 +90,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
 
         msg = buildRuntimeContext(msg);
 
-        renamingService.renameSession(getFastChatModel(), msg, agent.getMemory().getMessages(),
-                eventSink.getAgentId(), eventSink.getSessionId());
+        renameSession(eventSink, msg, agent.getMemory().getMessages());
 
         AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
@@ -219,7 +201,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doFinally(s -> {
                     eventSink.onComplete();
                     if (!cancelled.get()) {
-                        followupSuggestionService.suggest(getFastChatModel(), agent.getMemory().getMessages(), eventSink);
+                        followupSuggestions(eventSink, agent.getMemory().getMessages());
                     }
                 })
                 .blockLast();

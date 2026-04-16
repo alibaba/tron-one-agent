@@ -19,14 +19,15 @@ package com.aliyun.tam.x.tron.core.agents.one;
 
 import com.aliyun.tam.x.tron.core.agents.AbstractAgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
+import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ActionStatus;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
+import com.aliyun.tam.x.tron.core.domain.models.contents.HitlContent;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
+import com.aliyun.tam.x.tron.core.domain.models.events.AgentMessageAppendContentEvent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
-import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
-import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -35,7 +36,6 @@ import com.google.common.collect.Sets;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
-import io.agentscope.core.hook.Hook;
 import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
@@ -45,19 +45,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.aliyun.tam.x.tron.core.utils.AgentHelper.convertToBlocks;
 
 @Getter
 public class OneAgentHandler extends AbstractAgentHandler {
-
-    private final String id;
 
     private final ReActAgent mainAgent;
 
@@ -71,18 +67,13 @@ public class OneAgentHandler extends AbstractAgentHandler {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private RenamingService renamingService;
 
-    @Autowired
-    private FollowupSuggestionService followupSuggestionService;
-
-    public OneAgentHandler(String id, ReActAgent.Builder mainAgentBuilder, List<SubAgentHandler> subAgents, Collection<ContentType> supportedInputTypes) {
-        super(supportedInputTypes);
-        this.id = id;
+    public OneAgentHandler(AgentConfig agentConfig, ReActAgent.Builder mainAgentBuilder, List<SubAgentHandler> subAgents) {
+        super(agentConfig);
         this.mainAgent = mainAgentBuilder
                 .build();
         this.subAgents = subAgents;
+        registerQuestionTool(mainAgent);
     }
 
     @Override
@@ -115,8 +106,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
 
         msg = buildRuntimeContext(msg);
 
-        renamingService.renameSession(getFastChatModel(), msg, mainAgent.getMemory().getMessages(),
-                eventSink.getAgentId(), eventSink.getSessionId());
+        renameSession(eventSink, msg, mainAgent.getMemory().getMessages());
 
         Set<String> subAgentTools = Sets.newHashSet();
         for (SubAgentHandler subAgent : subAgents) {
@@ -185,6 +175,20 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                     continue;
                                 }
 
+                                if (QUESTION_TOOL_NAME.contains(toolName)) {
+                                    eventSink.appendContentToMessage(
+                                            List.of(
+                                                    HitlContent.builder()
+                                                            .id(toolUseBlock.getId())
+                                                            .status(HitlContent.Status.PENDING)
+                                                            .properties(toolUseBlock.getInput())
+                                                            .method(toolName)
+                                                            .build()
+                                            )
+                                    );
+                                    continue;
+                                }
+
                                 Long actionId = null;
                                 try {
                                     String formattedToolName = toolFormatter.formatToolName(toolName);
@@ -242,7 +246,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 .doFinally(s -> {
                     eventSink.onComplete();
                     if (!cancelled.get()) {
-                        followupSuggestionService.suggest(getFastChatModel(), mainAgent.getMemory().getMessages(), eventSink);
+                        followupSuggestions(eventSink, mainAgent.getMemory().getMessages());
                     }
                 })
                 .blockLast();

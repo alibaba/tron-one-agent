@@ -49,11 +49,12 @@ import java.util.function.BiConsumer;
         @JsonSubTypes.Type(value = MediaContent.class, name = "3"),
         @JsonSubTypes.Type(value = MediaContent.class, name = "4"),
         @JsonSubTypes.Type(value = MediaContent.class, name = "5"),
+        @JsonSubTypes.Type(value = HitlContent.class, name = "6"),
         @JsonSubTypes.Type(value = TaskContent.class, name = "100"),
         @JsonSubTypes.Type(value = ActionContent.class, name = "200"),
 })
-public abstract class Content {
-    private Long id;
+public abstract class Content<ID> {
+    private ID id;
 
     public abstract ContentType getType();
 

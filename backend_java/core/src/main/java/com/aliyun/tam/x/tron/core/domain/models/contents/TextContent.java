@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class TextContent extends Content {
+public class TextContent extends Content<Long> {
     @Builder.Default
     private ContentType type = ContentType.TEXT;
 

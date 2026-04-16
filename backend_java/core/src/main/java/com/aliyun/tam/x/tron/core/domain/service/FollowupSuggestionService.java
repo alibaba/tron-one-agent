@@ -88,7 +88,13 @@ public class FollowupSuggestionService {
                     .map(m -> {
                         return String.format("%s: %s", m.getRole(), m.getTextContent());
                     }).collect(Collectors.joining("\n"));
-            text += "\n\nFrom user's perspective, give at most 3 follow-up questions(in user's language) based on the history and latest input. Each question should be a complete sentence and stand alone as a valid question. \nOutput in JSON format(without any description and annotation, just the JSON content): \n Example:\n[\"content of suggestion 1\", \"content of suggestion 2\", \"content of suggestion 3\"]";
+            text += """
+                    \n
+                    From user's perspective, give at most 3 follow-up questions(in user's language) based on the history and latest input. Each question should be a complete sentence and stand alone as a valid question.
+                    Output in JSON format(without any description and annotation, just the JSON content):
+                    Example:
+                    ["content of suggestion 1", "content of suggestion 2", "content of suggestion 3"]
+                    """;
 
             Msg prompt = Msg.builder()
                     .role(MsgRole.USER)

@@ -116,4 +116,14 @@ public class AgentConfig {
 
     @Builder.Default
     private LongTermMemoryMode longTermMemoryMode = LongTermMemoryMode.BOTH;
+
+
+    @Builder.Default
+    private Boolean enableSessionRenaming = Boolean.TRUE;
+
+    @Builder.Default
+    private Boolean enableSuggestion = Boolean.TRUE;
+
+    @Builder.Default
+    private Boolean enableQuestion = Boolean.TRUE;
 }

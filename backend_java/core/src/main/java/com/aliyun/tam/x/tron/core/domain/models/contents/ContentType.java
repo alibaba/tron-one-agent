@@ -29,6 +29,7 @@ public enum ContentType {
     IMAGE(3),
     VIDEO(4),
     AUDIO(5),
+    HITL(6),
     TASK(100),
     ACTION(200);
 

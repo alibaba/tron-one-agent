@@ -36,7 +36,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class TaskContent extends Content {
+public class TaskContent extends Content<Long> {
     private String agentId;
     private TaskStatus status;
     private String title;

@@ -31,7 +31,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class MediaContent extends Content {
+public class MediaContent extends Content<Long> {
     private ContentType type;
     private String url;
     private String base64Data;

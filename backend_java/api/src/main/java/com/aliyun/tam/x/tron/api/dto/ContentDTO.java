@@ -84,7 +84,7 @@ public class ContentDTO {
     }
 
 
-    private Long id;
+    private Object id;
 
     @NotNull
     private Integer type;
@@ -122,9 +122,8 @@ public class ContentDTO {
         }
         switch (type) {
             case TEXT:
-
                 return TextContent.builder()
-                        .id(id)
+                        .id((Long) id)
                         .type(ContentType.TEXT)
                         .text(text)
                         .build();
@@ -132,7 +131,7 @@ public class ContentDTO {
             case VIDEO:
             case AUDIO:
                 return MediaContent.builder()
-                        .id(id)
+                        .id((Long) id)
                         .type(type)
                         .url(url)
                         .base64Data(base64Data)

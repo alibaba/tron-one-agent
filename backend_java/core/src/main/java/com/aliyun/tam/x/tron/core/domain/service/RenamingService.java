@@ -80,7 +80,10 @@ public class RenamingService {
                         return String.format("%s: %s", m.getRole(), m.getTextContent());
                     }).collect(Collectors.joining("\n"));
             text += String.format("\n%s: %s", msg.getRole(), msg.getTextContent());
-            text += "\n\nFrom user's perspective, summarize and generate a concise session name (within 20 characters, excluding the word \"session\") based on the history, latest input, and user's language.";
+            text += """
+                    \n
+                    From user's perspective, summarize and generate a concise session name (within 20 characters, excluding the word "session") based on the history, latest input, and user's language.
+                    """;
 
             Msg prompt = Msg.builder()
                     .name(msg.getName())
