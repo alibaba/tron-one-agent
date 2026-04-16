@@ -287,7 +287,7 @@ public abstract class AbstractAgentHandler implements AgentHandler {
                     .output(TextBlock.builder().text("user cancelled this tool call").build())
                     .build());
         }
-        inputMsgs.add(Msg.builder()
+        inputMsgs.add(0, Msg.builder()
                 .role(MsgRole.TOOL)
                 .content(contentBlocks)
                 .build());
