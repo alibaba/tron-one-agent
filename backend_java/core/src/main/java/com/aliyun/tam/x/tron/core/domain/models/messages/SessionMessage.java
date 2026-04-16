@@ -36,11 +36,17 @@ import java.util.List;
 @AllArgsConstructor
 public abstract class SessionMessage {
     private Long id;
+
     private SessionMessageStatus status;
+
     private String agentId;
+
     private String userId;
+
     private String sessionId;
+
     private LocalDateTime gmtCreate;
+
     private LocalDateTime gmtModified;
 
     public abstract SessionMessageType getType();

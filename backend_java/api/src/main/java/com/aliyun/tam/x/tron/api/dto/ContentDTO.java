@@ -79,6 +79,8 @@ public class ContentDTO {
                     .gmtFinished(actionContent.getGmtFinished());
         } else if (content instanceof HitlContent hitlContent) {
             builder.type(hitlContent.getType().getValue())
+                    .id(hitlContent.getId())
+                    .agentMessageId(hitlContent.getAgentMessageId())
                     .status(hitlContent.getStatus().getValue())
                     .method(hitlContent.getMethod())
                     .properties(hitlContent.getProperties())

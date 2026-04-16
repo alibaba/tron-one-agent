@@ -17,8 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.domain.repository.mysql;
 
-import com.aliyun.tam.x.tron.core.domain.models.contents.ActionContent;
-import com.aliyun.tam.x.tron.core.domain.models.contents.TaskContent;
+import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.events.*;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
@@ -260,7 +259,29 @@ public class MysqlEventRepository implements EventRepository {
         private void handleAgentMessageAppendContent(AgentMessageAppendContentEvent event) {
             SessionMessage msg = getMessage(event.getMessageId());
             if (msg instanceof AgentSessionMessage agentMsg) {
-                agentMsg.append(event.getNewContents());
+                boolean hasHitl = event.getNewContents()
+                        .stream()
+                        .anyMatch(c -> c instanceof HitlContent);
+                if (hasHitl) {
+                    List<Content<?>> newContents = new ArrayList<>();
+                    for (Content<?> content : event.getNewContents()) {
+                        if (content instanceof HitlContent hitl) {
+                            newContents.add(HitlContent.builder()
+                                    .id(hitl.getId())
+                                    .agentMessageId(hitl.getAgentMessageId())
+                                    .status(HitlStatus.REJECTED)
+                                    .method(hitl.getMethod())
+                                    .properties(hitl.getProperties())
+                                    .result(null)
+                                    .build());
+                        } else {
+                            newContents.add(content);
+                        }
+                    }
+                    agentMsg.append(newContents);
+                } else {
+                    agentMsg.append(event.getNewContents());
+                }
                 saveMessage(agentMsg);
             }
         }

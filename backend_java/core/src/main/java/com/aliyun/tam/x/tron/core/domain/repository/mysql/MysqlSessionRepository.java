@@ -31,6 +31,7 @@ import com.aliyun.tam.x.tron.infra.dal.mapper.SessionMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Repository
 public class MysqlSessionRepository implements SessionRepository {
 
@@ -65,7 +67,16 @@ public class MysqlSessionRepository implements SessionRepository {
         sessionDO.setLastAppliedEventId(session.getLastAppliedEventId() != null ? session.getLastAppliedEventId() : 0L);
         sessionDO.setGmtCreated(LocalDateTime.now());
         sessionDO.setGmtModified(sessionDO.getGmtCreated());
-        sessionMapper.insert(sessionDO);
+        try {
+            sessionMapper.insert(sessionDO);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            Session existing = getSession(session.getAgentId(), session.getId());
+            if (existing == null) {
+                throw e;
+            }
+            log.warn("Session already exists due to concurrent creation, agentId={}, sessionId={}, userId={}",
+                    session.getAgentId(), session.getId(), session.getUserId());
+        }
     }
 
     @Override

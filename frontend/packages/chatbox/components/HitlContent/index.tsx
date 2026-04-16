@@ -184,6 +184,33 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
     );
   }
 
+  if (status === 3 && method === "question" && total > 0) {
+    return (
+      <div className={styles.hitlContainer}>
+        <div className={styles.tabHeader}>
+          <div className={styles.tabHeaderLeft}>
+            <span className={styles.rejectedBadge}>
+              <i className="fas fa-times-circle"></i>
+              用户拒绝
+            </span>
+          </div>
+        </div>
+        <div className={styles.questionBody}>
+          {questions.map((q: HitlQuestion, idx: number) => (
+            <div key={idx} className={styles.resultBlock}>
+              <div className={styles.questionText}>
+                {q.header && (
+                  <span className={styles.resultHeader}>{q.header}</span>
+                )}
+                {q.question}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (status !== 1 || method !== "question" || total === 0) {
     return null;
   }
