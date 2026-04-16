@@ -29,6 +29,7 @@ import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.events.SessionEvent;
 import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
@@ -311,6 +312,11 @@ public class AgentWsEndpoint {
                         }
                     }
                 }
+            }
+
+            @Override
+            public void saveMessage(SessionMessage sessionMessage) {
+                rawEventSink.saveMessage(sessionMessage);
             }
 
             @Override

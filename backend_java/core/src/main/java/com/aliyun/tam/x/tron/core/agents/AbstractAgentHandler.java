@@ -24,7 +24,10 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.HitlContent;
 import com.aliyun.tam.x.tron.core.domain.models.contents.HitlStatus;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
+import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
 import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
@@ -40,10 +43,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -126,6 +126,9 @@ public abstract class AbstractAgentHandler implements AgentHandler {
             )
             .build();
 
+    @Autowired
+    private MessageRepository messageRepository;
+
     @Autowired(required = false)
     private StorageProvider storageProvider;
 
@@ -200,9 +203,25 @@ public abstract class AbstractAgentHandler implements AgentHandler {
             msg = buildRuntimeContext(msg);
             return List.of(msg);
         } else {
-            Map<String, HitlContent> hitls = userMessage.getContentsOfType(ContentType.HITL, HitlContent.class)
-                    .stream()
-                    .collect(Collectors.toMap(HitlContent::getId, c -> c));
+            Map<String, HitlContent> hitls = new HashMap<>();
+            for (HitlContent content : userMessage.getContentsOfType(ContentType.HITL, HitlContent.class)) {
+                SessionMessage message = messageRepository.getMessage(content.getAgentMessageId());
+                if (message instanceof AgentSessionMessage agentMessage) {
+                    HitlContent existing = agentMessage.getContents()
+                            .stream()
+                            .filter(c -> c instanceof HitlContent)
+                            .map(c -> (HitlContent) c)
+                            .filter(c -> Objects.equals(c.getId(), content.getId()))
+                            .findFirst()
+                            .orElse(null);
+                    if (existing != null && existing.getStatus() == HitlStatus.PENDING) {
+                        existing.setStatus(content.getStatus());
+                        existing.setResult(content.getResult());
+                    }
+                    eventSink.saveMessage(message);
+                }
+                hitls.put(content.getId(), content);
+            }
 
             List<ContentBlock> resultBlocks = new ArrayList<>();
             List<Msg> messages = memory.getMessages();

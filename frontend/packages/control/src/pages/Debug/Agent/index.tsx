@@ -590,6 +590,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
       const inputContents = [{
         type: ContentType.HITL,
         id: payload.id,
+        agentMessageId: payload.agentMessageId,
         result: payload.result,
       }];
 

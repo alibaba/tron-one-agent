@@ -22,6 +22,7 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.MediaContent;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.*;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 
 import java.time.LocalDateTime;
@@ -76,6 +77,11 @@ public class SubAgentTaskEventSink extends EventSink {
         } else {
             delegate.newEvent(event);
         }
+    }
+
+    @Override
+    public void saveMessage(SessionMessage sessionMessage) {
+        delegate.saveMessage(sessionMessage);
     }
 
     @Override

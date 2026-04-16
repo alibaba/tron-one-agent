@@ -25,22 +25,28 @@ export interface HitlSubmitPayload {
   id: string;
   status?: number;
   result: string;
+  agentMessageId: number;
 }
 
 export interface HitlContentRenderProps {
   content: HitlContentType;
+  agentMessageId?: number;
   onSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
 type AnswerValue = string[];
 
-const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit }) => {
+const OTHER_LABEL = "\u5176\u5b83";
+
+const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMessageId, onSubmit }) => {
   const { properties, status, method } = content;
   const questions = properties?.questions || [];
   const total = questions.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
+  const [otherTexts, setOtherTexts] = useState<Record<number, string>>({});
+  const [skipped, setSkipped] = useState<Record<number, boolean>>({});
 
   const handleOptionToggle = useCallback(
     (qIndex: number, label: string, multiSelect?: boolean) => {
@@ -61,9 +67,9 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit
   const allAnswered = useMemo(() => {
     return questions.every((_, idx) => {
       const answer = answers[idx];
-      return answer && answer.length > 0;
+      return (answer && answer.length > 0) || skipped[idx];
     });
-  }, [questions, answers]);
+  }, [questions, answers, skipped]);
 
   const currentAnswered = useMemo(() => {
     const answer = answers[currentIndex];
@@ -78,19 +84,34 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit
     setCurrentIndex((i) => Math.min(total - 1, i + 1));
   }, [total]);
 
+  const handleSkip = useCallback(() => {
+    setSkipped((prev) => ({ ...prev, [currentIndex]: true }));
+    setCurrentIndex((i) => Math.min(total - 1, i + 1));
+  }, [currentIndex, total]);
+
   const buildResult = useCallback(() => {
     return questions.map((q: HitlQuestion, idx: number) => {
       const selectedLabels = answers[idx] || [];
+      if (selectedLabels.length === 0 && skipped[idx]) {
+        return {
+          header: q.header || "",
+          question: q.question,
+          values: [{ label: "skip", description: "user skipped this question" }],
+        };
+      }
       const values = q.options
         .filter((opt) => selectedLabels.includes(opt.label))
         .map((opt) => ({ label: opt.label, description: opt.description }));
+      if (selectedLabels.includes(OTHER_LABEL)) {
+        values.push({ label: OTHER_LABEL, description: otherTexts[idx] || "" });
+      }
       return {
         header: q.header || "",
         question: q.question,
         values,
       };
     });
-  }, [questions, answers]);
+  }, [questions, answers, otherTexts]);
 
   const handleSubmit = useCallback(() => {
     if (!allAnswered || !onSubmit) return;
@@ -99,8 +120,62 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit
       type: ContentType.HITL,
       id: content.id,
       result: JSON.stringify(result),
+      agentMessageId: agentMessageId!,
     });
   }, [allAnswered, onSubmit, buildResult, content.id]);
+
+  // Approved: parse result and render read-only view
+  if (status === 2 && content.result) {
+    let resultData: Array<{ header?: string; question: string; values: Array<{ label: string; description?: string }> }> = [];
+    try {
+      resultData = JSON.parse(content.result);
+    } catch {
+      return null;
+    }
+    if (!resultData.length) return null;
+
+    return (
+      <div className={styles.hitlContainer}>
+        <div className={styles.tabHeader}>
+          <div className={styles.tabHeaderLeft}>
+            <span className={styles.approvedBadge}>
+              <i className="fas fa-check-circle"></i>
+              已完成
+            </span>
+          </div>
+        </div>
+        <div className={styles.questionBody}>
+          {resultData.map((item, idx) => (
+            <div key={idx} className={styles.resultBlock}>
+              <div className={styles.questionText}>
+                {item.header && (
+                  <span className={styles.resultHeader}>{item.header}</span>
+                )}
+                {item.question}
+              </div>
+              <div className={styles.optionsList}>
+                {item.values.map((v, vIdx) => (
+                  <div key={vIdx} className={`${styles.optionRow} ${styles.optionRowSelected} ${styles.readonlyRow}`}>
+                    <span className={styles.optionIndicator}>
+                      <span className={`${styles.checkbox} ${styles.checked}`}>
+                        <i className="fas fa-check"></i>
+                      </span>
+                    </span>
+                    <div className={styles.optionContent}>
+                      <span className={styles.optionLabel}>{v.label}</span>
+                      {v.description && (
+                        <span className={styles.optionDesc}>{v.description}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (status !== 1 || method !== "question" || total === 0) {
     return null;
@@ -193,6 +268,54 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit
               </div>
             );
           })}
+          {/* "Other" option */}
+          {(() => {
+            const isOtherSelected = selected.includes(OTHER_LABEL);
+            return (
+              <div
+                className={`${styles.optionRow}${
+                  isOtherSelected ? ` ${styles.optionRowSelected}` : ""
+                }`}
+                onClick={() =>
+                  handleOptionToggle(currentIndex, OTHER_LABEL, q.multiSelect)
+                }
+              >
+                <span className={styles.optionIndicator}>
+                  {q.multiSelect ? (
+                    <span
+                      className={`${styles.checkbox}${
+                        isOtherSelected ? ` ${styles.checked}` : ""
+                      }`}
+                    >
+                      {isOtherSelected && <i className="fas fa-check"></i>}
+                    </span>
+                  ) : (
+                    <span
+                      className={`${styles.radio}${
+                        isOtherSelected ? ` ${styles.checked}` : ""
+                      }`}
+                    />
+                  )}
+                </span>
+                <div className={styles.optionContent}>
+                  <span className={styles.optionLabel}>{OTHER_LABEL}</span>
+                  {isOtherSelected && (
+                    <input
+                      className={styles.otherInput}
+                      type="text"
+                      placeholder="请输入..."
+                      value={otherTexts[currentIndex] || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOtherTexts((prev) => ({ ...prev, [currentIndex]: val }));
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -202,7 +325,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit
           {!isLast && (
             <button
               className={styles.skipBtn}
-              onClick={goNext}
+              onClick={handleSkip}
               type="button"
             >
               跳过

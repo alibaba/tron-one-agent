@@ -95,6 +95,7 @@ export interface HitlContent {
   properties: {
     questions: HitlQuestion[];
   };
+  result?: string;
 }
 
 export interface TaskContent extends Content {

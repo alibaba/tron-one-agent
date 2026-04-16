@@ -290,3 +290,62 @@
     font-size: 11px;
   }
 }
+
+// Approved readonly view
+.approvedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #52c41a;
+
+  i {
+    font-size: 13px;
+  }
+}
+
+.resultBlock {
+  margin-bottom: 14px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.resultHeader {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #667eea;
+  background: #eef2ff;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+
+.readonlyRow {
+  cursor: default;
+  pointer-events: none;
+}
+
+.otherInput {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #262626;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.2s;
+
+  &::placeholder {
+    color: #bfbfbf;
+  }
+
+  &:focus {
+    border-color: #667eea;
+  }
+}

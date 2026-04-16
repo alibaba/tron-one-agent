@@ -19,6 +19,7 @@ package com.aliyun.tam.x.tron.core.domain.models.events;
 
 import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
@@ -58,6 +59,10 @@ public abstract class EventSink {
      */
     public abstract void newEvent(SessionEvent event);
 
+
+    public abstract void saveMessage(SessionMessage sessionMessage);
+
+
     /**
      * Create new user message event
      */
@@ -87,7 +92,6 @@ public abstract class EventSink {
                 .gmtCreated(LocalDateTime.now())
                 .build());
     }
-
     /**
      * Append content to message
      */

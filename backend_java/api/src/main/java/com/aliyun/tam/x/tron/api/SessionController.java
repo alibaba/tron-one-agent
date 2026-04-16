@@ -432,6 +432,11 @@ public class SessionController {
                 }
 
                 @Override
+                public void saveMessage(SessionMessage sessionMessage) {
+                    rawEventSink.saveMessage(sessionMessage);
+                }
+
+                @Override
                 public Long nextSequence(SequenceService.SequenceName sequenceName) {
                     return rawEventSink.nextSequence(sequenceName);
                 }

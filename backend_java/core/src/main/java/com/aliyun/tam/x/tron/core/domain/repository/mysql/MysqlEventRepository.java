@@ -338,8 +338,10 @@ public class MysqlEventRepository implements EventRepository {
             return null;
         }
 
-        private void saveMessage(SessionMessage msg) {
-            // dummy
+        public void saveMessage(SessionMessage msg) {
+            if (!messages.contains(msg)) {
+                messages.add(msg);
+            }
         }
 
         private void updateSessionLastAppliedEventId(String agentId, String sessionId, Long eventId) {

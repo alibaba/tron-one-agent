@@ -19,6 +19,7 @@ package com.aliyun.tam.x.tron.core.tts;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
 import com.aliyun.tam.x.tron.core.domain.models.events.*;
+import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,11 @@ public class TtsEventSinkWrapper extends EventSink {
             }
             ttsSession = null;
         }
+    }
+
+    @Override
+    public void saveMessage(SessionMessage sessionMessage) {
+        eventSink.saveMessage(sessionMessage);
     }
 
     private void appendText(String text) {
