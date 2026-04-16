@@ -2485,6 +2485,85 @@ public class AzureTtsConfig {
 4. 支持流式文本输入和流式音频输出
 5. 输出音频格式建议：24kHz PCM 16bit 单声道
 
+## HITL（Human-in-the-Loop）人机协同
+
+HITL 允许 Agent 在对话过程中主动暂停并等待用户回答问卷或做出决策，实现人机协同交互。
+
+### 内容类型定义
+
+| 枚举值 | 说明 |
+|------|------|
+| HITL = 6 | HITL 人机协同内容 |
+
+### HitlContent 数据结构
+
+```java
+public class HitlContent implements Content {
+    private String id;           // HITL 内容 ID
+    private HitlStatus status;   // 状态：PENDING(1), APPROVED(2), REJECTED(3)
+    private String method;       // 交互方式，当前仅支持 "question"
+    private HitlProperties properties; // 问卷属性
+    private String result;       // 用户提交的结果（JSON 字符串）
+}
+```
+
+**HitlStatus 枚举**：
+
+| 状态值 | 说明 |
+|------|------|
+| 1 | PENDING - 等待用户回答 |
+| 2 | APPROVED - 用户已提交并接受 |
+| 3 | REJECTED - 用户已拒绝 |
+
+**properties 结构**：
+
+```json
+{
+  "questions": [
+    {
+      "header": "登山类型",
+      "question": "您计划进行哪种类型的登山活动？",
+      "options": [
+        {"label": "徒步", "description": "低强度，适合新手"},
+        {"label": "攀岩", "description": "中高强度，需要经验"}
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+### 前端交互流程
+
+1. **渲染触发条件**：当消息中包含 `type=6`、`status=1`、`method="question"` 的 HITL 内容时，在输入框上方渲染问卷组件
+2. **多 Tab 问卷**：每道题一个 Tab，支持单选（radio）和多选（checkbox），每个问题末尾自动添加"其它"选项供用户自由输入
+3. **跳过与提交**：用户可跳过题目，未回答的题目在结果中标记为 `{"label": "skip", "description": "user skipped this question"}`
+4. **提交接口**：通过 Chat API（SSE 或 WebSocket）提交，请求体中构造 HITL content：
+   ```json
+   {
+     "input": [{
+       "type": 6,
+       "id": "hitl_content_id",
+       "agentMessageId": 12345,
+       "result": "[{\"header\":\"...\",\"question\":\"...\",\"values\":[{\"label\":\"...\",\"description\":\"...\"}]}]"
+     }],
+     "enableTts": false
+   }
+   ```
+5. **消息完成后可交互**：仅当消息状态为 `SUCCEED`（已完成）时，HITL 问卷才允许交互，否则输入框和按钮保持禁用
+6. **只读展示**：
+   - `status=2`（APPROVED）：解析 `result` JSON，展示用户选择的所有选项
+   - `status=3`（REJECTED）：展示红色"用户拒绝"标签，仅渲染 header 和 question 文本
+
+### 后端处理
+
+当收到 HITL 提交后，后端会：
+
+1. 从 ChatRequest 的 input 中提取 HITL content
+2. 解析 `result` JSON 获取用户选择
+3. 更新 HitlContent 的 status 为 APPROVED(2) 或 REJECTED(3)
+4. 继续 Agent 执行流程，将用户反馈作为上下文输入
+
 ## 可观测
 
 OneAgent 在 AgentScope Java之上，扩展建立了完善的可观测机制，主要包括以下内容：

@@ -2487,6 +2487,85 @@ public class AzureTtsConfig {
 4. Supports streaming text input and streaming audio output
 5. Recommended output audio format: 24kHz PCM 16bit mono
 
+## HITL (Human-in-the-Loop)
+
+HITL allows the Agent to pause during conversation and wait for users to answer questionnaires or make decisions, enabling human-machine collaborative interaction.
+
+### Content Type Definition
+
+| Enum Value | Description |
+|------|------|
+| HITL = 6 | HITL collaborative content |
+
+### HitlContent Data Structure
+
+```java
+public class HitlContent implements Content {
+    private String id;           // HITL content ID
+    private HitlStatus status;   // Status: PENDING(1), APPROVED(2), REJECTED(3)
+    private String method;       // Interaction method, currently only supports "question"
+    private HitlProperties properties; // Questionnaire properties
+    private String result;       // User submitted result (JSON string)
+}
+```
+
+**HitlStatus Enum**:
+
+| Status Value | Description |
+|------|------|
+| 1 | PENDING - Waiting for user response |
+| 2 | APPROVED - User submitted and accepted |
+| 3 | REJECTED - User rejected |
+
+**properties Structure**:
+
+```json
+{
+  "questions": [
+    {
+      "header": "Climbing Type",
+      "question": "What type of climbing activity do you plan?",
+      "options": [
+        {"label": "Hiking", "description": "Low intensity, suitable for beginners"},
+        {"label": "Rock Climbing", "description": "Medium-high intensity, requires experience"}
+      ],
+      "multiSelect": false
+    }
+  ]
+}
+```
+
+### Frontend Interaction Flow
+
+1. **Rendering Trigger**: When a message contains HITL content with `type=6`, `status=1`, `method="question"`, a questionnaire component is rendered above the input box
+2. **Multi-Tab Questionnaire**: Each question is a Tab, supporting single-select (radio) and multi-select (checkbox). An "Other" option is automatically appended to each question for free-text input
+3. **Skip & Submit**: Users can skip questions. Unanswered questions are marked in the result as `{"label": "skip", "description": "user skipped this question"}`
+4. **Submit API**: Submit via Chat API (SSE or WebSocket) by constructing a HITL content in the request body:
+   ```json
+   {
+     "input": [{
+       "type": 6,
+       "id": "hitl_content_id",
+       "agentMessageId": 12345,
+       "result": "[{\"header\":\"...\",\"question\":\"...\",\"values\":[{\"label\":\"...\",\"description\":\"...\"}]}]"
+     }],
+     "enableTts": false
+   }
+   ```
+5. **Interaction After Message Completion**: The HITL questionnaire is only interactive when the message status is `SUCCEED` (completed). Otherwise, the input box and buttons remain disabled
+6. **Read-only Display**:
+   - `status=2` (APPROVED): Parses the `result` JSON and displays all selected options
+   - `status=3` (REJECTED): Displays a red "User Rejected" badge, rendering only header and question text
+
+### Backend Processing
+
+When receiving a HITL submission, the backend will:
+
+1. Extract HITL content from ChatRequest input
+2. Parse the `result` JSON to get user selections
+3. Update HitlContent status to APPROVED(2) or REJECTED(3)
+4. Continue Agent execution flow, incorporating user feedback as context
+
 ## Observability
 
 OneAgent extends AgentScope Java to establish a comprehensive observability mechanism, which mainly includes the following:
