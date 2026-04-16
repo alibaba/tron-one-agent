@@ -18,13 +18,10 @@
 package com.aliyun.tam.x.tron.core.agents;
 
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
-import com.aliyun.tam.x.tron.core.domain.models.contents.ActionStatus;
-import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
-import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
+import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
-import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.agentscope.core.ReActAgent;
@@ -34,7 +31,6 @@ import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -42,16 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.aliyun.tam.x.tron.core.utils.AgentHelper.*;
-
 public class ReActAgentHandler extends AbstractAgentHandler {
 
     private final ReActAgent agent;
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-    @Autowired
-    private ToolFormatter toolFormatter;
 
     public ReActAgentHandler(AgentConfig config, ReActAgent agent) {
         super(config);
@@ -69,7 +60,6 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         agent.loadFrom(session, sessionKey);
     }
 
-
     @Override
     public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
         long startTime = System.currentTimeMillis();
@@ -79,6 +69,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
         AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
         Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
+        AtomicBoolean hasHitl = new AtomicBoolean(false);
         agent.stream(inputMsgs)
                 .doFirst(() -> cancelled.set(false))
                 .doOnEach(s -> {
@@ -92,6 +83,9 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                     }
 
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
+                        if (event.getMessage().hasContentBlocks(ToolUseBlock.class)) {
+                            hasHitl.set(true);
+                        }
                         result.setResponse(event.getMessage().getTextContent());
                         return;
                     }
@@ -106,7 +100,6 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                         if (eventMsg.getRole() != MsgRole.ASSISTANT) {
                             return;
                         }
-
                         List<ToolUseBlock> toolUseBlocks = eventMsg.getContentBlocks(ToolUseBlock.class);
                         if (CollectionUtils.isEmpty(toolUseBlocks)) {
                             if (!event.isLast()) {
@@ -131,12 +124,30 @@ public class ReActAgentHandler extends AbstractAgentHandler {
 
                             for (ToolUseBlock toolUseBlock : toolUseBlocks) {
                                 String toolName = toolUseBlock.getName();
+
+                                if (QUESTION_TOOL_NAME.contains(toolName)) {
+                                    hasHitl.set(true);
+                                    eventSink.appendContentToMessage(
+                                            List.of(
+                                                    HitlContent.builder()
+                                                            .id(toolUseBlock.getId())
+                                                            .agentMessageId(eventSink.getMessageId())
+                                                            .status(HitlStatus.PENDING)
+                                                            .properties(toolUseBlock.getInput())
+                                                            .method(toolName)
+                                                            .build()
+                                            )
+                                    );
+                                    continue;
+                                }
+
                                 Long actionId = null;
                                 try {
                                     String formattedToolName = toolFormatter.formatToolName(toolName);
                                     if (!StringUtils.hasText(formattedToolName)) {
                                         continue;
                                     }
+
                                     actionId = eventSink.newAction(formattedToolName);
                                     eventSink.appendContentToAction(actionId,
                                             Lists.newArrayList(TextContent.builder()
@@ -181,14 +192,17 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doOnComplete(() -> {
                     eventSink.changeMessageStatus(cancelled.get() ? SessionMessageStatus.CANCELLED : SessionMessageStatus.SUCCEED);
                 })
-                .doOnError(throwable -> eventSink.changeMessageStatus(SessionMessageStatus.FAILED))
+                .doOnError(throwable -> {
+                    eventSink.changeMessageStatus(SessionMessageStatus.FAILED);
+                })
                 .doFinally(s -> {
                     eventSink.onComplete();
-                    if (!cancelled.get()) {
+                    if (!cancelled.get() && !hasHitl.get()) {
                         followupSuggestions(eventSink, agent.getMemory().getMessages());
                     }
                 })
                 .blockLast();
+
         result.setCostInMs(System.currentTimeMillis() - startTime);
         return result;
     }

@@ -30,6 +30,7 @@ import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
 import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
 import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
+import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
 import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
 import com.google.common.collect.Lists;
 import io.agentscope.core.ReActAgent;
@@ -137,6 +138,9 @@ public abstract class AbstractAgentHandler implements AgentHandler {
 
     @Autowired
     private FollowupSuggestionService followupSuggestionService;
+
+    @Autowired
+    protected ToolFormatter toolFormatter;
 
     protected final AgentConfig agentConfig;
 

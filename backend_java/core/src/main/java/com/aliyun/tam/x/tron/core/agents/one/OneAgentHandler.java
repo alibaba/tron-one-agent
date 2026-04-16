@@ -24,8 +24,6 @@ import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
-import com.aliyun.tam.x.tron.core.tools.ToolFormatter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -36,8 +34,6 @@ import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -46,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Getter
 public class OneAgentHandler extends AbstractAgentHandler {
 
     private final ReActAgent mainAgent;
@@ -54,13 +49,6 @@ public class OneAgentHandler extends AbstractAgentHandler {
     private final List<SubAgentHandler> subAgents;
 
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-    @Autowired
-    private ToolFormatter toolFormatter;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
 
     public OneAgentHandler(AgentConfig agentConfig, ReActAgent.Builder mainAgentBuilder, List<SubAgentHandler> subAgents) {
         super(agentConfig);
