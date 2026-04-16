@@ -242,7 +242,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 .doFinally(s -> {
                     eventSink.onComplete();
                     if (!cancelled.get()) {
-                        followupSuggestionService.suggest(getFastChatModel(), agent.getMemory().getMessages(), eventSink);
+                        followupSuggestionService.suggest(getFastChatModel(), mainAgent.getMemory().getMessages(), eventSink);
                     }
                 })
                 .blockLast();
