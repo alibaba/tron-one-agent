@@ -350,7 +350,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       case ContentType.ACTION:
         return <ActionContentRender action={content} onToggleExpand={(actionId, isExpanded) => handleToggleExpand(actionId, isExpanded, 'action')} />;
       case ContentType.HITL:
-        return <HitlContentRender content={content} agentMessageId={message.id} onSubmit={onHitlSubmit} />;
+        return <HitlContentRender content={content} agentMessageId={message.id} messageStatus={message.status} onSubmit={onHitlSubmit} />;
       default:
         return null;
     }

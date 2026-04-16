@@ -17,7 +17,7 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import type { HitlContent as HitlContentType, HitlQuestion } from "../../types";
-import { ContentType } from "../../types/enums";
+import { ContentType, SessionMessageStatus } from "../../types/enums";
 import styles from "./index.module.less";
 
 export interface HitlSubmitPayload {
@@ -31,6 +31,7 @@ export interface HitlSubmitPayload {
 export interface HitlContentRenderProps {
   content: HitlContentType;
   agentMessageId?: number;
+  messageStatus?: SessionMessageStatus;
   onSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
@@ -38,10 +39,12 @@ type AnswerValue = string[];
 
 const OTHER_LABEL = "\u5176\u5b83";
 
-const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMessageId, onSubmit }) => {
+const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMessageId, messageStatus, onSubmit }) => {
   const { properties, status, method } = content;
   const questions = properties?.questions || [];
   const total = questions.length;
+
+  const messageCompleted = messageStatus === SessionMessageStatus.SUCCEED;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
@@ -190,7 +193,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
   const isLast = currentIndex === total - 1;
 
   return (
-    <div className={styles.hitlContainer}>
+    <div className={`${styles.hitlContainer}${!messageCompleted ? ` ${styles.hitlDisabled}` : ''}`}>
       {/* Tab header */}
       <div className={styles.tabHeader}>
         <div className={styles.tabHeaderLeft}>
@@ -243,7 +246,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
                   isSelected ? ` ${styles.optionRowSelected}` : ""
                 }`}
                 onClick={() =>
-                  handleOptionToggle(currentIndex, opt.label, q.multiSelect)
+                  messageCompleted && handleOptionToggle(currentIndex, opt.label, q.multiSelect)
                 }
               >
                 <span className={styles.optionIndicator}>
@@ -281,7 +284,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
                   isOtherSelected ? ` ${styles.optionRowSelected}` : ""
                 }`}
                 onClick={() =>
-                  handleOptionToggle(currentIndex, OTHER_LABEL, q.multiSelect)
+                  messageCompleted && handleOptionToggle(currentIndex, OTHER_LABEL, q.multiSelect)
                 }
               >
                 <span className={styles.optionIndicator}>
@@ -325,6 +328,12 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
 
       {/* Footer */}
       <div className={styles.footerBar}>
+        {!messageCompleted ? (
+          <div className={styles.footerWaiting}>
+            <i className="fas fa-spinner fa-spin"></i>
+            <span>等待消息完成后可作答</span>
+          </div>
+        ) : (
         <div className={styles.footerRight}>
           {!isLast && (
             <button
@@ -352,6 +361,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
             </button>
           )}
         </div>
+        )}
       </div>
     </div>
   );

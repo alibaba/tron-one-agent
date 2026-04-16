@@ -247,16 +247,13 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
   const agentIdChanged = Form.useWatch("agentId", form);
 
   useEffect(() => {
-    if (agentIdChanged) {
-      updateUrlParams({ agentId: agentIdChanged });
+    const params: Record<string, string> = {};
+    if (agentIdChanged) params.agentId = agentIdChanged;
+    if (sessionId) params.sessionId = sessionId;
+    if (Object.keys(params).length > 0) {
+      updateUrlParams(params);
     }
-  }, [agentIdChanged, updateUrlParams]);
-
-  useEffect(() => {
-    if (sessionId) {
-      updateUrlParams({ sessionId });
-    }
-  }, [sessionId, updateUrlParams]);
+  }, [agentIdChanged, sessionId, updateUrlParams]);
 
   useEffect(() => {
     const params: Record<string, string> = {};

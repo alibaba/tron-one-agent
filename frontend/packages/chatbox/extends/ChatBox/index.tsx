@@ -31,6 +31,7 @@ import {
   UserSessionMessage,
   AgentSessionMessage,
   SessionMessageType,
+  HitlContent,
 } from "../../types";
 import type { HitlSubmitPayload } from "../../components/HitlContent";
 import { ContentType } from "../../types/enums";
@@ -117,6 +118,18 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
       supportInputTypes.includes(ContentType.AUDIO)
     );
   }, [supportInputTypes]);
+
+  const hasPendingHitl = useMemo(() => {
+    if (!messages) return false;
+    return messages.some((msg) => {
+      if (msg.type !== SessionMessageType.AGENT) return false;
+      const agentMsg = msg as AgentSessionMessage;
+      return agentMsg.contents?.some(
+        (c) => c.type === ContentType.HITL && (c as HitlContent).status === 1 && (c as HitlContent).method === 'question'
+      );
+    });
+  }, [messages]);
+
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
   const [showBackToBottom, setShowBackToBottom] = useState(false);
@@ -297,11 +310,11 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               value={inputValue}
               onChange={setInputValue}
               onSend={handleMessageSendWithAttachments}
-              disabled={sending || running}
+              disabled={sending || running || hasPendingHitl}
               running={running}
               onStop={props.onStop}
               placeholder={
-                sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
+                hasPendingHitl ? "请先完成问卷后再发送消息" : sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
               }
               supportInputTypes={supportInputTypes}
               voiceInput={voiceInput}
@@ -311,12 +324,12 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               value={inputValue}
               onChange={setInputValue}
               onSend={handleMessageSendWithAttachments}
-              disabled={sending || running}
+              disabled={sending || running || hasPendingHitl}
               running={running}
               onStop={props.onStop}
               voiceInput={voiceInput}
               placeholder={
-                sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
+                hasPendingHitl ? "请先完成问卷后再发送消息" : sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
               }
             />
           )}
