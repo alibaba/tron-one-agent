@@ -16,16 +16,25 @@
 
 
 import React, { useState, useCallback, useMemo } from "react";
-import type { HitlContent as HitlContentType } from "../../types";
+import type { HitlContent as HitlContentType, HitlQuestion } from "../../types";
+import { ContentType } from "../../types/enums";
 import styles from "./index.module.less";
+
+export interface HitlSubmitPayload {
+  type: ContentType.HITL;
+  id: string;
+  status?: number;
+  result: string;
+}
 
 export interface HitlContentRenderProps {
   content: HitlContentType;
+  onSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
 type AnswerValue = string[];
 
-const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content }) => {
+const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, onSubmit }) => {
   const { properties, status, method } = content;
   const questions = properties?.questions || [];
   const total = questions.length;
@@ -68,6 +77,30 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content }) => {
   const goNext = useCallback(() => {
     setCurrentIndex((i) => Math.min(total - 1, i + 1));
   }, [total]);
+
+  const buildResult = useCallback(() => {
+    return questions.map((q: HitlQuestion, idx: number) => {
+      const selectedLabels = answers[idx] || [];
+      const values = q.options
+        .filter((opt) => selectedLabels.includes(opt.label))
+        .map((opt) => ({ label: opt.label, description: opt.description }));
+      return {
+        header: q.header || "",
+        question: q.question,
+        values,
+      };
+    });
+  }, [questions, answers]);
+
+  const handleSubmit = useCallback(() => {
+    if (!allAnswered || !onSubmit) return;
+    const result = buildResult();
+    onSubmit({
+      type: ContentType.HITL,
+      id: content.id,
+      result: JSON.stringify(result),
+    });
+  }, [allAnswered, onSubmit, buildResult, content.id]);
 
   if (status !== 1 || method !== "question" || total === 0) {
     return null;
@@ -176,7 +209,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content }) => {
             </button>
           )}
           {isLast && allAnswered ? (
-            <button className={styles.submitBtn} type="button">
+            <button className={styles.submitBtn} type="button" onClick={handleSubmit}>
               提交
               <i className="fas fa-level-down-alt fa-rotate-90"></i>
             </button>

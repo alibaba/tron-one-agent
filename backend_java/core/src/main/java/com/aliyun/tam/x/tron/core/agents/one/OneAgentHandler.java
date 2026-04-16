@@ -46,8 +46,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.aliyun.tam.x.tron.core.utils.AgentHelper.convertToBlocks;
-
 @Getter
 public class OneAgentHandler extends AbstractAgentHandler {
 
@@ -86,23 +84,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
     public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
         long startTime = System.currentTimeMillis();
 
-        Msg msg = Msg.builder()
-                .role(MsgRole.USER)
-                .name(userMessage.getName())
-                .content(convertToBlocks(userMessage.getContents()))
-                .build();
-        {
-            processMediaContentOfMemory(userMessage.getUserId(), this.mainAgent.getMemory());
-
-            Msg newMsg = processMediaContentOfMessage(userMessage.getUserId(), msg);
-            if (newMsg != null) {
-                msg = newMsg;
-            }
-        }
-
-        msg = buildRuntimeContext(msg);
-
-        renameSession(eventSink, msg, mainAgent.getMemory().getMessages());
+        List<Msg> inputMsgs = convertToInputMsgs(userMessage, eventSink, mainAgent.getMemory());
 
         Set<String> subAgentTools = Sets.newHashSet();
         for (SubAgentHandler subAgent : subAgents) {
@@ -115,7 +97,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
         AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
         Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
-        mainAgent.stream(msg)
+        mainAgent.stream(inputMsgs)
                 .doFirst(() -> cancelled.set(false))
                 .doOnEach(s -> {
                     Event event = s.get();

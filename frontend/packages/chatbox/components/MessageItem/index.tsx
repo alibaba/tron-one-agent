@@ -20,6 +20,7 @@ import TaskContentRender from "../TaskContent";
 import ActionContentRender from "../ActionContent";
 import TextContentRender from "../TextContent";
 import HitlContentRender from "../HitlContent";
+import type { HitlSubmitPayload } from "../HitlContent";
 import styles from "./index.module.less";
 import type { AgentSessionMessage, UserSessionMessage, TextContent } from "../../types";
 import {
@@ -120,6 +121,8 @@ export interface MessageItemProps {
   onLike?: (messageId: number) => void;
   /** 点踩回调 */
   onDislike?: (messageId: number) => void;
+  /** HITL submit callback */
+  onHitlSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
@@ -134,6 +137,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   isLastMessage = false,
   onLike,
   onDislike,
+  onHitlSubmit,
 }) => {
   const isUser = message.type === SessionMessageType.USER;
   const isAgent = message.type === SessionMessageType.AGENT;
@@ -346,7 +350,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       case ContentType.ACTION:
         return <ActionContentRender action={content} onToggleExpand={(actionId, isExpanded) => handleToggleExpand(actionId, isExpanded, 'action')} />;
       case ContentType.HITL:
-        return <HitlContentRender content={content} />;
+        return <HitlContentRender content={content} onSubmit={onHitlSubmit} />;
       default:
         return null;
     }

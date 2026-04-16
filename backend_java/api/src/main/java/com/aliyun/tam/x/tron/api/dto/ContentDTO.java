@@ -148,6 +148,12 @@ public class ContentDTO {
                         .base64Data(base64Data)
                         .mediaType(mediaType)
                         .build();
+            case HITL:
+                return HitlContent.builder()
+                        .id((String) id)
+                        .status(status == null ? HitlStatus.APPROVED : HitlStatus.fromValue(status))
+                        .result(result)
+                        .build();
             default:
                 throw new IllegalArgumentException("Unknown input content type: " + type);
         }

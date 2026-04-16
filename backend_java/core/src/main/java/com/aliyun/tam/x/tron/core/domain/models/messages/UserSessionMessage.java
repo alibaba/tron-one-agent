@@ -18,12 +18,10 @@
 package com.aliyun.tam.x.tron.core.domain.models.messages;
 
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
+import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TaskContent;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
@@ -38,6 +36,7 @@ import java.util.List;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class UserSessionMessage extends SessionMessage {
+
     private String name;
 
     @lombok.Builder.Default
@@ -60,5 +59,20 @@ public class UserSessionMessage extends SessionMessage {
             }
         }
         return null;
+    }
+
+    public boolean hasContentOf(ContentType contentType) {
+        return this.contents.stream().anyMatch(c -> c.getType() == contentType);
+    }
+
+    public <ID, T extends Content<ID>> List<T> getContentsOfType(ContentType contentType, Class<T> cls) {
+        return this.contents.stream().filter(c -> c.getType() == contentType).map(cls::cast).toList();
+    }
+
+    public boolean isVisible() {
+        if (hasContentOf(ContentType.HITL)) {
+            return false;
+        }
+        return true;
     }
 }

@@ -19,8 +19,12 @@ package com.aliyun.tam.x.tron.core.agents;
 
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.config.ChatModelConfig;
+import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
+import com.aliyun.tam.x.tron.core.domain.models.contents.HitlContent;
+import com.aliyun.tam.x.tron.core.domain.models.contents.HitlStatus;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
+import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
 import com.aliyun.tam.x.tron.core.domain.service.FollowupSuggestionService;
 import com.aliyun.tam.x.tron.core.domain.service.RenamingService;
 import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
@@ -36,9 +40,14 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static com.aliyun.tam.x.tron.core.utils.AgentHelper.convertToBlocks;
 
 @Setter
 public abstract class AbstractAgentHandler implements AgentHandler {
@@ -134,6 +143,9 @@ public abstract class AbstractAgentHandler implements AgentHandler {
 
     @Override
     public boolean supportInputType(ContentType contentType) {
+        if (contentType == ContentType.HITL && Boolean.TRUE.equals(agentConfig.getEnableQuestion())) {
+            return true;
+        }
         if (CollectionUtils.isEmpty(agentConfig.getSupportInputTypes())) {
             return false;
         }
@@ -166,7 +178,73 @@ public abstract class AbstractAgentHandler implements AgentHandler {
         followupSuggestionService.suggest(getFastChatModel(), history, eventSink);
     }
 
-    protected void processMediaContentOfMemory(String userId, Memory memory) {
+    protected List<Msg> convertToInputMsgs(UserSessionMessage userMessage, EventSink eventSink, Memory memory) {
+        boolean hasHitl = userMessage.getContents().stream()
+                .anyMatch(content -> content instanceof HitlContent);
+        if (!hasHitl) {
+            Msg msg = Msg.builder()
+                    .role(MsgRole.USER)
+                    .name(userMessage.getName())
+                    .content(convertToBlocks(userMessage.getContents()))
+                    .build();
+            {
+                processMediaContentOfMemory(userMessage.getUserId(), memory);
+
+                Msg newMsg = processMediaContentOfMessage(userMessage.getUserId(), msg);
+                if (newMsg != null) {
+                    msg = newMsg;
+                }
+            }
+            renameSession(eventSink, msg, memory.getMessages());
+
+            msg = buildRuntimeContext(msg);
+            return List.of(msg);
+        } else {
+            Map<String, HitlContent> hitls = userMessage.getContentsOfType(ContentType.HITL, HitlContent.class)
+                    .stream()
+                    .collect(Collectors.toMap(HitlContent::getId, c -> c));
+
+            List<ContentBlock> resultBlocks = new ArrayList<>();
+            List<Msg> messages = memory.getMessages();
+            List<ToolUseBlock> toolUseBlocks = messages.get(messages.size() - 1).getContentBlocks(ToolUseBlock.class);
+            for (ToolUseBlock toolUse : toolUseBlocks) {
+                HitlContent hitl = hitls.get(toolUse.getId());
+                if (hitl == null) {
+                    resultBlocks.add(
+                            ToolResultBlock.builder()
+                                    .id(toolUse.getId())
+                                    .name(toolUse.getName())
+                                    .output(TextBlock.builder().text("user cancelled this tool call").build())
+                                    .build()
+                    );
+                } else if (hitl.getStatus() == HitlStatus.APPROVED) {
+                    resultBlocks.add(
+                            ToolResultBlock.builder()
+                                    .id(toolUse.getId())
+                                    .name(toolUse.getName())
+                                    .output(TextBlock.builder().text(hitl.getResult()).build())
+                                    .build()
+                    );
+                } else if (hitl.getStatus() == HitlStatus.REJECTED) {
+                    resultBlocks.add(
+                            ToolResultBlock.builder()
+                                    .id(toolUse.getId())
+                                    .name(toolUse.getName())
+                                    .output(TextBlock.builder().text("user rejected this tool call").build())
+                                    .build()
+                    );
+                }
+            }
+            return List.of(
+                    Msg.builder()
+                            .role(MsgRole.TOOL)
+                            .content(resultBlocks)
+                            .build()
+            );
+        }
+    }
+
+    private void processMediaContentOfMemory(String userId, Memory memory) {
         if (storageProvider == null) {
             return;
         }
@@ -188,7 +266,7 @@ public abstract class AbstractAgentHandler implements AgentHandler {
         }
     }
 
-    protected Msg processMediaContentOfMessage(String userId, Msg msg) {
+    private Msg processMediaContentOfMessage(String userId, Msg msg) {
         if (storageProvider == null) {
             return null;
         }

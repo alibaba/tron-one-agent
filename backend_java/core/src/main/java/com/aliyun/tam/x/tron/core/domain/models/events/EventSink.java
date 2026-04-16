@@ -62,6 +62,9 @@ public abstract class EventSink {
      * Create new user message event
      */
     public void newUserMessage(UserSessionMessage msg) {
+        if (!msg.isVisible()) {
+            return;
+        }
         newEvent(NewUserInputEvent.builder()
                 .id(newEventId())
                 .agentId(agentId)
