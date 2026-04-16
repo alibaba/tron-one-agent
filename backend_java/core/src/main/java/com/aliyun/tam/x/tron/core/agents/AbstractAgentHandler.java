@@ -205,7 +205,9 @@ public abstract class AbstractAgentHandler implements AgentHandler {
             renameSession(eventSink, msg, memory.getMessages());
 
             msg = buildRuntimeContext(msg);
-            return List.of(msg);
+            List<Msg> msgs = Lists.newArrayList(msg);
+            cancelPendingToolCalls(msgs, memory);
+            return msgs;
         } else {
             Map<String, HitlContent> hitls = new HashMap<>();
             for (HitlContent content : userMessage.getContentsOfType(ContentType.HITL, HitlContent.class)) {
@@ -265,6 +267,30 @@ public abstract class AbstractAgentHandler implements AgentHandler {
                             .build()
             );
         }
+    }
+
+    private void cancelPendingToolCalls(List<Msg> inputMsgs, Memory memory) {
+        List<Msg> messages = memory.getMessages();
+        if (messages.isEmpty()) {
+            return;
+        }
+        Msg lastMsg = messages.get(messages.size() - 1);
+        if (lastMsg.getRole() != MsgRole.ASSISTANT || !lastMsg.hasContentBlocks(ToolUseBlock.class)) {
+            return;
+        }
+
+        List<ContentBlock> contentBlocks = new ArrayList<>();
+        for (ToolUseBlock toolUse : lastMsg.getContentBlocks(ToolUseBlock.class)) {
+            contentBlocks.add(ToolResultBlock.builder()
+                    .id(toolUse.getId())
+                    .name(toolUse.getName())
+                    .output(TextBlock.builder().text("user cancelled this tool call").build())
+                    .build());
+        }
+        inputMsgs.add(Msg.builder()
+                .role(MsgRole.TOOL)
+                .content(contentBlocks)
+                .build());
     }
 
     private void processMediaContentOfMemory(String userId, Memory memory) {
