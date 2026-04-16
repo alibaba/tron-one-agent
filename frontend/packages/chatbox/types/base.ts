@@ -46,7 +46,7 @@ export interface UserSessionMessage extends SessionMessage {
 export interface AgentSessionMessage extends SessionMessage {
   type: SessionMessageType.AGENT;
 
-  contents: Array<TextContent | MediaContent | TaskContent | ActionContent>;
+  contents: Array<TextContent | MediaContent | TaskContent | ActionContent | HitlContent>;
   gmtFinished?: string | null;
 }
 
@@ -75,6 +75,28 @@ export interface ActionContent extends Content {
   gmtModified: string;
   gmtFinished?: string | null;
 }
+export interface HitlQuestionOption {
+  label: string;
+  description: string;
+}
+
+export interface HitlQuestion {
+  header?: string;
+  question: string;
+  options: HitlQuestionOption[];
+  multiSelect?: boolean;
+}
+
+export interface HitlContent {
+  type: ContentType.HITL;
+  id: string;
+  status: number;
+  method: string;
+  properties: {
+    questions: HitlQuestion[];
+  };
+}
+
 export interface TaskContent extends Content {
   type: ContentType.TASK;
 

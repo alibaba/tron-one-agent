@@ -39,7 +39,7 @@ public class TaskAppendContentEvent extends SessionEvent {
     private Long messageId;
     private Long taskId;
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> newContents;
+    private List<Content<?>> newContents;
 
     @Override
     public SessionEventType getType() {

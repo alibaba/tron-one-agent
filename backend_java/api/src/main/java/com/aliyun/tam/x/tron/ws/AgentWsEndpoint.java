@@ -57,6 +57,7 @@ import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -232,10 +233,10 @@ public class AgentWsEndpoint {
             throw new JsonRpcException(requestId, JsonRpcError.INVALID_REQUEST, "Chatting already in progress");
         }
 
-        List<Content> contents = request.getInput()
+        List<Content<?>> contents = request.getInput()
                 .stream()
                 .map(c -> c.toInputContent(agentHandler))
-                .toList();
+                .collect(Collectors.toList());
 
         UserSessionMessage userMessage = UserSessionMessage.builder()
                 .id(sequenceService.nextSequence(SequenceService.SequenceName.MESSAGE))

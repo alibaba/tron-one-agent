@@ -45,7 +45,7 @@ public abstract class SessionMessage {
 
     public abstract SessionMessageType getType();
 
-    public abstract List<Content> getContents();
+    public abstract List<Content<?>> getContents();
 
     /**
      * Find task by task ID

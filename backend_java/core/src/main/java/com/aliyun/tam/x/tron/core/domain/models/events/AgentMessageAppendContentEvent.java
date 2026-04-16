@@ -38,7 +38,7 @@ import java.util.List;
 public class AgentMessageAppendContentEvent extends SessionEvent {
     private Long messageId;
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> newContents;
+    private List<Content<?>> newContents;
 
 
     @Override

@@ -195,6 +195,10 @@ const eventHandlers: Record<
             contents.push({
               ...content,
             });
+          } else if (content.type === ContentType.HITL) {
+            contents.push({
+              ...content,
+            });
           }
         });
         message.contents = contents;

@@ -138,7 +138,7 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                     task.setId(taskId);
                     task.setName(taskName);
 
-                    List<Content> contents = Lists.newArrayList();
+                    List<Content<?>> contents = Lists.newArrayList();
                     contents.add(TextContent.builder().type(ContentType.TEXT).text(taskDetail).build());
                     if (!CollectionUtils.isEmpty(taskImages)) {
                         for (String taskImage : taskImages) {

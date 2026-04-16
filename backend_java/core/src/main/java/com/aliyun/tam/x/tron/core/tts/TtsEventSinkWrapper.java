@@ -114,6 +114,7 @@ public class TtsEventSinkWrapper extends EventSink {
 
     @Override
     public void onComplete() {
+        eventSink.onComplete();
     }
 
 }

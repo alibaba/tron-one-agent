@@ -42,7 +42,7 @@ public class UserSessionMessage extends SessionMessage {
 
     @lombok.Builder.Default
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> contents = new ArrayList<>();
+    private List<Content<?>> contents = new ArrayList<>();
 
     @Override
     public SessionMessageType getType() {
@@ -54,7 +54,7 @@ public class UserSessionMessage extends SessionMessage {
         if (this.contents == null || taskId == null) {
             return null;
         }
-        for (Content c : this.contents) {
+        for (Content<?> c : this.contents) {
             if (c instanceof TaskContent task && taskId.equals(task.getId())) {
                 return task;
             }

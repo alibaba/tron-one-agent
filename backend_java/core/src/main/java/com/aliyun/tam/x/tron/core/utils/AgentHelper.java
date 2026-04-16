@@ -43,14 +43,14 @@ public final class AgentHelper {
     }
 
 
-    public static List<Content> convertFromBlocks(List<ContentBlock> blocks) {
+    public static List<Content<?>> convertFromBlocks(List<ContentBlock> blocks) {
         return blocks.stream()
                 .map(AgentHelper::convertFromBlock)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    public static Content convertFromBlock(ContentBlock block) {
+    public static Content<?> convertFromBlock(ContentBlock block) {
         if (block instanceof TextBlock textBlock) {
             return TextContent.builder()
                     .text(textBlock.getText())
@@ -87,14 +87,14 @@ public final class AgentHelper {
         return builder.build();
     }
 
-    public static List<ContentBlock> convertToBlocks(List<Content> content) {
+    public static List<ContentBlock> convertToBlocks(List<Content<?>> content) {
         return content.stream()
                 .map(AgentHelper::convertToBlock)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    public static ContentBlock convertToBlock(Content content) {
+    public static ContentBlock convertToBlock(Content<?> content) {
         if (content == null) {
             return null;
         }

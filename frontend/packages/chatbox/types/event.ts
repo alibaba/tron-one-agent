@@ -23,6 +23,7 @@ import {
   MediaContent,
   TextContent,
   ActionContent,
+  HitlContent,
 } from "./base";
 
 export interface SessionEvent {
@@ -53,7 +54,7 @@ export interface AgentMessageAppendContentEvent extends SessionEvent {
   type: SessionEventType.AGENT_MESSAGE_APPEND_CONTENT;
 
   messageId: number;
-  newContents: Array<TextContent | MediaContent | TaskContent | ActionContent>;
+  newContents: Array<TextContent | MediaContent | TaskContent | ActionContent | HitlContent>;
 }
 
 export interface AgentMessageStatusChangedEvent extends SessionEvent {

@@ -19,6 +19,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import TaskContentRender from "../TaskContent";
 import ActionContentRender from "../ActionContent";
 import TextContentRender from "../TextContent";
+import HitlContentRender from "../HitlContent";
 import styles from "./index.module.less";
 import type { AgentSessionMessage, UserSessionMessage, TextContent } from "../../types";
 import {
@@ -344,6 +345,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
         return <TaskContentRender task={content} onToggleExpand={(taskId, isExpanded) => handleToggleExpand(taskId, isExpanded, 'task')} />;
       case ContentType.ACTION:
         return <ActionContentRender action={content} onToggleExpand={(actionId, isExpanded) => handleToggleExpand(actionId, isExpanded, 'action')} />;
+      case ContentType.HITL:
+        return <HitlContentRender content={content} />;
       default:
         return null;
     }

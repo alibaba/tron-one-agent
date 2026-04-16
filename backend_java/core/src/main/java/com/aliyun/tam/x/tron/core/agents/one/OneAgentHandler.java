@@ -20,11 +20,7 @@ package com.aliyun.tam.x.tron.core.agents.one;
 import com.aliyun.tam.x.tron.core.agents.AbstractAgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
-import com.aliyun.tam.x.tron.core.domain.models.contents.ActionStatus;
-import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
-import com.aliyun.tam.x.tron.core.domain.models.contents.HitlContent;
-import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
-import com.aliyun.tam.x.tron.core.domain.models.events.AgentMessageAppendContentEvent;
+import com.aliyun.tam.x.tron.core.domain.models.contents.*;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
@@ -180,7 +176,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                             List.of(
                                                     HitlContent.builder()
                                                             .id(toolUseBlock.getId())
-                                                            .status(HitlContent.Status.PENDING)
+                                                            .status(HitlStatus.PENDING)
                                                             .properties(toolUseBlock.getInput())
                                                             .method(toolName)
                                                             .build()

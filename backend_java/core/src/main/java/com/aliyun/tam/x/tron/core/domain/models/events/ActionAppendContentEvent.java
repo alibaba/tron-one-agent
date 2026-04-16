@@ -37,7 +37,7 @@ public class ActionAppendContentEvent extends SessionEvent {
     private Long messageId;
     private Long actionId;
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> newContents;
+    private List<Content<?>> newContents;
 
     @Override
     public SessionEventType getType() {

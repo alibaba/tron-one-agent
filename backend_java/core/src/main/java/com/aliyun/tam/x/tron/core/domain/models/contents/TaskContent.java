@@ -44,7 +44,7 @@ public class TaskContent extends Content<Long> {
     private String result;
     @lombok.Builder.Default
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> contents = new ArrayList<>();
+    private List<Content<?>> contents = new ArrayList<>();
     private LocalDateTime gmtCreated;
     private LocalDateTime gmtModified;
     private LocalDateTime gmtFinished;
@@ -67,14 +67,14 @@ public class TaskContent extends Content<Long> {
     /**
      * Append new contents to this task
      */
-    public void append(List<Content> newContents) {
-        List<Content> mergedContents = new ArrayList<>();
+    public void append(List<Content<?>> newContents) {
+        List<Content<?>> mergedContents = new ArrayList<>();
         if (this.contents != null) {
             mergedContents.addAll(this.contents);
         }
 
-        for (Content c : newContents) {
-            Content lastContent = mergedContents.isEmpty() ? null : mergedContents.get(mergedContents.size() - 1);
+        for (Content<?> c : newContents) {
+            Content<?> lastContent = mergedContents.isEmpty() ? null : mergedContents.get(mergedContents.size() - 1);
             if (lastContent == null || !lastContent.merge(c)) {
                 mergedContents.add(c);
             }

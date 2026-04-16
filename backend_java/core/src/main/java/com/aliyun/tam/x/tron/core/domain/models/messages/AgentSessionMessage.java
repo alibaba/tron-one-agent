@@ -42,7 +42,7 @@ import java.util.List;
 public class AgentSessionMessage extends SessionMessage {
     @lombok.Builder.Default
     @JsonDeserialize(using = Content.ContentDeserializer.class)
-    private List<Content> contents = new ArrayList<>();
+    private List<Content<?>> contents = new ArrayList<>();
 
     private LocalDateTime gmtFinished;
 
@@ -56,7 +56,7 @@ public class AgentSessionMessage extends SessionMessage {
         if (this.contents == null || taskId == null) {
             return null;
         }
-        for (Content c : this.contents) {
+        for (Content<?> c : this.contents) {
             if (c instanceof TaskContent task && taskId.equals(task.getId())) {
                 return task;
             }
@@ -71,7 +71,7 @@ public class AgentSessionMessage extends SessionMessage {
         if (this.contents == null || actionId == null) {
             return null;
         }
-        for (Content c : this.contents) {
+        for (Content<?> c : this.contents) {
             if (c instanceof ActionContent action && actionId.equals(action.getId())) {
                 return action;
             } else if (c instanceof TaskContent task) {
@@ -87,14 +87,14 @@ public class AgentSessionMessage extends SessionMessage {
     /**
      * Append new contents to this message
      */
-    public void append(List<Content> newContents) {
-        List<Content> mergedContents = new ArrayList<>();
+    public void append(List<Content<?>> newContents) {
+        List<Content<?>> mergedContents = new ArrayList<>();
         if (this.contents != null) {
             mergedContents.addAll(this.contents);
         }
 
-        for (Content c : newContents) {
-            Content lastContent = mergedContents.isEmpty() ? null : mergedContents.get(mergedContents.size() - 1);
+        for (Content<?> c : newContents) {
+            Content<?> lastContent = mergedContents.isEmpty() ? null : mergedContents.get(mergedContents.size() - 1);
             if (lastContent == null || !lastContent.merge(c)) {
                 mergedContents.add(c);
             }

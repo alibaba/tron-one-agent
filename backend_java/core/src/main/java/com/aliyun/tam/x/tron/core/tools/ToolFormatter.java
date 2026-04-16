@@ -99,7 +99,7 @@ public class ToolFormatter {
         }
     }
 
-    public List<Content> formatToolResult(List<ContentBlock> result, String name) {
+    public List<Content<?>> formatToolResult(List<ContentBlock> result, String name) {
         if (BAILIAN_WEBSEARCH_TOOL_NAME.equals(name)) {
             String searchResult = result.stream()
                     .filter(b -> b instanceof TextBlock)

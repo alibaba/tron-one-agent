@@ -73,6 +73,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -352,10 +353,10 @@ public class SessionController {
             ChatRequest chatRequest,
             SseEmitter sseEmitter
     ) {
-        List<Content> contents = chatRequest.getInput()
+        List<Content<?>> contents = chatRequest.getInput()
                 .stream()
                 .map(c -> c.toInputContent(agentHandler))
-                .toList();
+                .collect(Collectors.toList());
 
 
         UserSessionMessage userMessage = UserSessionMessage.builder()

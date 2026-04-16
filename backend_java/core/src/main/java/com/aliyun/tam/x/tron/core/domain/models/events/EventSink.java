@@ -88,7 +88,7 @@ public abstract class EventSink {
     /**
      * Append content to message
      */
-    public void appendContentToMessage(List<Content> contents) {
+    public void appendContentToMessage(List<Content<?>> contents) {
         newEvent(AgentMessageAppendContentEvent.builder()
                 .id(newEventId())
                 .agentId(agentId)
@@ -150,7 +150,7 @@ public abstract class EventSink {
     /**
      * Append content to task
      */
-    public void appendContentToTask(Long taskId, List<Content> contents) {
+    public void appendContentToTask(Long taskId, List<Content<?>> contents) {
         newEvent(TaskAppendContentEvent.builder()
                 .id(newEventId())
                 .agentId(agentId)
@@ -212,7 +212,7 @@ public abstract class EventSink {
     /**
      * Append content to action
      */
-    public void appendContentToAction(Long actionId, List<Content> contents) {
+    public void appendContentToAction(Long actionId, List<Content<?>> contents) {
         newEvent(ActionAppendContentEvent.builder()
                 .id(newEventId())
                 .agentId(agentId)

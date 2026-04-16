@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Data
@@ -35,14 +36,14 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentDTO {
-    public static List<ContentDTO> from(List<Content> contents) {
+    public static List<ContentDTO> from(List<Content<?>> contents) {
         return contents.stream()
                 .map(ContentDTO::from)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    public static ContentDTO from(Content content) {
+    public static ContentDTO from(Content<?> content) {
         if (content == null) {
             return null;
         }
@@ -76,6 +77,12 @@ public class ContentDTO {
                     .gmtCreated(actionContent.getGmtCreated())
                     .gmtModified(actionContent.getGmtModified())
                     .gmtFinished(actionContent.getGmtFinished());
+        } else if (content instanceof HitlContent hitlContent) {
+            builder.type(hitlContent.getType().getValue())
+                    .status(hitlContent.getStatus().getValue())
+                    .method(hitlContent.getMethod())
+                    .properties(hitlContent.getProperties())
+                    .result(hitlContent.getResult());
         } else {
             throw new IllegalArgumentException("Unknown content type: " + content.getClass().getName());
         }
@@ -105,6 +112,10 @@ public class ContentDTO {
 
     private String description;
 
+    private String method;
+
+    private Map<String, Object> properties;
+
     private String result;
 
     private List<ContentDTO> contents = new ArrayList<>();
@@ -115,7 +126,7 @@ public class ContentDTO {
 
     private LocalDateTime gmtFinished;
 
-    public Content toInputContent(AgentHandler agentHandler) {
+    public Content<?> toInputContent(AgentHandler agentHandler) {
         ContentType type = ContentType.fromValue(this.type);
         if (!agentHandler.supportInputType(type)) {
             throw new IllegalArgumentException("Unsupported input content type: " + type);

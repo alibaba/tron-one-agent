@@ -64,11 +64,11 @@ public abstract class Content<ID> {
      * @param c the content to merge
      * @return true if merge successful, false otherwise
      */
-    public boolean merge(Content c) {
+    public boolean merge(Content<?> c) {
         return false;
     }
 
-    public static class ContentDeserializer extends JsonDeserializer<List<Content>> {
+    public static class ContentDeserializer extends JsonDeserializer<List<Content<?>>> {
 
         private static ObjectMapper mapper;
 
@@ -84,7 +84,7 @@ public abstract class Content<ID> {
         }
 
         @Override
-        public List<Content> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        public List<Content<?>> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode arrayNode = p.getCodec().readTree(p);
 
             if (arrayNode == null || arrayNode.isNull()) {
@@ -95,9 +95,9 @@ public abstract class Content<ID> {
                 throw new IOException("Expected array for Content list deserialization");
             }
 
-            List<Content> contents = Lists.newArrayListWithCapacity(arrayNode.size());
+            List<Content<?>> contents = Lists.newArrayListWithCapacity(arrayNode.size());
             for (JsonNode node : arrayNode) {
-                Content content = parseContent(node);
+                Content<?> content = parseContent(node);
                 if (content != null) {
                     contents.add(content);
                 }
@@ -105,7 +105,7 @@ public abstract class Content<ID> {
             return contents;
         }
 
-        private Content parseContent(JsonNode node) throws IOException {
+        private Content<?> parseContent(JsonNode node) throws IOException {
             if (node == null || node.isNull()) {
                 return null;
             }
@@ -118,11 +118,12 @@ public abstract class Content<ID> {
                 case IMAGE, VIDEO, AUDIO -> mapper.treeToValue(node, MediaContent.class);
                 case TASK -> parseWithContentsContents(node, TaskContent.class, TaskContent::setContents);
                 case ACTION -> parseWithContentsContents(node, ActionContent.class, ActionContent::setContents);
+                case HITL -> mapper.treeToValue(node, HitlContent.class);
                 default -> null;
             };
         }
 
-        private <T> T parseWithContentsContents(JsonNode node, Class<T> cls, BiConsumer<T, List<Content>> setter) throws IOException {
+        private <T> T parseWithContentsContents(JsonNode node, Class<T> cls, BiConsumer<T, List<Content<?>>> setter) throws IOException {
             JsonNode contentsArray = node.get("contents");
             if (contentsArray == null || contentsArray.isNull() || contentsArray.isEmpty()) {
                 return mapper.treeToValue(node, cls);
@@ -132,9 +133,9 @@ public abstract class Content<ID> {
             ((com.fasterxml.jackson.databind.node.ObjectNode) nodeCopy).remove("contents");
             T inst = mapper.treeToValue(nodeCopy, cls);
 
-            List<Content> contents = new ArrayList<>();
+            List<Content<?>> contents = new ArrayList<>();
             for (JsonNode contentNode : contentsArray) {
-                Content content = parseContent(contentNode);
+                Content<?> content = parseContent(contentNode);
                 if (content != null) {
                     contents.add(content);
                 }

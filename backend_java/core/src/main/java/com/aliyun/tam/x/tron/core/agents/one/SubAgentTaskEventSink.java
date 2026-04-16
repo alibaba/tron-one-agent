@@ -47,7 +47,7 @@ public class SubAgentTaskEventSink extends EventSink {
         }
 
         if (event instanceof AgentMessageAppendContentEvent e) {
-            List<Content> contents = e.getNewContents()
+            List<Content<?>> contents = e.getNewContents()
                     .stream()
                     .filter(c -> c instanceof TextContent || c instanceof MediaContent || c instanceof ActionContent)
                     .peek(c -> {
