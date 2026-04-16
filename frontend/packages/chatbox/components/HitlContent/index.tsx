@@ -47,6 +47,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
   const [answers, setAnswers] = useState<Record<number, AnswerValue>>({});
   const [otherTexts, setOtherTexts] = useState<Record<number, string>>({});
   const [skipped, setSkipped] = useState<Record<number, boolean>>({});
+  const [submittedResult, setSubmittedResult] = useState<string | null>(null);
 
   const handleOptionToggle = useCallback(
     (qIndex: number, label: string, multiSelect?: boolean) => {
@@ -116,19 +117,22 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
   const handleSubmit = useCallback(() => {
     if (!allAnswered || !onSubmit) return;
     const result = buildResult();
+    const resultJson = JSON.stringify(result);
     onSubmit({
       type: ContentType.HITL,
       id: content.id,
-      result: JSON.stringify(result),
+      result: resultJson,
       agentMessageId: agentMessageId!,
     });
+    setSubmittedResult(resultJson);
   }, [allAnswered, onSubmit, buildResult, content.id]);
 
-  // Approved: parse result and render read-only view
-  if (status === 2 && content.result) {
+  const resultToRender = (status === 2 && content.result) ? content.result : submittedResult;
+
+  if (resultToRender) {
     let resultData: Array<{ header?: string; question: string; values: Array<{ label: string; description?: string }> }> = [];
     try {
-      resultData = JSON.parse(content.result);
+      resultData = JSON.parse(resultToRender);
     } catch {
       return null;
     }

@@ -97,6 +97,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
         AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
         Map<Long, AgentResult.Action> actions = Maps.newConcurrentMap();
+        AtomicBoolean hasHitl = new AtomicBoolean(false);
         mainAgent.stream(inputMsgs)
                 .doFirst(() -> cancelled.set(false))
                 .doOnEach(s -> {
@@ -110,6 +111,9 @@ public class OneAgentHandler extends AbstractAgentHandler {
                     }
 
                     if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.SUMMARY) {
+                        if (event.getMessage().hasContentBlocks(ToolUseBlock.class)) {
+                            hasHitl.set(true);
+                        }
                         result.setResponse(event.getMessage().getTextContent());
                         return;
                     }
@@ -154,6 +158,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                 }
 
                                 if (QUESTION_TOOL_NAME.contains(toolName)) {
+                                    hasHitl.set(true);
                                     eventSink.appendContentToMessage(
                                             List.of(
                                                     HitlContent.builder()
@@ -224,7 +229,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 })
                 .doFinally(s -> {
                     eventSink.onComplete();
-                    if (!cancelled.get()) {
+                    if (!cancelled.get() && !hasHitl.get()) {
                         followupSuggestions(eventSink, mainAgent.getMemory().getMessages());
                     }
                 })
