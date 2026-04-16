@@ -210,7 +210,22 @@ public class OneAgentHandler extends AbstractAgentHandler {
                     }
                 })
                 .doOnComplete(() -> {
-                    eventSink.changeMessageStatus(cancelled.get() ? SessionMessageStatus.CANCELLED : SessionMessageStatus.SUCCEED);
+                    if (cancelled.get()) {
+                        List<Msg> msgs = mainAgent.getMemory().getMessages();
+                        for (int i = msgs.size() - 1; i >= 0; i--) {
+                            Msg msg = msgs.get(i);
+                            if (msg.getRole() != MsgRole.ASSISTANT) {
+                                break;
+                            }
+                            if (!msg.hasContentBlocks(ToolUseBlock.class)) {
+                                continue;
+                            }
+                            mainAgent.getMemory().deleteMessage(i);
+                        }
+                        eventSink.changeMessageStatus(SessionMessageStatus.CANCELLED);
+                    } else {
+                        eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                    }
                 })
                 .doOnError(throwable -> {
                     eventSink.changeMessageStatus(SessionMessageStatus.FAILED);

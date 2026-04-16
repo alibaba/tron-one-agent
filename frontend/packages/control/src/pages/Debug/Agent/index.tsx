@@ -645,6 +645,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     setSessionId(newId);
     lastEventIdRef.current = 0;
     setEvents([]);
+    setSuggestions([]);
     setChatState({
       sessionId: newId,
       sessionName: "新会话",
@@ -684,6 +685,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     
     lastEventIdRef.current = 0;
     setEvents([]);
+    setSuggestions([]);
     setChatState({
       sessionId: newId,
       sessionName: "新会话",
