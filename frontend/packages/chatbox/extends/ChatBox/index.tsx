@@ -32,6 +32,7 @@ import {
   AgentSessionMessage,
   SessionMessageType,
 } from "../../types";
+import type { HitlSubmitPayload } from "../../components/HitlContent";
 import { ContentType } from "../../types/enums";
 import { throttle } from "lodash";
 import cls from "classnames";
@@ -72,6 +73,8 @@ export interface ChatBoxProps {
   suggestions?: string[];
   /** 点击建议问题回调 */
   onSuggestionClick?: (suggestion: string) => void;
+  /** HITL 提交回调 */
+  onHitlSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
 // 显示回到底部按钮的阈值
@@ -102,6 +105,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
     voiceInput,
     suggestions,
     onSuggestionClick,
+    onHitlSubmit,
   } = props;
 
   // 只有 TEXT 时使用文本模式，包含 IMAGE/VIDEO/AUDIO 时使用多模式
@@ -258,6 +262,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
             ttsAutoPlay={ttsAutoPlay}
             onLike={onLike}
             onDislike={onDislike}
+            onHitlSubmit={onHitlSubmit}
           />
           {/* 建议问题列表 */}
           {suggestions && suggestions.length > 0 && (
@@ -325,3 +330,4 @@ export default ChatBox;
 
 export { Header, NormalMessageInput, MultiModeMessageInput, ChatBox };
 export type { AttachmentItem, VoiceInputConfig, VoiceInputMode } from "./MessageInput";
+export type { HitlSubmitPayload } from "../../components/HitlContent";

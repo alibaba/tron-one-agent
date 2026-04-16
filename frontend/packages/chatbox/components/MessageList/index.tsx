@@ -19,6 +19,7 @@ import React from "react";
 import MessageItem from "../MessageItem";
 import styles from "./index.module.less";
 import type { AgentSessionMessage, UserSessionMessage } from "../../types";
+import type { HitlSubmitPayload } from "../HitlContent";
 import { SessionMessageType } from "../../types/enums";
 
 export interface MessageListProps {
@@ -43,6 +44,8 @@ export interface MessageListProps {
   onLike?: (messageId: number) => void;
   /** Dislike callback */
   onDislike?: (messageId: number) => void;
+  /** HITL submit callback */
+  onHitlSubmit?: (payload: HitlSubmitPayload) => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -58,6 +61,7 @@ const MessageList: React.FC<MessageListProps> = ({
   ttsAutoPlay,
   onLike,
   onDislike,
+  onHitlSubmit,
 }) => {
   // Track initial loaded message IDs to distinguish historical vs new messages
   const initialMessageIdsRef = React.useRef<Set<number> | null>(null);
@@ -97,6 +101,7 @@ const MessageList: React.FC<MessageListProps> = ({
           isLastMessage={message.id === lastNewAgentMessageId}
           onLike={onLike}
           onDislike={onDislike}
+          onHitlSubmit={onHitlSubmit}
         />
       ))}
     </div>

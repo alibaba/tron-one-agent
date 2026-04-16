@@ -26,7 +26,7 @@ import {
 } from "chatbox";
 import type { EventItem, ChatState, UserSessionMessage } from "chatbox";
 import { ChatBox } from "chatbox/extends/ChatBox";
-import type { AttachmentItem } from "chatbox/extends/ChatBox";
+import type { AttachmentItem, HitlSubmitPayload } from "chatbox/extends/ChatBox";
 import {
   createSession,
   getSessionById,
@@ -582,6 +582,66 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
     },
     [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected]
   );
+
+  const handleHitlSubmit = useCallback(
+    (payload: HitlSubmitPayload) => {
+      if (!sessionId || !agentIdChanged) return;
+
+      const inputContents = [{
+        type: ContentType.HITL,
+        id: payload.id,
+        result: payload.result,
+      }];
+
+      setRunning(true);
+      stopInlineTts();
+
+      if (chatProtocol === "ws") {
+        if (!wsConnectionRef.current || !wsConnected) {
+          message.warning("WebSocket 未连接，请等待连接建立后再提交");
+          setRunning(false);
+          return;
+        }
+        wsConnectionRef.current.sendChat(inputContents, ttsAutoPlay);
+      } else {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = createChatStream(
+          agentIdChanged,
+          sessionId,
+          { data: { input: inputContents, enableTts: ttsAutoPlay } },
+          {
+            onEvent: (event: EventItem) => {
+              if ((event as any).type === SessionEventType.TTS_RESPONSE) {
+                handleTtsResponse((event as any).data);
+                return;
+              }
+              setEvents((prev) => [...prev, event]);
+              lastEventIdRef.current = event.id;
+              setChatState((prevState) => updateMessageListByEvents(prevState, [event]));
+
+              if (
+                event.type === SessionEventType.AGENT_MESSAGE_STATUS_CHANGED &&
+                (event as any).newStatus !== SessionMessageStatus.EXECUTING
+              ) {
+                setRunning(false);
+              }
+            },
+            onError: (error: Error) => {
+              console.error("HITL SSE 错误:", error);
+              setRunning(false);
+              message.error("提交失败");
+            },
+            onComplete: () => {
+              setRunning(false);
+            },
+          }
+        );
+      }
+    },
+    [sessionId, agentIdChanged, chatProtocol, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected]
+  );
   const onCreateSessionClick = useCallback(() => {
     const newId = generateSessionId();
     setSessionId(newId);
@@ -775,9 +835,9 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
           suggestions={suggestions}
           onSuggestionClick={(text) => {
             setSuggestions([]);
-            // 将建议内容填充到输入框并自动发送
             handleSendMessage(text);
           }}
+          onHitlSubmit={handleHitlSubmit}
         />
         <Card
           className={styles.operateWrap}

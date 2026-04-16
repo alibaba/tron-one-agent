@@ -116,6 +116,8 @@ public class ContentDTO {
 
     private Map<String, Object> properties;
 
+    private Long agentMessageId;
+
     private String result;
 
     private List<ContentDTO> contents = new ArrayList<>();
@@ -151,6 +153,7 @@ public class ContentDTO {
             case HITL:
                 return HitlContent.builder()
                         .id((String) id)
+                        .agentMessageId(agentMessageId)
                         .status(status == null ? HitlStatus.APPROVED : HitlStatus.fromValue(status))
                         .result(result)
                         .build();

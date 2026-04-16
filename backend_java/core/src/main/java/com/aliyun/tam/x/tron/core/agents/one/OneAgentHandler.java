@@ -158,6 +158,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                                             List.of(
                                                     HitlContent.builder()
                                                             .id(toolUseBlock.getId())
+                                                            .agentMessageId(eventSink.getMessageId())
                                                             .status(HitlStatus.PENDING)
                                                             .properties(toolUseBlock.getInput())
                                                             .method(toolName)

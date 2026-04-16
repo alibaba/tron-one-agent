@@ -20,6 +20,8 @@ import static com.aliyun.tam.x.tron.core.domain.models.contents.ContentType.HITL
 @EqualsAndHashCode(callSuper = true)
 public class HitlContent extends Content<String> {
 
+    private Long agentMessageId;
+
     private HitlStatus status;
 
     private String method;
