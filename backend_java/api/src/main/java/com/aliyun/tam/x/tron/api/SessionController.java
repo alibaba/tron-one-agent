@@ -407,7 +407,7 @@ public class SessionController {
         EventSink eventSink;
         if (sseEmitter == null) {
             eventSink = rawEventSink;
-        } else {
+        } else if (!chatRequest.isEnableTts()) {
             AtomicBoolean completed = new AtomicBoolean(false);
             eventSink = new EventSink() {
                 @Override
@@ -447,11 +447,8 @@ public class SessionController {
                     sseEmitter.complete();
                 }
             };
-        }
-
-        if (sseEmitter != null && chatRequest.isEnableTts()) {
-            final EventSink original = eventSink;
-            eventSink = new TtsEventSinkWrapper(ttsService, original, new TtsService.TtsCallback() {
+        } else {
+            EventSink ttsEventSink = new TtsEventSinkWrapper(ttsService, rawEventSink, new TtsService.TtsCallback() {
                 @Override
                 public void onData(String dataBase64) {
                     send(TtsResponse.builder().dataBase64(dataBase64).finished(false).build());
@@ -460,6 +457,9 @@ public class SessionController {
                 @Override
                 public void onFinished() {
                     send(TtsResponse.builder().finished(true).build());
+
+                    rawEventSink.onComplete();
+                    sseEmitter.complete();
                 }
 
                 @Override
@@ -467,7 +467,6 @@ public class SessionController {
                     send(TtsResponse.builder().success(false).error(t.getMessage()).build());
                     sseEmitter.completeWithError(t);
                 }
-
 
                 private void send(TtsResponse response) {
                     try {
@@ -482,7 +481,46 @@ public class SessionController {
                     }
                 }
             });
+
+            AtomicBoolean completed = new AtomicBoolean(false);
+            eventSink = new EventSink() {
+                @Override
+                public void newEvent(SessionEvent event) {
+                    ttsEventSink.newEvent(event);
+                    if (completed.get()) {
+                        return;
+                    }
+                    try {
+                        sseEmitter.send(event);
+                    } catch (IllegalStateException e) {
+                        log.warn("SseEmitter is closed");
+                        handler.cancel(null);
+                        completed.set(true);
+                    } catch (Exception e) {
+                        try {
+                            sseEmitter.completeWithError(e);
+                            completed.set(true);
+                        } catch (Exception ex) {
+                        }
+                    }
+                }
+
+                @Override
+                public void saveMessage(SessionMessage sessionMessage) {
+                    ttsEventSink.saveMessage(sessionMessage);
+                }
+
+                @Override
+                public Long nextSequence(SequenceService.SequenceName sequenceName) {
+                    return ttsEventSink.nextSequence(sequenceName);
+                }
+
+                @Override
+                public void onComplete() {
+                }
+            };
         }
+
         eventSink.setAgentId(rawEventSink.getAgentId());
         eventSink.setSessionId(rawEventSink.getSessionId());
         eventSink.setUserId(rawEventSink.getUserId());
