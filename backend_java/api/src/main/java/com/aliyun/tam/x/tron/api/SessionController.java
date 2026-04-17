@@ -460,7 +460,6 @@ public class SessionController {
                 @Override
                 public void onFinished() {
                     send(TtsResponse.builder().finished(true).build());
-                    original.onComplete();
                 }
 
                 @Override

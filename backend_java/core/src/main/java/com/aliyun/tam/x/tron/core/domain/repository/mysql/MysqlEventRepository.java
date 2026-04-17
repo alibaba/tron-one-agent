@@ -34,16 +34,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Slf4j
 @Repository
 public class MysqlEventRepository implements EventRepository {
 
@@ -158,7 +161,12 @@ public class MysqlEventRepository implements EventRepository {
                 }
 
                 for (List<SessionEventDO> partition : Lists.partition(events, 64)) {
-                    sessionEventMapper.insertBatch(partition);
+                    try {
+                        sessionEventMapper.insertBatch(partition);
+                    }
+                    catch (Exception e) {
+                        log.info("encounter exception during saving events", e);
+                    }
                 }
 
                 if (lastAppliedEventId != null) {
