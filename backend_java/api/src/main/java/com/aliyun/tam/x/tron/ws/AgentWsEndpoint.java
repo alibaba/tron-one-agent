@@ -264,9 +264,9 @@ public class AgentWsEndpoint {
 
         EventSink eventSink = buildEventSink(agentMessage, request, wsSession);
 
+        eventSink.newUserMessage(userMessage);
+        eventSink.newAgentMessage(agentMessage);
         threadPoolExecutor.submit(() -> {
-            eventSink.newUserMessage(userMessage);
-            eventSink.newAgentMessage(agentMessage);
             try {
                 agentHandler.handleInput(userMessage, eventSink);
             } catch (Exception e) {
