@@ -56,12 +56,6 @@ Tron OneAgent is built on [Alibaba AgentScope Java](https://java.agentscope.io/z
 
 ```mermaid
 graph TB
-  EndUser((End User))
-  subgraph Client["Client (Node)"]
-    Session[Session]
-    Chat[Chat]
-  end
-
   Developer((Developer))
   subgraph Control["Control (Node)"]
     Config[Configuration]
@@ -83,13 +77,10 @@ graph TB
 
   RemoteSubAgent[Remote Sub-Agent]
 
-  EndUser --> Client
   Developer --> Control
 
   Config --> Backend
   Debugger --> Backend
-  Session --> Backend
-  Chat --> Backend
 
   Backend --> Mysql
   Backend --> OSS
@@ -113,16 +104,6 @@ graph TB
 | MySQL | 5.7+ / 8.0+ | Database |
 | A2A SDK | 0.3.2 | Agent-to-Agent Protocol |
 | Alibaba Bailian SDK | 2.6.2 | Alibaba Cloud AI Services |
-
-### Frontend Technologies
-
-| Component | Version | Description |
-|-----------|---------|-------------|
-| React | 18.x | Frontend Framework |
-| TypeScript | 5.x | Type Checking |
-| Ant Design | 5.x | UI Component Library |
-| Webpack | 5.x | Module Bundler |
-| Yarn | 1.x/2.x | Package Manager |
 
 ## Quick Start (Local Deployment)
 
@@ -149,21 +130,6 @@ java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
 ```
 
 Service will be available at: `http://localhost:8080`
-
-### Start Frontend Application
-
-```bash
-cd frontend
-
-# 1. Install Dependencies
-yarn install
-
-# 2. Start Development Server
-yarn dev:client    # Start client application
-yarn dev:control   # Start control panel application
-```
-
-Client will be available at: `http://localhost:3000`
 
 ## Documentation
 

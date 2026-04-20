@@ -55,14 +55,8 @@ Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/int
 
 ```mermaid
 graph TB
-  EndUser((终端用户))
-  subgraph Client["Client (Node)"]
-    Session[会话管理]
-    Chat[聊天对话]
-  end
-
   Developer((开发者))
-  subgraph Control["Client (Node)"]
+  subgraph Control["Control (Node)"]
     Config[动态配置]
     Debugger[开发调试]
   end
@@ -82,13 +76,10 @@ graph TB
 
   RemoteSubAgent[远程子Agent]
 
-  EndUser --> Client
   Developer --> Control
 
   Config --> Backend
   Debugger --> Backend
-  Session --> Backend
-  Chat --> Backend
 
   Backend --> Mysql
   Backend --> OSS
@@ -112,16 +103,6 @@ graph TB
 | MySQL | 5.7+ / 8.0+ | 数据库 |
 | A2A SDK | 0.3.2 | Agent-to-Agent 协议 |
 | 阿里云百炼 SDK | 2.6.2 | 阿里云 AI 服务 |
-
-### 前端技术
-
-| 组件 | 版本 | 说明 |
-|------|------|------|
-| React | 18.x | 前端框架 |
-| TypeScript | 5.x | 类型检查 |
-| Ant Design | 5.x | UI 组件库 |
-| Webpack | 5.x | 模块打包器 |
-| Yarn | 1.x/2.x | 包管理器 |
 
 ## 快速开始（本地部署）
 
@@ -148,21 +129,6 @@ java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
 ```
 
 服务启动后访问：`http://localhost:8080`
-
-### 启动前端应用
-
-```bash
-cd frontend
-
-# 1. 安装依赖
-yarn install
-
-# 2. 启动开发服务器
-yarn dev:client    # 启动客户端应用
-yarn dev:control   # 启动控制台应用
-```
-
-客户端启动后访问：`http://localhost:3000`
 
 ## 文档
 
