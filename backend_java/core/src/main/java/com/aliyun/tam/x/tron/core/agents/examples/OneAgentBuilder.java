@@ -55,7 +55,7 @@ public class OneAgentBuilder extends BaseAgentBuilder {
                                 .type(ChatModelType.OPENAI_COMPATIBLE)
                                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1")
                                 .apiKey(apiKey)
-                                .modelName("qwen3.5-flash")
+                                .modelName("qwen3.6-flash")
                                 .thinking(false)
                                 .build()
                 )
