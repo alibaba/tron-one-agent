@@ -106,7 +106,7 @@ graph TB
 | A2A SDK | 0.3.2 | Agent-to-Agent 协议 |
 | 阿里云百炼 SDK | 2.6.2 | 阿里云 AI 服务 |
 
-## 快速开始（本地部署）
+## 快速开始（本地启动）
 
 ### 启动后端服务
 
@@ -124,6 +124,14 @@ export DB_NAME=tron_agent_java
 export DB_USER=root
 export DB_PASS=your_password
 export DASHSCOPE_API_KEY=your_dashscope_api_key
+
+# 以下 OSS 配置为可选，用于支持多模态（图片）文件上传与存储
+export ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+export OSS_BUCKET=your_bucket_name
+export OSS_REGION=cn-hangzhou
+export OSS_ENDPOINT=oss-cn-hangzhou.aliyuncs.com
+export FILE_SERVER_BASE_URL=https://your-domain.com/api/files
 
 # 3. 编译并启动
 mvn clean package -DskipTests

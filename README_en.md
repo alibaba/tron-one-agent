@@ -126,6 +126,14 @@ export DB_USER=root
 export DB_PASS=your_password
 export DASHSCOPE_API_KEY=your_dashscope_api_key
 
+# The following OSS configuration is optional, used to support multimodal (image) file upload and storage
+export ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+export OSS_BUCKET=your_bucket_name
+export OSS_REGION=cn-hangzhou
+export OSS_ENDPOINT=oss-cn-hangzhou.aliyuncs.com
+export FILE_SERVER_BASE_URL=https://your-domain.com/api/files
+
 # 3. Compile and Start
 mvn clean package -DskipTests
 java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
