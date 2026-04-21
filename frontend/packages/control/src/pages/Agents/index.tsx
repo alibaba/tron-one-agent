@@ -80,11 +80,6 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "最大迭代",
-      dataIndex: "maxIters",
-      key: "maxIters",
-    },
-    {
       title: "工具",
       key: "toolsCount",
       render: (_, record: AgentConfig) => (
@@ -182,6 +177,42 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
+      title: "工具",
+      key: "toolsCount",
+      render: (_, record: AgentConfig) => (
+        <Tag icon={<ToolOutlined />} color="blue">
+          {record.tools?.length || 0}
+        </Tag>
+      ),
+    },
+    {
+      title: "MCP",
+      key: "mcpCount",
+      render: (_, record: AgentConfig) => (
+        <Tag icon={<ApiOutlined />} color="green">
+          {record.mcpClients?.length || 0}
+        </Tag>
+      ),
+    },
+    {
+      title: "知识库",
+      key: "kbCount",
+      render: (_, record: AgentConfig) => (
+        <Tag icon={<DatabaseOutlined />} color="purple">
+          {record.knowledgeBases?.length || 0}
+        </Tag>
+      ),
+    },
+    {
+      title: "Skills",
+      key: "skillsCount",
+      render: (_, record: AgentConfig) => (
+        <Tag icon={<ThunderboltOutlined />} color="orange">
+          {record.skills?.length || 0}
+        </Tag>
+      ),
+    },
+    {
       title: "操作",
       key: "action",
       width: 400,
@@ -204,6 +235,10 @@ const AgentsPage: React.FC = () => {
           <Space size="small" wrap>
             <ChatConfigButton agent={record} onSuccess={handleSuccess} />
             <SubAgentButton agent={record} onSuccess={handleSuccess} />
+            <KbButton agent={record} onSuccess={handleSuccess} />
+            <ToolsButton agent={record} onSuccess={handleSuccess} />
+            <McpButton agent={record} onSuccess={handleSuccess} />
+            <SkillButton agent={record} onSuccess={handleSuccess} />
           </Space>
         </Space>
       ),

@@ -47,7 +47,7 @@ public final class AgentHelper {
         return blocks.stream()
                 .map(AgentHelper::convertFromBlock)
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public static Content<?> convertFromBlock(ContentBlock block) {
@@ -91,7 +91,7 @@ public final class AgentHelper {
         return content.stream()
                 .map(AgentHelper::convertToBlock)
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public static ContentBlock convertToBlock(Content<?> content) {

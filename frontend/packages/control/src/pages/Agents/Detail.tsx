@@ -296,91 +296,67 @@ const AgentDetail: React.FC = () => {
           </Card>
 
           {/* 工具配置区域 */}
-          {agent.type !== LocalAgentType.ONE && (
-            <Card
-              title={`工具 (${agent.tools?.length || 0})`}
-              size="small"
-              extra={
-                agent.type !== LocalAgentType.MULTI ? (
-                  <ToolsButton agent={agent} onSuccess={handleSuccess}>
-                    管理工具
-                  </ToolsButton>
-                ) : (
-                  <span style={{ color: "#8c8c8c", fontSize: "12px" }}>
-                    Multi类型Agent不支持工具配置
-                  </span>
-                )
-              }
-            >
-              {agent.type !== LocalAgentType.MULTI ? (
-                <List
-                  dataSource={agent.tools || []}
-                  renderItem={(tool) => {
-                    const toolInfo = availableTools.find(
-                      (availableTool) => availableTool.name === tool.name
-                    );
-                    return (
-                      <List.Item>
-                        <List.Item.Meta
-                          avatar={<ToolOutlined style={{ color: "#1890ff" }} />}
-                          title={
-                            <Space>
-                              <span>{tool.name}</span>
-                              <Tag
-                                size="small"
-                                color={tool.enabled !== false ? "green" : "red"}
-                              >
-                                {tool.enabled !== false ? "启用" : "禁用"}
-                              </Tag>
-                            </Space>
-                          }
-                          description={
-                            toolInfo?.description && (
-                              <div
-                                style={{
-                                  fontSize: "13px",
-                                  color: "#595959",
-                                  lineHeight: "1.4",
-                                  marginTop: "4px",
-                                }}
-                              >
-                                {toolInfo.description}
-                              </div>
-                            )
-                          }
-                        />
-                      </List.Item>
-                    );
-                  }}
-                  locale={{ emptyText: "暂无配置工具" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    padding: "40px",
-                    textAlign: "center",
-                    background: "#fafafa",
-                    border: "1px solid #f0f0f0",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <Text type="secondary">Multi类型Agent不支持工具配置</Text>
-                </div>
-              )}
-            </Card>
-          )}
+          <Card
+            title={`工具 (${agent.tools?.length || 0})`}
+            size="small"
+            extra={
+              <ToolsButton agent={agent} onSuccess={handleSuccess}>
+                管理工具
+              </ToolsButton>
+            }
+          >
+            <List
+              dataSource={agent.tools || []}
+              renderItem={(tool) => {
+                const toolInfo = availableTools.find(
+                  (availableTool) => availableTool.name === tool.name
+                );
+                return (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={<ToolOutlined style={{ color: "#1890ff" }} />}
+                      title={
+                        <Space>
+                          <span>{tool.name}</span>
+                          <Tag
+                            color={tool.enabled !== false ? "green" : "red"}
+                          >
+                            {tool.enabled !== false ? "启用" : "禁用"}
+                          </Tag>
+                        </Space>
+                      }
+                      description={
+                        toolInfo?.description && (
+                          <div
+                            style={{
+                              fontSize: "13px",
+                              color: "#595959",
+                              lineHeight: "1.4",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {toolInfo.description}
+                          </div>
+                        )
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+              locale={{ emptyText: "暂无配置工具" }}
+            />
+          </Card>
 
           {/* MCP客户端区域 */}
-          {agent.type !== LocalAgentType.ONE && (
-            <Card
-              title={`MCP (${agent.mcpClients?.length || 0})`}
-              size="small"
-              extra={
-                <McpButton agent={agent} onSuccess={handleSuccess}>
-                  管理MCP
-                </McpButton>
-              }
-            >
+          <Card
+            title={`MCP (${agent.mcpClients?.length || 0})`}
+            size="small"
+            extra={
+              <McpButton agent={agent} onSuccess={handleSuccess}>
+                管理MCP
+              </McpButton>
+            }
+          >
               <List
                 dataSource={agent.mcpClients || []}
                 renderItem={(mcp) => {
@@ -397,13 +373,12 @@ const AgentDetail: React.FC = () => {
                           <Space>
                             <span>{mcpInfo?.name || mcp.clientId}</span>
                             {mcpInfo?.transport && (
-                              <Tag size="small" color="blue">
+                              <Tag color="blue">
                                 {mcpInfo.transport.toUpperCase()}
                               </Tag>
                             )}
                             {mcpInfo?.enabled !== undefined && (
                               <Tag
-                                size="small"
                                 color={mcpInfo.enabled ? "green" : "red"}
                               >
                                 {mcpInfo.enabled ? "在线" : "离线"}
@@ -446,18 +421,18 @@ const AgentDetail: React.FC = () => {
                               <Tag color={mcp.enabled ? "green" : "red"}>
                                 {mcp.enabled ? "启用" : "禁用"}
                               </Tag>
-                              {mcp.enable_funcs &&
-                                Array.isArray(mcp.enable_funcs) &&
-                                mcp.enable_funcs.length > 0 && (
+                              {mcp.enableFuncs &&
+                                Array.isArray(mcp.enableFuncs) &&
+                                mcp.enableFuncs.length > 0 && (
                                   <Tag color="blue">
-                                    启用函数: {mcp.enable_funcs.join(", ")}
+                                    启用函数: {mcp.enableFuncs.join(", ")}
                                   </Tag>
                                 )}
-                              {mcp.disable_funcs &&
-                                Array.isArray(mcp.disable_funcs) &&
-                                mcp.disable_funcs.length > 0 && (
+                              {mcp.disableFuncs &&
+                                Array.isArray(mcp.disableFuncs) &&
+                                mcp.disableFuncs.length > 0 && (
                                   <Tag color="orange">
-                                    禁用函数: {mcp.disable_funcs.join(", ")}
+                                    禁用函数: {mcp.disableFuncs.join(", ")}
                                   </Tag>
                                 )}
                             </Space>
@@ -469,78 +444,54 @@ const AgentDetail: React.FC = () => {
                 }}
                 locale={{ emptyText: "暂无配置MCP客户端" }}
               />
-            </Card>
-          )}
+          </Card>
           {/* 知识库区域 */}
-          {agent.type !== LocalAgentType.ONE && (
-            <Card
-              title={`知识库 (${agent.knowledgeBases?.length || 0})`}
-              size="small"
-              extra={
-                agent.type !== LocalAgentType.MULTI ? (
-                  <KbButton agent={agent} onSuccess={handleSuccess}>
-                    管理知识库
-                  </KbButton>
-                ) : (
-                  <span style={{ color: "#8c8c8c", fontSize: "12px" }}>
-                    Multi类型Agent不支持知识库配置
-                  </span>
-                )
-              }
-            >
-              {agent.type !== LocalAgentType.MULTI ? (
-                <List
-                  dataSource={agent.knowledgeBases || []}
-                  renderItem={(kb: any) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        avatar={
-                          <DatabaseOutlined style={{ color: "#722ed1" }} />
-                        }
-                        title={kb.name}
-                        description={
-                          <Space>
-                            <Text type="secondary">
-                              工作空间: {kb.workspaceId}
-                            </Text>
-                            <Text type="secondary">索引: {kb.indexId}</Text>
-                            <Tag color={kb.enabled ? "green" : "red"}>
-                              {kb.enabled ? "启用" : "禁用"}
-                            </Tag>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                  locale={{ emptyText: "暂无配置知识库" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    padding: "40px",
-                    textAlign: "center",
-                    background: "#fafafa",
-                    border: "1px solid #f0f0f0",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <Text type="secondary">Multi类型Agent不支持知识库配置</Text>
-                </div>
+          <Card
+            title={`知识库 (${agent.knowledgeBases?.length || 0})`}
+            size="small"
+            extra={
+              <KbButton agent={agent} onSuccess={handleSuccess}>
+                管理知识库
+              </KbButton>
+            }
+          >
+            <List
+              dataSource={agent.knowledgeBases || []}
+              renderItem={(kb: any) => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={
+                      <DatabaseOutlined style={{ color: "#722ed1" }} />
+                    }
+                    title={kb.name}
+                    description={
+                      <Space>
+                        <Text type="secondary">
+                          工作空间: {kb.workspaceId}
+                        </Text>
+                        <Text type="secondary">索引: {kb.indexId}</Text>
+                        <Tag color={kb.enabled ? "green" : "red"}>
+                          {kb.enabled ? "启用" : "禁用"}
+                        </Tag>
+                      </Space>
+                    }
+                  />
+                </List.Item>
               )}
-            </Card>
-          )}
+              locale={{ emptyText: "暂无配置知识库" }}
+            />
+          </Card>
 
           {/* Skills区域 */}
-          {agent.type !== LocalAgentType.ONE && (
-            <Card
-              title={`Skills (${agent.skills?.length || 0})`}
-              size="small"
-              extra={
-                <SkillButton agent={agent} onSuccess={handleSuccess}>
-                  管理Skills
-                </SkillButton>
-              }
-            >
+          <Card
+            title={`Skills (${agent.skills?.length || 0})`}
+            size="small"
+            extra={
+              <SkillButton agent={agent} onSuccess={handleSuccess}>
+                管理Skills
+              </SkillButton>
+            }
+          >
               <List
                 dataSource={agent.skills || []}
                 renderItem={(skill) => {
@@ -583,8 +534,7 @@ const AgentDetail: React.FC = () => {
                 }}
                 locale={{ emptyText: "暂无配置Skills" }}
               />
-            </Card>
-          )}
+          </Card>
 
           {/* 子Agent区域 - 仅在Multi类型时显示 */}
           {agent.type === LocalAgentType.ONE && (
@@ -654,13 +604,11 @@ const AgentDetail: React.FC = () => {
                               }}
                             >
                               <Tag
-                                size="small"
                                 color={isRemoteAgent ? "orange" : "blue"}
                               >
                                 {isRemoteAgent ? "远程" : "本地"}
                               </Tag>
                               <Tag
-                                size="small"
                                 color={subAgent.enabled ? "green" : "red"}
                               >
                                 {subAgent.enabled ? "启用" : "禁用"}
