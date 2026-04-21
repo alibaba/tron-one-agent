@@ -26,10 +26,8 @@ import com.google.common.collect.Maps;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import io.agentscope.core.skill.AgentSkill;
-import io.agentscope.core.skill.repository.ClasspathSkillRepository;
 import io.agentscope.core.skill.repository.FileSystemSkillRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -235,8 +233,30 @@ public class SkillConfigService {
         throw new IllegalArgumentException(String.format("invalid %s format, no end %s found", fileName, METADATA_SEPARATOR));
     }
 
+    public List<SkillConfig> listSkillConfigs() {
+        List<SkillConfig> configs = skillConfigRepository.list();
+        for (AgentSkill skill : listBuiltinSkills()) {
+            boolean exists = configs
+                    .stream()
+                    .anyMatch(config -> config.getName().equals(skill.getName()));
+            if (exists) {
+                continue;
+            }
 
-    public List<AgentSkill> getBuiltinSkills() {
+            configs.add(SkillConfig.builder()
+                    .id(0L)
+                    .name(skill.getName())
+                    .description(skill.getDescription())
+                    .instruction(skill.getSkillContent())
+                    .files(Lists.newArrayList(skill.getResourcePaths()))
+                    .builtin(true)
+                    .build()
+            );
+        }
+        return configs;
+    }
+
+    public List<AgentSkill> listBuiltinSkills() {
         if (!Files.exists(BUILTINT_SKILL_DIR_PATH)) {
             builtinSkillRepository = null;
             return Lists.newArrayList();

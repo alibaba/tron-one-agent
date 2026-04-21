@@ -17,7 +17,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip, Tree } from 'antd';
-import { DeleteOutlined, ReloadOutlined, UploadOutlined, DownloadOutlined, FileZipOutlined, ReadOutlined, FolderOutlined, FileOutlined } from '@ant-design/icons';
+import { DeleteOutlined, ReloadOutlined, UploadOutlined, DownloadOutlined, FileZipOutlined, ReadOutlined, FolderOutlined, FileOutlined, LockOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { DataNode } from 'antd/es/tree';
 import ReactMarkdown from 'react-markdown';
@@ -99,7 +99,16 @@ const SkillsPage: React.FC = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 100,
+      render: (id: number, record: SkillConfig) => (
+        record.builtin ? (
+          <Tag icon={<LockOutlined />} color="purple">
+            内置
+          </Tag>
+        ) : (
+          id
+        )
+      ),
     },
     {
       title: '名称',
@@ -179,6 +188,7 @@ const SkillsPage: React.FC = () => {
         <Switch
           checked={enabled}
           onChange={(checked) => handleToggleEnabled(record.id, checked)}
+          disabled={record.builtin}
         />
       ),
     },
@@ -191,6 +201,7 @@ const SkillsPage: React.FC = () => {
             type="link"
             icon={<UploadOutlined />}
             onClick={() => handleUpdateFile(record.id)}
+            disabled={record.builtin}
           >
             更新文件
           </Button>
@@ -198,6 +209,7 @@ const SkillsPage: React.FC = () => {
             type="link"
             icon={<DownloadOutlined />}
             onClick={() => handleDownload(record.id)}
+            disabled={record.builtin}
           >
             下载
           </Button>
@@ -206,6 +218,7 @@ const SkillsPage: React.FC = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
+            disabled={record.builtin}
           >
             删除
           </Button>

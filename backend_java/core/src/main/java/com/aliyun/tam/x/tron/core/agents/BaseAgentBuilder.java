@@ -339,7 +339,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
         }
 
         List<SkillConfig> skillConfigs = skillConfigRepository.list();
-        List<AgentSkill> builtinSkills = skillConfigService.getBuiltinSkills();
+        List<AgentSkill> builtinSkills = skillConfigService.listBuiltinSkills();
 
         Hasher hasher = Hashing.sha256().newHasher();
         List<AgentSkill> agentSkills = Lists.newArrayList();

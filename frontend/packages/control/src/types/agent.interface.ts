@@ -94,6 +94,7 @@ export interface AgentConfig {
   enabled: boolean;
   type: LocalAgentType;
   chatModel?: ChatModelConfig;
+  fastChatModel?: ChatModelConfig;
   systemPrompt?: string;
   maxIters?: number;
   tools: AgentToolConfig[];
@@ -109,6 +110,8 @@ export interface UpdateAgentRequest {
   enabled?: boolean;
   systemPrompt?: string;
   maxIters?: number;
+  chatModel?: ChatModelConfig;
+  fastChatModel?: ChatModelConfig;
   tools?: any[];
   mcpClients?: AgentMcpConfig[];
   knowledgeBases?: AgentKnowledgeBaseConfig[];

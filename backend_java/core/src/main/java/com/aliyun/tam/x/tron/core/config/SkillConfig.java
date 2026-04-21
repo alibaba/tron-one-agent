@@ -50,4 +50,7 @@ public class SkillConfig {
     private Long fileId;
 
     private String checksum;
+
+    @Builder.Default
+    private Boolean builtin = false;
 }

@@ -25,4 +25,5 @@ export interface SkillConfig {
   files?: string[];
   fileId?: number;
   checksum?: string;
+  builtin?: boolean;
 }

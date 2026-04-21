@@ -322,7 +322,7 @@ public class ConfigController {
 
     @GetMapping("/skills")
     public ControlResponse<?> getSkills() {
-        return ControlResponse.success(skillConfigRepository.list());
+        return ControlResponse.success(skillConfigService.listSkillConfigs());
     }
 
     @GetMapping("/skills/{skill_id}")
