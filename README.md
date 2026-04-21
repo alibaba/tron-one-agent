@@ -28,9 +28,10 @@ Tron OneAgent 是一个企业级 AI Agent 高代码开发框架，提供开箱�
 - **Agent 控制**：支持对话中断（Cancel）功能，用户可随时停止正在执行的 Agent 任务
 - **智能建议**：内置 Follow-up Suggestion 功能，自动为用户生成后续对话建议
 - **动态配置能力**：无需重启服务即可动态调整配置、工具、MCP、知识库、长期记忆和技能
+- **HITL 人机协同**：支持 Human-in-the-Loop 交互模式，可在对话流程中插入人工确认、信息收集等环节
 - **现代化前端**：开箱即用的现代化 UI 界面和丰富的交互组件
 - **多模态支持**：除多模态大模型外，还支持外挂 TTS、ASR 功能
-- **评估框架**：集成 Dokimos 评估框架，支持 Agent 能力评估与测试
+- **评估框架**：集成 [Dokimos](https://dokimos.dev/) 评估框架，支持 Agent 能力评估与测试
 
 Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/intro.html) 构建，完全兼容其生态能力。
 
@@ -42,6 +43,7 @@ Tron OneAgent 基于 [Alibaba AgentScope Java](https://java.agentscope.io/zh/int
 - **完善的会话状态管理**：提供完整的会话生命周期管理和纯异步流式输出
 - **强大的交互控制**：支持对话中断（Cancel）功能，用户可随时停止 Agent 执行；内置 Follow-up Suggestion 智能推荐后续问题
 - **动态配置与调试**：支持热更新配置，便于开发调试和生产环境应急处理
+- **HITL 人机协同**：支持人工介入交互，适用于需要人工确认、信息收集等场景
 - **丰富的前端交互**：提供开箱即用的现代化 UI 界面和丰富的交互组件
 - **多模态能力**：支持语音交互（TTS/ASR），扩展 Agent 的适用场景
 - **评估与测试**：集成 Dokimos 评估框架，方便进行 Agent 能力评估和持续优化
@@ -129,6 +131,20 @@ java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
 ```
 
 服务启动后访问：`http://localhost:8080`
+
+### 启动控制台应用
+
+```bash
+cd frontend
+
+# 1. 安装依赖
+yarn install
+
+# 2. 启动控制台
+yarn dev
+```
+
+控制台启动后访问：`http://localhost:4000`
 
 ## 文档
 

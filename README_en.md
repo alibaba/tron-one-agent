@@ -29,9 +29,10 @@ Tron OneAgent is an enterprise-grade AI Agent high-code development framework th
 - **Agent Control**: Built-in Cancel functionality allowing users to interrupt ongoing Agent tasks at any time
 - **Smart Suggestions**: Integrated Follow-up Suggestion feature that automatically generates conversation suggestions for users
 - **Dynamic Configuration**: Dynamically adjust configurations, tools, MCP, knowledge base, long-term memory, and skills without service restart
+- **HITL Human-in-the-Loop**: Support Human-in-the-Loop interaction mode, allowing manual confirmation, information collection, and other steps to be inserted into the conversation flow
 - **Modern Frontend**: Out-of-the-box modern UI interface with rich interactive components
 - **Multimodal Support**: In addition to multimodal LLMs, also supports external TTS and ASR capabilities
-- **Evaluation Framework**: Integrated Dokimos evaluation framework for Agent capability assessment and testing
+- **Evaluation Framework**: Integrated [Dokimos](https://dokimos.dev/) evaluation framework for Agent capability assessment and testing
 
 Tron OneAgent is built on [Alibaba AgentScope Java](https://java.agentscope.io/zh/intro.html) and is fully compatible with its ecosystem.
 
@@ -43,9 +44,10 @@ Tron OneAgent is built on [Alibaba AgentScope Java](https://java.agentscope.io/z
 - **Robust Session State Management**: Provides complete session lifecycle management and pure async streaming output
 - **Powerful Interaction Control**: Built-in Cancel functionality for interrupting Agent execution; integrated Follow-up Suggestion for intelligent next-question recommendations
 - **Dynamic Configuration & Debugging**: Supports hot configuration updates for convenient development debugging and production emergency handling
+- **HITL Human-in-the-Loop**: Support human intervention interaction, suitable for scenarios requiring manual confirmation and information collection
 - **Rich Frontend Interactions**: Provides out-of-the-box modern UI interface with rich interactive components
 - **Multimodal Capabilities**: Supports voice interaction (TTS/ASR), expanding Agent application scenarios
-- **Evaluation & Testing**: Integrated Dokimos evaluation framework for convenient Agent capability assessment and continuous optimization
+- **Evaluation & Testing**: Integrated [Dokimos](https://dokimos.dev/) evaluation framework for convenient Agent capability assessment and continuous optimization
 
 ## Use Cases
 
@@ -130,6 +132,20 @@ java -jar bootstrap/target/tron-java-bootstrap-1.0-SNAPSHOT.jar
 ```
 
 Service will be available at: `http://localhost:8080`
+
+### Start Control Panel
+
+```bash
+cd frontend
+
+# 1. Install Dependencies
+yarn install
+
+# 2. Start Control Panel
+yarn dev
+```
+
+Control panel will be available at: `http://localhost:4000`
 
 ## Documentation
 
