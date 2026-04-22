@@ -24,15 +24,10 @@ import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
+import com.aliyun.tam.x.tron.core.domain.models.PageResult;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
-import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
-import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
-import com.aliyun.tam.x.tron.core.domain.models.events.SessionEvent;
-import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
-import com.aliyun.tam.x.tron.core.domain.models.messages.AgentSessionMessage;
-import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessage;
-import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
-import com.aliyun.tam.x.tron.core.domain.models.messages.UserSessionMessage;
+import com.aliyun.tam.x.tron.core.domain.models.events.*;
+import com.aliyun.tam.x.tron.core.domain.models.messages.*;
 import com.aliyun.tam.x.tron.core.domain.repository.AgentStateRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.EventRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.MessageRepository;
@@ -137,38 +132,86 @@ public class AgentWsEndpoint {
         this.session = getOrCreateSession(agentId, sessionId, userId);
 
         threadPoolExecutor.submit(() -> {
-            if (!wsSession.isOpen()) {
-                return;
-            }
+        });
+        log.info("Open session for agent {} and session {}", agentId, sessionId);
+    }
 
-            PageResultDTO<SessionMessageDTO> messages = PageResultDTO.from(
-                    messageRepository.listMessages(agentId, sessionId, 1, 100),
-                    SessionMessageDTO::from
-            );
+    private void sendSessionSnapshot(Session wsSession, String agentId, String sessionId, String userId) {
+        if (!wsSession.isOpen()) {
+            return;
+        }
 
-            SessionDTO sessionDTO = SessionDTO.builder()
-                    .id(session.getId())
-                    .userId(userId)
-                    .agentId(agentId)
-                    .name(session.getName())
-                    .lastAppliedEventId(session.getLastAppliedEventId())
-                    .gmtCreated(session.getGmtCreated())
-                    .gmtModified(session.getGmtModified())
-                    .messages(messages)
-                    .build();
+        PageResult<SessionMessage> messages = messageRepository.listMessages(agentId, sessionId, 1, 100);
 
-            try {
+        SessionDTO sessionDTO = SessionDTO.builder()
+                .id(session.getId())
+                .userId(userId)
+                .agentId(agentId)
+                .name(session.getName())
+                .lastAppliedEventId(session.getLastAppliedEventId())
+                .gmtCreated(session.getGmtCreated())
+                .gmtModified(session.getGmtModified())
+                .messages(PageResultDTO.from(messages, SessionMessageDTO::from))
+                .build();
+        try {
+            synchronized (wsSendLock) {
                 wsSession.getBasicRemote().sendText(jsonRpcHelper.serialize(
                         JsonRpcNotification.builder()
                                 .method("session")
                                 .params(sessionDTO)
                                 .build()
                 ));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.info("Sent session snapshot, sessionId={}, messageCount={}", session.getId(), messages.getTotalRecords());
             }
-        });
-        log.info("Open session for agent {} and session {}", agentId, sessionId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (!messages.getRecords().isEmpty()) {
+            SessionMessage lastMsg = messages.getRecords().get(0);
+            if (lastMsg.getType() == SessionMessageType.AGENT
+                    && lastMsg.getStatus() == SessionMessageStatus.EXECUTING) {
+                threadPoolExecutor.submit(() -> sendOngoingMessageEvents(wsSession, lastMsg));
+            }
+        }
+    }
+
+    private void sendOngoingMessageEvents(Session wsSession, SessionMessage lastMsg) {
+        Long fromEventId = session.getLastAppliedEventId();
+        if (fromEventId == null) {
+            return;
+        }
+
+        while (wsSession.isOpen()) {
+            List<SessionEvent> sessionEvents = eventRepository.pullEvents(lastMsg.getAgentId(), lastMsg.getSessionId(), fromEventId, 10);
+            if (sessionEvents.isEmpty()) {
+                break;
+            }
+            for (SessionEvent event : sessionEvents) {
+                synchronized (wsSendLock) {
+                    try {
+                        wsSession.getBasicRemote().sendText(
+                                jsonRpcHelper.serialize(
+                                        JsonRpcNotification.builder()
+                                                .method("event")
+                                                .params(event)
+                                                .build()
+                                )
+                        );
+
+                        if (event instanceof AgentMessageStatusChangedEvent e
+                                && Objects.equals(e.getMessageId(), lastMsg.getId())) {
+                            log.info("Sent ongoing message events, sessionId={}, messageId={}", lastMsg.getSessionId(), lastMsg.getId());
+                            return;
+                        }
+                        fromEventId = event.getId();
+                    } catch (IOException e) {
+                        log.warn("Failed to send message: {}", event.getId(), e);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @OnMessage
