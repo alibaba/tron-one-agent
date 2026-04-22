@@ -102,6 +102,17 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         if (event.getMessage().hasContentBlocks(ToolUseBlock.class)) {
                             hasHitl.set(true);
                         }
+                        if (event.getType() == EventType.SUMMARY) {
+                            List<TextBlock> textBlocks = event.getMessage().getContentBlocks(TextBlock.class);
+                            if (!CollectionUtils.isEmpty(textBlocks)) {
+                                if (result.getFirstResponseTokenDelayInMs() == null) {
+                                    result.setFirstResponseTokenDelayInMs(System.currentTimeMillis() - startTime);
+                                }
+
+                                String content = textBlocks.stream().map(TextBlock::getText).reduce("", String::concat);
+                                eventSink.appendContentToMessage(Lists.newArrayList(TextContent.builder().text(content).build()));
+                            }
+                        }
                         result.setResponse(event.getMessage().getTextContent());
                         return;
                     }
