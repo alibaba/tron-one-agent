@@ -147,6 +147,8 @@ public class MysqlEventRepository implements EventRepository {
 
         private final List<SessionMessage> messages = new CopyOnWriteArrayList<>();
 
+        private final List<SessionMessage> updatedMessages = new CopyOnWriteArrayList<>();
+
         public MySQLEventSink(String agentId, String userId, String sessionId, Long messageId) {
             super(agentId, userId, sessionId, messageId);
         }
@@ -162,10 +164,16 @@ public class MysqlEventRepository implements EventRepository {
             }
 
             transactionTemplate.execute(status -> {
-                for (SessionMessage message : messages) {
+                if (force) {
+                    for (SessionMessage message : messages) {
+                        messageRepository.saveMessage(message);
+                    }
+                }
+
+                for (SessionMessage message : updatedMessages) {
                     messageRepository.saveMessage(message);
                 }
-                messages.clear();
+                updatedMessages.clear();
 
                 for (List<SessionEventDO> partition : Lists.partition(events, 64)) {
                     try {
@@ -276,10 +284,14 @@ public class MysqlEventRepository implements EventRepository {
 
         private void handleNewUserInput(NewUserInputEvent event) {
             messages.add(event.getMsg());
+            updatedMessages.add(event.getMsg());
+            flush(true);
         }
 
         private void handleNewAgentMessage(NewAgentMessageEvent event) {
             messages.add(event.getMsg());
+            updatedMessages.add(event.getMsg());
+            flush(true);
         }
 
         private void handleAgentMessageAppendContent(AgentMessageAppendContentEvent event) {
@@ -379,6 +391,7 @@ public class MysqlEventRepository implements EventRepository {
             }
             for (SessionMessage message : messages) {
                 if (messageId.equals(message.getId())) {
+                    updatedMessages.add(message);
                     return message;
                 }
             }
@@ -386,8 +399,8 @@ public class MysqlEventRepository implements EventRepository {
         }
 
         public synchronized void saveMessage(SessionMessage msg) {
-            if (!messages.contains(msg)) {
-                messages.add(msg);
+            if (!updatedMessages.contains(msg)) {
+                updatedMessages.add(msg);
             }
         }
 
