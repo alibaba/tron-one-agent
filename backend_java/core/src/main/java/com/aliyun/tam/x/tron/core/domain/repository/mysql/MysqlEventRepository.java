@@ -34,6 +34,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import io.vertx.core.impl.ConcurrentHashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -44,7 +45,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Slf4j
 @Repository
@@ -145,9 +149,9 @@ public class MysqlEventRepository implements EventRepository {
 
         private final List<SessionEventDO> events = new CopyOnWriteArrayList<>();
 
-        private final List<SessionMessage> messages = new CopyOnWriteArrayList<>();
+        private final Map<Long, SessionMessage> messages = new ConcurrentHashMap<>();
 
-        private final List<SessionMessage> updatedMessages = new CopyOnWriteArrayList<>();
+        private final Map<Long, SessionMessage> updatedMessages = new ConcurrentHashMap<>();
 
         public MySQLEventSink(String agentId, String userId, String sessionId, Long messageId) {
             super(agentId, userId, sessionId, messageId);
@@ -165,12 +169,12 @@ public class MysqlEventRepository implements EventRepository {
 
             transactionTemplate.execute(status -> {
                 if (force) {
-                    for (SessionMessage message : messages) {
+                    for (SessionMessage message : messages.values()) {
                         messageRepository.saveMessage(message);
                     }
                 }
 
-                for (SessionMessage message : updatedMessages) {
+                for (SessionMessage message : updatedMessages.values()) {
                     messageRepository.saveMessage(message);
                 }
                 updatedMessages.clear();
@@ -283,14 +287,14 @@ public class MysqlEventRepository implements EventRepository {
         }
 
         private void handleNewUserInput(NewUserInputEvent event) {
-            messages.add(event.getMsg());
-            updatedMessages.add(event.getMsg());
+            messages.put(event.getMsg().getId(), event.getMsg());
+            updatedMessages.put(event.getMsg().getId(), event.getMsg());
             flush(true);
         }
 
         private void handleNewAgentMessage(NewAgentMessageEvent event) {
-            messages.add(event.getMsg());
-            updatedMessages.add(event.getMsg());
+            messages.put(event.getMsg().getId(), event.getMsg());
+            updatedMessages.put(event.getMsg().getId(), event.getMsg());
             flush(true);
         }
 
@@ -389,19 +393,17 @@ public class MysqlEventRepository implements EventRepository {
             if (messageId == null) {
                 return null;
             }
-            for (SessionMessage message : messages) {
-                if (messageId.equals(message.getId())) {
-                    updatedMessages.add(message);
-                    return message;
-                }
+
+            SessionMessage message = messages.get(messageId);
+            if (message != null) {
+                updatedMessages.put(messageId, message);
+                return message;
             }
-            return null;
+            return message;
         }
 
-        public synchronized void saveMessage(SessionMessage msg) {
-            if (!updatedMessages.contains(msg)) {
-                updatedMessages.add(msg);
-            }
+        public void saveMessage(SessionMessage msg) {
+            updatedMessages.put(msg.getId(), msg);
         }
 
         private synchronized void updateSessionLastAppliedEventId(String agentId, String sessionId, Long eventId) {
