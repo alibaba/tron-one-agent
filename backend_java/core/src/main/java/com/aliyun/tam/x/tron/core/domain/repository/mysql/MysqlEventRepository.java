@@ -137,6 +137,9 @@ public class MysqlEventRepository implements EventRepository {
     }
 
     public class MySQLEventSink extends EventSink {
+        private static final long FLUSH_INTERVAL = 1000L;
+
+        private volatile long lastFlushTimestamp = System.currentTimeMillis();
 
         private volatile Long lastAppliedEventId = null;
 
@@ -153,28 +156,39 @@ public class MysqlEventRepository implements EventRepository {
             return MysqlEventRepository.this.sequenceService.nextSequence(sequenceName);
         }
 
-        @Override
-        public void onComplete() {
+        private synchronized void flush(boolean force) {
+            if (!force && System.currentTimeMillis() - lastFlushTimestamp < FLUSH_INTERVAL) {
+                return;
+            }
+
             transactionTemplate.execute(status -> {
                 for (SessionMessage message : messages) {
                     messageRepository.saveMessage(message);
                 }
+                messages.clear();
 
                 for (List<SessionEventDO> partition : Lists.partition(events, 64)) {
                     try {
                         sessionEventMapper.insertBatch(partition);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         log.info("encounter exception during saving events", e);
                     }
                 }
+                events.clear();
 
                 if (lastAppliedEventId != null) {
                     sessionRepository.updateSessionLastAppliedEventId(agentId, sessionId, lastAppliedEventId);
                 }
+                lastAppliedEventId = null;
 
                 return null;
             });
+            lastFlushTimestamp = System.currentTimeMillis();
+        }
+
+        @Override
+        public void onComplete() {
+            flush(true);
         }
 
         @Override
@@ -230,7 +244,9 @@ public class MysqlEventRepository implements EventRepository {
                 eventDO.setStatus(status);
                 eventDO.setData(data);
 
-                events.add(eventDO);
+                synchronized (this) {
+                    events.add(eventDO);
+                }
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to serialize event", e);
             }
@@ -254,6 +270,8 @@ public class MysqlEventRepository implements EventRepository {
             }
 
             updateSessionLastAppliedEventId(event.getAgentId(), event.getSessionId(), event.getId());
+
+            flush(false);
         }
 
         private void handleNewUserInput(NewUserInputEvent event) {
@@ -367,13 +385,13 @@ public class MysqlEventRepository implements EventRepository {
             return null;
         }
 
-        public void saveMessage(SessionMessage msg) {
+        public synchronized void saveMessage(SessionMessage msg) {
             if (!messages.contains(msg)) {
                 messages.add(msg);
             }
         }
 
-        private void updateSessionLastAppliedEventId(String agentId, String sessionId, Long eventId) {
+        private synchronized void updateSessionLastAppliedEventId(String agentId, String sessionId, Long eventId) {
             if (lastAppliedEventId == null || eventId > lastAppliedEventId) {
                 lastAppliedEventId = eventId;
             }
