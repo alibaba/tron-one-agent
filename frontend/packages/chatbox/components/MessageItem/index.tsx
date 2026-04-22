@@ -356,6 +356,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
     }
   };
 
+  const agentMessage = isAgent ? (message as AgentSessionMessage) : null;
+  
   const statusElement = useMemo(() => {
     if (!message.status) return null;
     if (isUser) {
@@ -404,7 +406,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
           return (
             <div className={styles.messageStatus} style={{ color: "#ff4d4f" }}>
               <i className="fas fa-exclamation-triangle"></i>
-              <span>消息获取失败，请稍后重试或者刷新页面尝试获取消息</span>
+              <span>{agentMessage?.errorMessage || "消息获取失败，请稍后重试或者刷新页面尝试获取消息"}</span>
             </div>
           );
         case SessionMessageStatus.CANCELLED:
@@ -412,6 +414,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
             <div className={styles.messageStatus} style={{ color: "#faad14" }}>
               <i className="fas fa-ban"></i>
               <span>已取消</span>
+              {agentMessage?.errorMessage && (
+                <span className={styles.errorMessage}>{agentMessage.errorMessage}</span>
+              )}
             </div>
           );
         default:
@@ -419,7 +424,20 @@ const MessageItem: React.FC<MessageItemProps> = ({
       }
     }
     return null;
-  }, [message.status, isUser, isAgent]);
+  }, [message.status, agentMessage?.errorMessage, isUser, isAgent]);
+  
+  const usageElement = useMemo(() => {
+    if (!agentMessage?.usage) return null;
+    const usage = agentMessage.usage;
+    return (
+      <div className={styles.messageUsage}>
+        <span>轮次: {usage.times}</span>
+        <span>耗时: {(usage.costInMs / 1000).toFixed(1)}s</span>
+        {usage.promptTokens > 0 && <span>输入: {usage.promptTokens} tokens</span>}
+        {usage.completionTokens > 0 && <span>输出: {usage.completionTokens} tokens</span>}
+      </div>
+    );
+  }, [agentMessage?.usage]);
 
   // TTS 播放图标
   const ttsButton = useMemo(() => {
@@ -474,6 +492,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
           <div className={styles.statusRow}>
             {statusElement}
             {ttsButton}
+          </div>
+        )}
+        {usageElement && (
+          <div className={styles.usageRow}>
+            {usageElement}
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ import { SessionEventType, TaskStatus, ActionStatus, SessionMessageStatus } from
 import {
   UserSessionMessage,
   AgentSessionMessage,
+  AgentChatUsage,
   TaskContent,
   MediaContent,
   TextContent,
@@ -63,6 +64,8 @@ export interface AgentMessageStatusChangedEvent extends SessionEvent {
   messageId: number;
   newStatus: SessionMessageStatus;
   gmtFinished: string;
+  errorMessage?: string | null;
+  usage?: AgentChatUsage | null;
 }
 
 export interface TaskAppendContentEvent extends SessionEvent {

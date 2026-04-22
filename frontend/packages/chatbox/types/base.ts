@@ -43,11 +43,20 @@ export interface UserSessionMessage extends SessionMessage {
   contents: Array<TextContent | MediaContent>;
 }
 
+export interface AgentChatUsage {
+  times: number;
+  costInMs: number;
+  promptTokens: number;
+  completionTokens: number;
+}
+
 export interface AgentSessionMessage extends SessionMessage {
   type: SessionMessageType.AGENT;
 
   contents: Array<TextContent | MediaContent | TaskContent | ActionContent | HitlContent>;
   gmtFinished?: string | null;
+  errorMessage?: string | null;
+  usage?: AgentChatUsage | null;
 }
 
 export interface Content {

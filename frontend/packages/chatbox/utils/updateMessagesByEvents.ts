@@ -215,6 +215,12 @@ const eventHandlers: Record<
       (message) => {
         message.status = e.newStatus;
         message.gmtModified = e.gmtFinished;
+        if (e.errorMessage != null) {
+          message.errorMessage = e.errorMessage;
+        }
+        if (e.usage != null) {
+          message.usage = e.usage;
+        }
       }
     );
 
