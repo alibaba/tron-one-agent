@@ -204,10 +204,27 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                     }
                 })
                 .doOnComplete(() -> {
-                    eventSink.changeMessageStatus(cancelled.get() ? SessionMessageStatus.CANCELLED : SessionMessageStatus.SUCCEED);
+                    if (cancelled.get()) {
+                        List<Msg> msgs = agent.getMemory().getMessages();
+                        for (int i = msgs.size() - 1; i >= 0; i--) {
+                            Msg msg = msgs.get(i);
+                            if (msg.getRole() != MsgRole.ASSISTANT) {
+                                break;
+                            }
+                            if (!msg.hasContentBlocks(ToolUseBlock.class)) {
+                                continue;
+                            }
+                            agent.getMemory().deleteMessage(i);
+                        }
+                        eventSink.changeAgentMessageStatus(builder -> builder.newStatus(SessionMessageStatus.CANCELLED));
+                    } else {
+                        eventSink.changeAgentMessageStatus(builder -> builder.newStatus(SessionMessageStatus.SUCCEED));
+                    }
                 })
                 .doOnError(throwable -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.FAILED);
+                    eventSink.changeAgentMessageStatus(builder -> {
+                        builder.newStatus(SessionMessageStatus.FAILED);
+                    });
                 })
                 .doFinally(s -> {
                     eventSink.onComplete();

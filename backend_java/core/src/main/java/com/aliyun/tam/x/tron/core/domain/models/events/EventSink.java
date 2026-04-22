@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Event sink abstract class for managing session events
@@ -79,6 +80,7 @@ public abstract class EventSink {
                 .gmtCreated(LocalDateTime.now())
                 .build());
     }
+
     /**
      * Create new agent message event
      */
@@ -92,6 +94,7 @@ public abstract class EventSink {
                 .gmtCreated(LocalDateTime.now())
                 .build());
     }
+
     /**
      * Append content to message
      */
@@ -110,17 +113,20 @@ public abstract class EventSink {
     /**
      * Change message status
      */
-    public void changeMessageStatus(SessionMessageStatus newStatus) {
-        newEvent(AgentMessageStatusChangedEvent.builder()
-                .id(newEventId())
-                .agentId(agentId)
+    public void changeAgentMessageStatus(Consumer<AgentMessageStatusChangedEvent.AgentMessageStatusChangedEventBuilder> statusChanger) {
+        AgentMessageStatusChangedEvent.AgentMessageStatusChangedEventBuilder<?, ?> builder = AgentMessageStatusChangedEvent.builder()
+                .id(newEventId());
+
+        statusChanger.accept(builder);
+
+        builder.agentId(agentId)
                 .userId(userId)
                 .sessionId(sessionId)
                 .messageId(messageId)
                 .gmtCreated(LocalDateTime.now())
-                .newStatus(newStatus)
-                .gmtFinished(LocalDateTime.now())
-                .build());
+                .gmtFinished(LocalDateTime.now());
+
+        newEvent(builder.build());
     }
 
     /**

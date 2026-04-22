@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.domain.models.messages;
 
+import com.aliyun.tam.x.tron.core.agents.AgentChatUsage;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ActionContent;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TaskContent;
@@ -45,6 +46,10 @@ public class AgentSessionMessage extends SessionMessage {
     private List<Content<?>> contents = new ArrayList<>();
 
     private LocalDateTime gmtFinished;
+
+    private String errorMessage;
+
+    private AgentChatUsage usage;
 
     @Override
     public SessionMessageType getType() {

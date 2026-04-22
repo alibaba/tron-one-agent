@@ -35,6 +35,7 @@ import io.agentscope.core.message.*;
 import io.agentscope.core.model.ChatUsage;
 import io.agentscope.core.session.Session;
 import io.agentscope.core.state.SessionKey;
+import io.opentelemetry.api.trace.Span;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -206,7 +207,6 @@ public class OneAgentHandler extends AbstractAgentHandler {
                         }
                     } else if (event.getType() == EventType.TOOL_RESULT) {
                         result.setFirstResponseTokenDelayInMs(null);
-
                         for (ToolResultBlock block : event.getMessage().getContentBlocks(ToolResultBlock.class)) {
                             Long actionId = ongoingToolUses.remove(block.getId());
                             if (actionId == null) {
@@ -237,13 +237,23 @@ public class OneAgentHandler extends AbstractAgentHandler {
                             }
                             mainAgent.getMemory().deleteMessage(i);
                         }
-                        eventSink.changeMessageStatus(SessionMessageStatus.CANCELLED);
+                        eventSink.changeAgentMessageStatus(builder -> {
+                            builder.newStatus(SessionMessageStatus.CANCELLED)
+                                    .usage(result.getUsage());
+                        });
                     } else {
-                        eventSink.changeMessageStatus(SessionMessageStatus.SUCCEED);
+                        eventSink.changeAgentMessageStatus(builder -> {
+                            builder.newStatus(SessionMessageStatus.SUCCEED)
+                                    .usage(result.getUsage());
+                        });
                     }
                 })
                 .doOnError(throwable -> {
-                    eventSink.changeMessageStatus(SessionMessageStatus.FAILED);
+                    eventSink.changeAgentMessageStatus(builder -> {
+                        builder.newStatus(SessionMessageStatus.FAILED)
+                                .errorMessage(throwable.getLocalizedMessage())
+                                .usage(result.getUsage());
+                    });
                 })
                 .doFinally(s -> {
                     eventSink.onComplete();

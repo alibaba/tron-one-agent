@@ -39,31 +39,6 @@ public class AgentResult {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Usage {
-        @Builder.Default
-        private int times = 0;
-
-        @Builder.Default
-        private long costInMs = 0;
-
-        @Builder.Default
-        private long promptTokens = 0;
-
-        @Builder.Default
-        private long completionTokens = 0;
-
-        public void increment(ChatUsage usage) {
-            times++;
-            costInMs += (long) Math.ceil(usage.getTime() * 1000);
-            promptTokens += usage.getInputTokens();
-            completionTokens += usage.getOutputTokens();
-        }
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class Action {
         private Long id;
 
@@ -98,7 +73,7 @@ public class AgentResult {
     private Long costInMs;
 
     @Builder.Default
-    private Usage usage = Usage.builder().build();
+    private AgentChatUsage usage = AgentChatUsage.builder().build();
 
     @Builder.Default
     private List<Action> actions = new ArrayList<>();

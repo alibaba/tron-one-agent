@@ -331,9 +331,14 @@ public class MysqlEventRepository implements EventRepository {
         private void handleAgentMessageStatusChanged(AgentMessageStatusChangedEvent event) {
             SessionMessage msg = getMessage(event.getMessageId());
             if (msg instanceof AgentSessionMessage agentMsg) {
-                SessionMessageStatus msgStatus = event.getNewStatus();
-                if (msgStatus != null) {
-                    agentMsg.setStatus(msgStatus);
+                if (event.getNewStatus() != null) {
+                    agentMsg.setStatus(event.getNewStatus());
+                }
+                if (event.getErrorMessage() != null) {
+                    agentMsg.setErrorMessage(event.getErrorMessage());
+                }
+                if (event.getUsage() != null) {
+                    agentMsg.setUsage(event.getUsage());
                 }
                 agentMsg.setGmtFinished(event.getGmtFinished());
                 saveMessage(agentMsg);

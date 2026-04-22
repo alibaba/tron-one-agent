@@ -53,7 +53,18 @@ public class SessionMessageDTO {
                 .gmtModified(message.getGmtModified());
 
         if (message instanceof AgentSessionMessage agentSessionMessage) {
-            builder.gmtFinished(agentSessionMessage.getGmtFinished());
+            builder.errorMessage(agentSessionMessage.getErrorMessage())
+                    .gmtFinished(agentSessionMessage.getGmtFinished());
+            if (agentSessionMessage.getUsage() != null) {
+                builder.usage(
+                        AgentChatUsageDTO.builder()
+                                .times(agentSessionMessage.getUsage().getTimes())
+                                .costInMs(agentSessionMessage.getUsage().getCostInMs())
+                                .promptTokens(agentSessionMessage.getUsage().getPromptTokens())
+                                .completionTokens(agentSessionMessage.getUsage().getCompletionTokens())
+                                .build()
+                );
+            }
         } else if (message instanceof UserSessionMessage userSessionMessage) {
             builder.name(userSessionMessage.getName());
         } else {
@@ -67,6 +78,8 @@ public class SessionMessageDTO {
     private Integer type;
 
     private Integer status;
+
+    private String errorMessage;
 
     private String agentId;
 
@@ -83,4 +96,6 @@ public class SessionMessageDTO {
     private LocalDateTime gmtModified;
 
     private LocalDateTime gmtFinished;
+
+    private AgentChatUsageDTO usage;
 }

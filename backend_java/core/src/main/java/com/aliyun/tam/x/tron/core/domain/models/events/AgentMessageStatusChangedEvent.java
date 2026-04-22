@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.domain.models.events;
 
+import com.aliyun.tam.x.tron.core.agents.AgentChatUsage;
 import com.aliyun.tam.x.tron.core.domain.models.messages.SessionMessageStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,6 +26,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Agent message status changed event
@@ -36,8 +38,14 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class AgentMessageStatusChangedEvent extends SessionEvent {
     private Long messageId;
+
     private SessionMessageStatus newStatus;
+
     private LocalDateTime gmtFinished;
+
+    private String errorMessage;
+
+    private AgentChatUsage usage;
 
     @Override
     public SessionEventType getType() {
