@@ -131,8 +131,7 @@ public class AgentWsEndpoint {
         this.agentHandler = agentHandler;
         this.session = getOrCreateSession(agentId, sessionId, userId);
 
-        threadPoolExecutor.submit(() -> {
-        });
+        threadPoolExecutor.submit(() -> sendSessionSnapshot(wsSession, agentId, sessionId, userId));
         log.info("Open session for agent {} and session {}", agentId, sessionId);
     }
 
@@ -185,8 +184,14 @@ public class AgentWsEndpoint {
         while (wsSession.isOpen()) {
             List<SessionEvent> sessionEvents = eventRepository.pullEvents(lastMsg.getAgentId(), lastMsg.getSessionId(), fromEventId, 10);
             if (sessionEvents.isEmpty()) {
-                break;
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    //ignore
+                }
+                continue;
             }
+
             for (SessionEvent event : sessionEvents) {
                 synchronized (wsSendLock) {
                     try {
