@@ -18,6 +18,7 @@
 package com.aliyun.tam.x.tron.core.agents.one;
 
 import com.aliyun.tam.x.tron.core.agents.AbstractAgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.*;
@@ -69,10 +70,13 @@ public class OneAgentHandler extends AbstractAgentHandler {
     }
 
     @Override
-    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(AgentInput input) {
+        UserSessionMessage userMessage = input.getUserMessage();
+        EventSink eventSink = input.getEventSink();
+
         long startTime = System.currentTimeMillis();
 
-        List<Msg> inputMsgs = convertToInputMsgs(userMessage, eventSink, mainAgent.getMemory());
+        List<Msg> inputMsgs = convertToInputMsgs(input, mainAgent.getMemory());
 
         Set<String> subAgentTools = Sets.newHashSet();
         for (SubAgentHandler subAgent : subAgents) {
@@ -244,7 +248,7 @@ public class OneAgentHandler extends AbstractAgentHandler {
                 .doFinally(s -> {
                     eventSink.onComplete();
                     if (!cancelled.get() && !hasHitl.get()) {
-                        followupSuggestions(eventSink, mainAgent.getMemory().getMessages());
+                        followupSuggestions(input, mainAgent.getMemory().getMessages());
                     }
                 })
                 .blockLast();

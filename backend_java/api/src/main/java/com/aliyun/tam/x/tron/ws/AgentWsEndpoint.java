@@ -22,6 +22,7 @@ import com.aliyun.tam.x.tron.api.dto.SessionMessageDTO;
 import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.api.response.TtsResponse;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
@@ -268,7 +269,11 @@ public class AgentWsEndpoint {
         eventSink.newAgentMessage(agentMessage);
         threadPoolExecutor.submit(() -> {
             try {
-                agentHandler.handleInput(userMessage, eventSink);
+                agentHandler.handleInput(AgentInput.builder()
+                        .source(AgentInput.Source.USER)
+                        .userMessage(userMessage)
+                        .eventSink(eventSink)
+                        .build());
             } catch (Exception e) {
                 log.warn("Error handling input for session {}", session.getId(), e);
             } finally {

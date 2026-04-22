@@ -23,6 +23,7 @@ import com.aliyun.tam.x.tron.api.dto.SessionMessageDTO;
 import com.aliyun.tam.x.tron.api.request.ChatRequest;
 import com.aliyun.tam.x.tron.api.request.CreateSessionRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
@@ -396,7 +397,11 @@ public class SessionController {
             io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentId, userId);
             try {
                 agentHandler.loadFrom(session, sessionId);
-                return agentHandler.handleInput(userMessage, eventSink);
+                return agentHandler.handleInput(AgentInput.builder()
+                        .source(AgentInput.Source.USER)
+                        .userMessage(userMessage)
+                        .eventSink(eventSink)
+                        .build());
             } finally {
                 agentHandler.saveTo(session, sessionId);
             }

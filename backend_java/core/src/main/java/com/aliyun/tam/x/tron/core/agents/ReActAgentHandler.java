@@ -61,10 +61,13 @@ public class ReActAgentHandler extends AbstractAgentHandler {
     }
 
     @Override
-    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(AgentInput input) {
+        UserSessionMessage userMessage = input.getUserMessage();
+        EventSink eventSink = input.getEventSink();
+
         long startTime = System.currentTimeMillis();
 
-        List<Msg> inputMsgs = convertToInputMsgs(userMessage, eventSink, agent.getMemory());
+        List<Msg> inputMsgs = convertToInputMsgs(input, agent.getMemory());
 
         AgentResult result = AgentResult.builder().build();
         Map<String, Long> ongoingToolUses = Maps.newConcurrentMap();
@@ -209,7 +212,7 @@ public class ReActAgentHandler extends AbstractAgentHandler {
                 .doFinally(s -> {
                     eventSink.onComplete();
                     if (!cancelled.get() && !hasHitl.get()) {
-                        followupSuggestions(eventSink, agent.getMemory().getMessages());
+                        followupSuggestions(input, agent.getMemory().getMessages());
                     }
                 })
                 .blockLast();

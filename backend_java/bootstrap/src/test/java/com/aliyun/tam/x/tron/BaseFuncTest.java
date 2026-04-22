@@ -20,6 +20,7 @@ package com.aliyun.tam.x.tron;
 import ch.vorburger.mariadb4j.DB;
 import ch.vorburger.mariadb4j.DBConfigurationBuilder;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
@@ -192,6 +193,12 @@ public abstract class BaseFuncTest {
         );
 
         AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
-        return agentHandler.handleInput(userMessage, eventSink);
+        return agentHandler.handleInput(
+                AgentInput.builder()
+                        .source(AgentInput.Source.USER)
+                        .userMessage(userMessage)
+                        .eventSink(eventSink)
+                        .build()
+        );
     }
 }

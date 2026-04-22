@@ -178,14 +178,20 @@ public abstract class AbstractAgentHandler implements AgentHandler {
         renamingService.renameSession(getFastChatModel(), msg, history, eventSink.getAgentId(), eventSink.getSessionId());
     }
 
-    protected void followupSuggestions(EventSink eventSink, List<Msg> history) {
+    protected void followupSuggestions(AgentInput input, List<Msg> history) {
+        if (input.getSource() != AgentInput.Source.USER) {
+            return;
+        }
         if (!Boolean.TRUE.equals(agentConfig.getEnableSuggestion())) {
             return;
         }
-        followupSuggestionService.suggest(getFastChatModel(), history, eventSink);
+        followupSuggestionService.suggest(getFastChatModel(), history, input.getEventSink());
     }
 
-    protected List<Msg> convertToInputMsgs(UserSessionMessage userMessage, EventSink eventSink, Memory memory) {
+    protected List<Msg> convertToInputMsgs(AgentInput input, Memory memory) {
+        UserSessionMessage userMessage = input.getUserMessage();
+        EventSink eventSink = input.getEventSink();
+
         boolean hasHitl = userMessage.getContents().stream()
                 .anyMatch(content -> content instanceof HitlContent);
         if (!hasHitl) {
@@ -202,7 +208,9 @@ public abstract class AbstractAgentHandler implements AgentHandler {
                     msg = newMsg;
                 }
             }
-            renameSession(eventSink, msg, memory.getMessages());
+            if (input.getSource() == AgentInput.Source.USER) {
+                renameSession(eventSink, msg, memory.getMessages());
+            }
 
             msg = buildRuntimeContext(msg);
             List<Msg> msgs = Lists.newArrayList(msg);

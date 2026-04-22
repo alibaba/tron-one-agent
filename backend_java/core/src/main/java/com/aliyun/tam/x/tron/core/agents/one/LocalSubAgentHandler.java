@@ -18,6 +18,7 @@
 package com.aliyun.tam.x.tron.core.agents.one;
 
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
+import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.LocalSubAgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.contents.*;
@@ -167,13 +168,19 @@ public class LocalSubAgentHandler extends SubAgentHandler {
                     Session subSession = agentStateRepository.agentSessionsOf(agentId(), userId);
                     try {
                         agentHandler.loadFrom(subSession, sessionId);
-                        result = agentHandler.handleInput(msg,
-                                new SubAgentTaskEventSink(
-                                        eventSink.getAgentId(),
-                                        eventSink.getUserId(),
-                                        eventSink.getSessionId(),
-                                        eventSink.getMessageId(),
-                                        eventSink, taskId)
+                        result = agentHandler.handleInput(
+                                AgentInput.builder()
+                                        .source(AgentInput.Source.AGENT)
+                                        .userMessage(msg)
+                                        .eventSink(
+                                                new SubAgentTaskEventSink(
+                                                        eventSink.getAgentId(),
+                                                        eventSink.getUserId(),
+                                                        eventSink.getSessionId(),
+                                                        eventSink.getMessageId(),
+                                                        eventSink, taskId)
+                                        )
+                                        .build()
                         );
                     } finally {
                         agentHandler.saveTo(subSession, sessionId);

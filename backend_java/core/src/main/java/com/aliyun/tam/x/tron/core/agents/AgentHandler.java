@@ -36,7 +36,7 @@ public interface AgentHandler extends StateModule {
 
     String getId();
 
-    AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink);
+    AgentResult handleInput(AgentInput input);
 
     default boolean supportInputType(ContentType contentType) {
         return true;
@@ -78,7 +78,10 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
     }
 
     @Override
-    public AgentResult handleInput(UserSessionMessage userMessage, EventSink eventSink) {
+    public AgentResult handleInput(AgentInput input) {
+        UserSessionMessage userMessage = input.getUserMessage();
+        EventSink eventSink = input.getEventSink();
+
         Span span = tracer.spanBuilder("handling input")
                 .setAttribute("agent.id", agentId)
                 .setAttribute("user.id", userMessage.getUserId())
@@ -91,7 +94,7 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
             logger.info("serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId());
 
-            AgentResult result = agentHandler.handleInput(userMessage, eventSink);
+            AgentResult result = agentHandler.handleInput(input);
 
             logger.info("finished serving user input, agent_id={}, user_id={}, session_id={}, user_message_id={}, agent_message_id={}, result={}",
                     agentId, userMessage.getUserId(), userMessage.getSessionId(), userMessage.getId(), eventSink.getMessageId(), result);

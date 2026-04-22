@@ -17,10 +17,7 @@
 
 package com.aliyun.tam.x.tron.api;
 
-import com.aliyun.tam.x.tron.core.agents.AgentBuilder;
-import com.aliyun.tam.x.tron.core.agents.AgentHandler;
-import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
-import com.aliyun.tam.x.tron.core.agents.AgentResult;
+import com.aliyun.tam.x.tron.core.agents.*;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.ContentType;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
@@ -197,7 +194,11 @@ public class A2AController {
             io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentBuilder.getAgentId(), userId);
             try {
                 agentHandler.loadFrom(session, sessionId);
-                AgentResult result = agentHandler.handleInput(userMsg, eventSink);
+                AgentResult result = agentHandler.handleInput(AgentInput.builder()
+                        .source(AgentInput.Source.AGENT)
+                        .userMessage(userMsg)
+                        .eventSink(eventSink)
+                        .build());
                 eventQueue.enqueueEvent(
                         new Message.Builder()
                                 .role(Message.Role.AGENT)
