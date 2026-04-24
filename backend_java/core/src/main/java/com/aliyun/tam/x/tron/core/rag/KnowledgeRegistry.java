@@ -88,14 +88,7 @@ public class KnowledgeRegistry {
             if (!Objects.equals(Boolean.TRUE, config.getEnabled())) {
                 continue;
             }
-            KnowledgeBaseConfig kbConfig = knowledgeBaseRepository.getKnowledgeConfig(config.getKnowledgeId());
-            if (kbConfig == null) {
-                kbConfig = knowledgeBaseConfigBuilders.stream()
-                        .filter(b -> Objects.equals(config.getKnowledgeId(), b.getId()))
-                        .findFirst()
-                        .map(KnowledgeBaseConfigBuilder::getConfig)
-                        .orElse(null);
-            }
+            KnowledgeBaseConfig kbConfig = getConfig(config.getKnowledgeId());
 
             if (kbConfig == null || !Objects.equals(Boolean.TRUE, kbConfig.getEnabled())) {
                 continue;
@@ -113,24 +106,33 @@ public class KnowledgeRegistry {
         Map<String, KnowledgeBaseConfig> configs = Maps.newLinkedHashMap();
         for (KnowledgeBaseConfigBuilder builder : knowledgeBaseConfigBuilders) {
             KnowledgeBaseConfig config = builder.getConfig();
+            if (config == null) {
+                continue;
+            }
             configs.put(config.getId(), config);
         }
         for (KnowledgeBaseConfig config : knowledgeBaseRepository.listKnowledgeConfigs()) {
+            if (configs.containsKey(config.getId())) {
+                KnowledgeBaseConfig existing = configs.get(config.getId());
+                config = existing.merge(config);
+            }
             configs.put(config.getId(), config);
         }
         return Lists.newArrayList(configs.values());
     }
 
     public KnowledgeBaseConfig getConfig(String knowledgeId) {
-        KnowledgeBaseConfig kbConfig = knowledgeBaseRepository.getKnowledgeConfig(knowledgeId);
-        if (kbConfig == null) {
-            kbConfig = knowledgeBaseConfigBuilders.stream()
-                    .filter(b -> Objects.equals(knowledgeId, b.getId()))
-                    .findFirst()
-                    .map(KnowledgeBaseConfigBuilder::getConfig)
-                    .orElse(null);
+        KnowledgeBaseConfig dbConfig = knowledgeBaseRepository.getKnowledgeConfig(knowledgeId);
+        KnowledgeBaseConfig codeConfig = knowledgeBaseConfigBuilders.stream()
+                .filter(b -> Objects.equals(knowledgeId, b.getId()))
+                .findFirst()
+                .map(KnowledgeBaseConfigBuilder::getConfig)
+                .orElse(null);
+        if (dbConfig == null) {
+            return codeConfig;
+        } else {
+            return dbConfig.merge(codeConfig);
         }
-        return kbConfig;
     }
 
     public Knowledge getKnowledgeBase(String knowledgeId) {

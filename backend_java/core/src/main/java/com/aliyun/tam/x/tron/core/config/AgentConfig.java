@@ -36,7 +36,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentConfig {
+public class AgentConfig implements VersionableConfig<AgentConfig> {
     /**
      * Agent ID
      */
@@ -51,6 +51,11 @@ public class AgentConfig {
      * Agent enabled status
      */
     private Boolean enabled;
+
+    /**
+     * config version
+     */
+    private Long version;
 
     /**
      * Local agent type

@@ -38,20 +38,25 @@ import lombok.experimental.SuperBuilder;
         @JsonSubTypes.Type(value = BailianKnowledgeBaseConfig.class, name = "1"),
         @JsonSubTypes.Type(value = ElasticSearchKnowledgeBaseConfig.class, name = "2"),
 })
-public abstract class KnowledgeBaseConfig {
+public abstract class KnowledgeBaseConfig implements VersionableConfig<KnowledgeBaseConfig> {
     /**
-     * Bailian knowledge base ID
+     * knowledge base ID
      */
     private String id;
 
     /**
-     * Bailian knowledge base enabled status
+     * knowledge base enabled status
      */
     @Builder.Default
     private Boolean enabled = true;
 
     /**
-     * Bailian knowledge base name
+     * config version
+     */
+    private Long version;
+
+    /**
+     * knowledge base name
      */
     private String name;
 

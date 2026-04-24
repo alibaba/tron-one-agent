@@ -19,10 +19,10 @@ import { ChatModelType } from "./common.interface";
 
 export interface ChatModelConfig {
   type: ChatModelType;
-  api_key: string;
-  model_name: string;
-  base_url?: string;
+  apiKey: string;
+  modelName: string;
+  baseUrl?: string;
   stream?: boolean;
-  generate_kwargs?: Record<string, any>;
-  kwargs?: Record<string, any>;
+  thinking?: boolean;
+  generateKwargs?: Record<string, any>;
 }

@@ -168,6 +168,7 @@ public class ConfigController {
         if (patchAgentConfig.getSkills() != null) {
             agentConfig.setSkills(patchAgentConfig.getSkills());
         }
+        agentConfig.setVersion(System.currentTimeMillis());
         agentRepository.saveConfig(agentId, agentConfig);
         return ControlResponse.success(agentConfig);
     }
@@ -206,6 +207,7 @@ public class ConfigController {
     public ControlResponse<?> createMcpConfig(
             @RequestBody McpClientConfig mcpClientConfig
     ) {
+        mcpClientConfig.setVersion(System.currentTimeMillis());
         mcpClientRepository.saveConfig(mcpClientConfig);
         return ControlResponse.success("success");
     }
@@ -243,6 +245,7 @@ public class ConfigController {
         if (patchMcpClientConfig.getHeaders() != null) {
             mcpClientConfig.setHeaders(patchMcpClientConfig.getHeaders());
         }
+        mcpClientConfig.setVersion(System.currentTimeMillis());
         mcpClientRepository.saveConfig(mcpClientConfig);
         return ControlResponse.success("success");
     }
@@ -275,6 +278,7 @@ public class ConfigController {
     public ControlResponse<?> createKbConfig(
             @RequestBody KnowledgeBaseConfig knowledgeBaseConfig
     ) {
+        knowledgeBaseConfig.setVersion(System.currentTimeMillis());
         knowledgeBaseRepository.saveKnowledgeConfig(knowledgeBaseConfig);
         return ControlResponse.success("success");
     }
@@ -308,6 +312,7 @@ public class ConfigController {
                 bailianConfig.setEnableRerank(patchKbConfig.getEnableRerank());
             }
         }
+        config.setVersion(System.currentTimeMillis());
         knowledgeBaseRepository.saveKnowledgeConfig(config);
         return ControlResponse.success("success");
     }

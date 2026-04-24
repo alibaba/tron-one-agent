@@ -32,7 +32,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class McpClientConfig {
+public class McpClientConfig implements VersionableConfig<McpClientConfig> {
     public static final String TRANSPORT_SSE = "sse";
     public static final String TRANSPORT_HTTP = "http";
 
@@ -46,6 +46,11 @@ public class McpClientConfig {
      */
     @Builder.Default
     private Boolean enabled = true;
+
+    /**
+     * config version
+     */
+    private Long version;
 
     /**
      * MCP client name

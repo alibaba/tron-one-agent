@@ -109,14 +109,7 @@ public class McpClientRegistry {
                 continue;
             }
 
-            McpClientConfig mcpConfig = clientRepository.getConfigById(config.getClientId());
-            if (mcpConfig == null) {
-                for (McpConfigBuilder mcpConfigBuilder : mcpConfigBuilders) {
-                    if (Objects.equals(config.getClientId(), mcpConfigBuilder.getId())) {
-                        mcpConfig = mcpConfigBuilder.getConfig();
-                    }
-                }
-            }
+            McpClientConfig mcpConfig = getClientConfigById(config.getClientId());
 
             if (mcpConfig == null || !Objects.equals(Boolean.TRUE, mcpConfig.getEnabled())) {
                 continue;
@@ -144,22 +137,27 @@ public class McpClientRegistry {
             configs.put(builder.getId(), builder.getConfig());
         }
         for (McpClientConfig config : clientRepository.listConfigs()) {
+            if (configs.containsKey(config.getId())) {
+                McpClientConfig existing = configs.get(config.getId());
+                config = existing.merge(config);
+            }
             configs.put(config.getId(), config);
         }
         return configs.values().stream().toList();
     }
 
     public McpClientConfig getClientConfigById(String clientId) {
-        McpClientConfig config = clientRepository.getConfigById(clientId);
-        if (config == null) {
-            config = mcpConfigBuilders.stream()
-                    .filter(builder -> Objects.equals(builder.getId(), clientId))
-                    .findFirst()
-                    .map(McpConfigBuilder::getConfig)
-                    .orElse(null);
+        McpClientConfig dbConfig = clientRepository.getConfigById(clientId);
+        McpClientConfig codeConfig = mcpConfigBuilders.stream()
+                .filter(builder -> Objects.equals(builder.getId(), clientId))
+                .findFirst()
+                .map(McpConfigBuilder::getConfig)
+                .orElse(null);
+        if (dbConfig == null) {
+            return codeConfig;
+        } else {
+            return dbConfig.merge(codeConfig);
         }
-        return config;
-
     }
 
     public McpClientWrapper getClient(String clientId) {

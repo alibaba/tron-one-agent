@@ -185,13 +185,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     @Override
     public AgentConfig getAgentConfig() {
         AgentConfig config = agentRepository.getConfig(agentId);
-        if (config == null) {
-            config = defaultConfig();
-        } else {
-            config = merge_config(defaultConfig(), config);
-        }
-        config.setId(agentId);
-        return config;
+        return defaultConfig().merge(config);
     }
 
     @Override
@@ -210,7 +204,8 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                 return null;
             }
         } else {
-            config = merge_config(getAgentConfig(), config);
+            config.setVersion(System.currentTimeMillis());
+            config = config.merge(getAgentConfig());
         }
 
         ChatModelBase chatModel = newChatModel(config.getChatModel());
