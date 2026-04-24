@@ -115,6 +115,12 @@ const eventHandlers: Record<
 
   [SessionEventType.NEW_USER_INPUT]: (state, event) => {
     const e = event as NewUserInputEvent;
+    const existingIndex = state.messages.findIndex((m) => m.id === e.msg.id);
+    if (existingIndex !== -1) {
+      const messages = [...state.messages];
+      messages[existingIndex] = e.msg;
+      return { ...state, messages };
+    }
     if (
       state.messages[state.messages.length - 1]?.type ===
       SessionMessageType.USER
@@ -134,6 +140,12 @@ const eventHandlers: Record<
 
   [SessionEventType.NEW_AGENT_MESSAGE]: (state, event) => {
     const e = event as NewAgentMessageEvent;
+    const existingIndex = state.messages.findIndex((m) => m.id === e.msg.id);
+    if (existingIndex !== -1) {
+      const messages = [...state.messages];
+      messages[existingIndex] = e.msg;
+      return { ...state, messages };
+    }
     return {
       ...state,
       messages: [...state.messages, e.msg],
