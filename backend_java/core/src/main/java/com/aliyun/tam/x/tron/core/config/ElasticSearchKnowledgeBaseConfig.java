@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.config;
 
+import com.aliyun.tam.x.tron.utils.encrypt.Encrypted;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -36,6 +37,7 @@ public class ElasticSearchKnowledgeBaseConfig extends KnowledgeBaseConfig {
 
     private String username;
 
+    @Encrypted
     private String password;
 
     private String indexName;

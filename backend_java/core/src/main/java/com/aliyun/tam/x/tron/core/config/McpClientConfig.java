@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.config;
 
+import com.aliyun.tam.x.tron.utils.encrypt.Encrypted;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -79,9 +80,9 @@ public class McpClientConfig {
     @Builder.Default
     private Integer timeout = 30;
 
-
     /**
      * MCP request headers
      */
+    @Encrypted
     private Map<String, String> headers;
 }

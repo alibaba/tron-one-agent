@@ -16,6 +16,7 @@
 
 package com.aliyun.tam.x.tron.core.config;
 
+import com.aliyun.tam.x.tron.utils.encrypt.Encrypted;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.agentscope.core.embedding.EmbeddingModel;
 import io.agentscope.core.embedding.dashscope.DashScopeTextEmbedding;
@@ -32,6 +33,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("1")
 public class DashscopeEmbeddingModelConfig extends EmbeddingModelConfig {
+    @Encrypted
     @Builder.Default
     private String apiKey = System.getenv("DASHSCOPE_API_KEY");
 

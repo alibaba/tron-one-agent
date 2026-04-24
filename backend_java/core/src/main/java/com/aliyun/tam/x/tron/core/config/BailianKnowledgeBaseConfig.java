@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.config;
 
+import com.aliyun.tam.x.tron.utils.encrypt.Encrypted;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -32,33 +33,20 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeName("1")
 public class BailianKnowledgeBaseConfig extends KnowledgeBaseConfig {
 
-
     private String accessKeyId;
 
+    @Encrypted
     private String accessKeySecret;
 
-    /**
-     * Bailian workspace ID
-     */
     private String workspaceId;
 
-    /**
-     * x
-     * Bailian index ID
-     */
     private String indexId;
 
-    /**
-     * Enable rewrite
-     */
     @Builder.Default
     private Boolean enableRewrite = true;
 
     private String rewriteModelName;
 
-    /**
-     * Enable rerank
-     */
     @Builder.Default
     private Boolean enableRerank = true;
 

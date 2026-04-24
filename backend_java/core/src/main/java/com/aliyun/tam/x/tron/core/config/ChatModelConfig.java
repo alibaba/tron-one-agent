@@ -17,6 +17,7 @@
 
 package com.aliyun.tam.x.tron.core.config;
 
+import com.aliyun.tam.x.tron.utils.encrypt.Encrypted;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,7 +37,8 @@ public class ChatModelConfig {
      * Chat model type
      */
     private ChatModelType type;
-    
+
+    @Encrypted
     /**
      * API key
      */
