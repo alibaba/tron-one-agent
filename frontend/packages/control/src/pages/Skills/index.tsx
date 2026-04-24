@@ -387,7 +387,6 @@ const SkillsPage: React.FC = () => {
           columns={columns}
           dataSource={skills}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
           loading={loading}
         />
       </Card>

@@ -173,6 +173,21 @@ CREATE TABLE `files`
 ) AUTO_INCREMENT = 1
   CHARSET = utf8mb4;
 
+DROP TABLE IF EXISTS `long_term_memory_configs`;
+CREATE TABLE `long_term_memory_configs`
+(
+    `id`           BIGINT UNSIGNED AUTO_INCREMENT,
+    `memory_id`    VARCHAR(32) CHARSET ascii    NOT NULL,
+    `name`         VARCHAR(128) CHARSET utf8mb4 NOT NULL,
+    `enabled`      TINYINT   DEFAULT 1          NOT NULL,
+    `config`       MEDIUMTEXT CHARSET utf8mb4,
+    `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP,
+    `gmt_created`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_memory_id` (`memory_id`)
+) AUTO_INCREMENT = 1
+  CHARSET = utf8mb4;
+
 DROP TABLE IF EXISTS `oss_files`;
 CREATE TABLE `oss_files`
 (

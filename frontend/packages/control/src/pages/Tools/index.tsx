@@ -85,7 +85,6 @@ const ToolsPage: React.FC = () => {
             columns={columns}
             dataSource={dataSource}
             rowKey="id"
-            pagination={{ pageSize: 10 }}
             locale={{ emptyText: loading ? '加载中...' : '暂无工具数据' }}
           />
         </Spin>

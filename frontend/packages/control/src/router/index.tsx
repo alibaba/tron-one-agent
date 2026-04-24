@@ -30,6 +30,8 @@ import AgentDebugPage from '../pages/Debug/Agent';
 import ToolDebugPage from '../pages/Debug/Tool';
 import McpDebugPage from '../pages/Debug/Mcp';
 import KbDebugPage from '../pages/Debug/Kb';
+import MemoryPage from '../pages/Memory';
+import SettingsPage from '../pages/Settings';
 
 export const router = createHashRouter([
   {
@@ -87,6 +89,14 @@ export const router = createHashRouter([
       {
         path: '/debug/kb',
         element: <KbDebugPage />,
+      },
+      {
+        path: '/memory',
+        element: <MemoryPage />,
+      },
+      {
+        path: '/settings',
+        element: <SettingsPage />,
       },
     ],
   },

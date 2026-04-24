@@ -23,6 +23,7 @@ import com.aliyun.tam.x.tron.api.request.PatchMcpClientConfigRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.config.*;
 import com.aliyun.tam.x.tron.core.domain.repository.*;
+import com.aliyun.tam.x.tron.core.mem.LongTermMemoryRegistry;
 import com.aliyun.tam.x.tron.core.domain.service.SkillConfigService;
 import com.aliyun.tam.x.tron.core.mcp.McpClientRegistry;
 import com.aliyun.tam.x.tron.core.rag.KnowledgeRegistry;
@@ -101,6 +102,10 @@ public class ConfigController {
 
     private final FileRepository fileRepository;
 
+    private final LongTermMemoryRegistry longTermMemoryRegistry;
+
+    private final LongTermMemoryRepository longTermMemoryRepository;
+
     @ExceptionHandler
     public ControlResponse<?> handleException(Exception e) {
         if (e instanceof IllegalArgumentException) {
@@ -167,6 +172,12 @@ public class ConfigController {
         }
         if (patchAgentConfig.getSkills() != null) {
             agentConfig.setSkills(patchAgentConfig.getSkills());
+        }
+        if (patchAgentConfig.getEnableLongTermMemory() != null) {
+            agentConfig.setEnableLongTermMemory(patchAgentConfig.getEnableLongTermMemory());
+        }
+        if (patchAgentConfig.getLongTermMemoryMode() != null) {
+            agentConfig.setLongTermMemoryMode(patchAgentConfig.getLongTermMemoryMode());
         }
         agentConfig.setVersion(System.currentTimeMillis());
         agentRepository.saveConfig(agentId, agentConfig);
@@ -397,6 +408,74 @@ public class ConfigController {
             @PathVariable("skill_id") Long skillId
     ) {
         skillConfigRepository.delete(skillId);
+        return ControlResponse.success("success");
+    }
+
+    @GetMapping("/memory")
+    public ControlResponse<?> getLongTermMemoryConfigs() {
+        return ControlResponse.success(longTermMemoryRegistry.getConfigs());
+    }
+
+    @GetMapping("/memory/{memory_id}")
+    public ControlResponse<?> getLongTermMemoryConfig(
+            @PathVariable("memory_id") String memoryId
+    ) {
+        LongTermMemoryConfig config = longTermMemoryRegistry.getConfigById(memoryId);
+        if (config == null) {
+            return ControlResponse.notFound();
+        }
+        return ControlResponse.success(config);
+    }
+
+    @PostMapping("/memory")
+    public ControlResponse<?> createLongTermMemoryConfig(
+            @RequestBody LongTermMemoryConfig longTermMemoryConfig
+    ) {
+        longTermMemoryConfig.setVersion(System.currentTimeMillis());
+        longTermMemoryRepository.saveConfig(longTermMemoryConfig);
+        return ControlResponse.success("success");
+    }
+
+    @PatchMapping("/memory/{memory_id}")
+    public ControlResponse<?> patchLongTermMemoryConfig(
+            @PathVariable("memory_id") String memoryId,
+            @RequestBody LongTermMemoryConfig patchConfig
+    ) {
+        LongTermMemoryConfig config = longTermMemoryRegistry.getConfigById(memoryId);
+        if (config == null) {
+            return ControlResponse.notFound();
+        }
+        if (patchConfig.getEnabled() != null) {
+            config.setEnabled(patchConfig.getEnabled());
+        }
+        if (patchConfig.getName() != null) {
+            config.setName(patchConfig.getName());
+        }
+        if (config instanceof BailianLongTermMemoryConfig bailianConfig
+                && patchConfig instanceof BailianLongTermMemoryConfig bailianPatch) {
+            if (bailianPatch.getApiKey() != null) {
+                bailianConfig.setApiKey(bailianPatch.getApiKey());
+            }
+            if (bailianPatch.getMemoryLibraryId() != null) {
+                bailianConfig.setMemoryLibraryId(bailianPatch.getMemoryLibraryId());
+            }
+            if (bailianPatch.getProjectId() != null) {
+                bailianConfig.setProjectId(bailianPatch.getProjectId());
+            }
+            if (bailianPatch.getProfileSchema() != null) {
+                bailianConfig.setProfileSchema(bailianPatch.getProfileSchema());
+            }
+        }
+        config.setVersion(System.currentTimeMillis());
+        longTermMemoryRepository.saveConfig(config);
+        return ControlResponse.success("success");
+    }
+
+    @DeleteMapping("/memory/{memory_id}")
+    public ControlResponse<?> deleteLongTermMemoryConfig(
+            @PathVariable("memory_id") String memoryId
+    ) {
+        longTermMemoryRepository.deleteConfigById(memoryId);
         return ControlResponse.success("success");
     }
 

@@ -26,7 +26,7 @@ import com.aliyun.tam.x.tron.core.domain.repository.AgentRepository;
 import com.aliyun.tam.x.tron.core.domain.repository.SkillConfigRepository;
 import com.aliyun.tam.x.tron.core.domain.service.SkillConfigService;
 import com.aliyun.tam.x.tron.core.mcp.McpClientRegistry;
-import com.aliyun.tam.x.tron.core.mem.LongTermMemoryFactory;
+import com.aliyun.tam.x.tron.core.mem.LongTermMemoryRegistry;
 import com.aliyun.tam.x.tron.core.rag.KnowledgeRegistry;
 import com.aliyun.tam.x.tron.core.tools.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -174,7 +174,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     private ResourceLoader resourceLoader;
 
     @Autowired(required = false)
-    private LongTermMemoryFactory longTermMemoryFactory;
+    private LongTermMemoryRegistry longTermMemoryRegistry;
 
     private final String agentId;
 
@@ -185,7 +185,9 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     @Override
     public AgentConfig getAgentConfig() {
         AgentConfig config = agentRepository.getConfig(agentId);
-        return defaultConfig().merge(config);
+        AgentConfig result = defaultConfig().merge(config);
+        result.setId(agentId);
+        return result;
     }
 
     @Override
@@ -235,8 +237,8 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .knowledges(knowledges)
                     .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
 
-            if (longTermMemoryFactory != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
-                agentBuilder.longTermMemory(longTermMemoryFactory.create(userId))
+            if (longTermMemoryRegistry != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
+                agentBuilder.longTermMemory(longTermMemoryRegistry.create(userId))
                         .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
             }
             ReActAgentHandler handler = new ReActAgentHandler(config, agentBuilder.build());
@@ -268,8 +270,8 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .knowledges(knowledges)
                     .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
 
-            if (longTermMemoryFactory != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
-                mainAgentBuilder.longTermMemory(longTermMemoryFactory.create(userId))
+            if (longTermMemoryRegistry != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
+                mainAgentBuilder.longTermMemory(longTermMemoryRegistry.create(userId))
                         .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
             }
 

@@ -22,6 +22,7 @@ export enum ChatModelType {
 
 export enum KnowledgeBaseType {
   BAILIAN = 1,
+  ELASTIC_SEARCH = 2,
 }
 
 export enum LocalAgentType {

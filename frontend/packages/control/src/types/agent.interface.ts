@@ -103,6 +103,8 @@ export interface AgentConfig {
   subAgents: SubAgent[];
   supportInputTypes: Array<ContentType.TEXT | ContentType.IMAGE | ContentType.VIDEO | ContentType.AUDIO>;
   skills: AgentSkillConfig[];
+  enableLongTermMemory?: boolean;
+  longTermMemoryMode?: string;
 }
 
 export interface UpdateAgentRequest {
@@ -117,6 +119,8 @@ export interface UpdateAgentRequest {
   knowledgeBases?: AgentKnowledgeBaseConfig[];
   subAgents?: any[];
   skills?: AgentSkillConfig[];
+  enableLongTermMemory?: boolean;
+  longTermMemoryMode?: string;
 }
 
 export interface CreateSessionRequest {

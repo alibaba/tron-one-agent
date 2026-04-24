@@ -312,7 +312,6 @@ const AgentsPage: React.FC = () => {
           columns={oneColumns}
           dataSource={oneAgents}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
           loading={loading}
           style={{ marginTop: 12 }}
         />
@@ -323,7 +322,6 @@ const AgentsPage: React.FC = () => {
           columns={reactColumns}
           dataSource={reactAgents}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
           loading={loading}
           style={{ marginTop: 12 }}
         />

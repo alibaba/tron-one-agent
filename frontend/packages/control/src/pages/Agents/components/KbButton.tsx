@@ -19,7 +19,8 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, List, Tag, Space, Typography, message, Select, Checkbox, Form, Input, Radio } from 'antd';
 import { DatabaseOutlined, PlusOutlined, DeleteOutlined, CheckOutlined, SettingOutlined } from '@ant-design/icons';
 import { AgentConfig, AgentKnowledgeBaseConfig } from '../../../types/agent.interface';
-import { BailianKnowledgeBaseConfig } from '../../../types/kb.interface';
+import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../../types/kb.interface';
+import { KnowledgeBaseType } from '../../../types/common.interface';
 import { updateAgent } from '../../../services/agent';
 import { getAllKbs } from '../../../services/kb';
 
@@ -36,7 +37,7 @@ interface KbButtonProps {
 const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onError, children }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [availableKbs, setAvailableKbs] = useState<BailianKnowledgeBaseConfig[]>([]);
+  const [availableKbs, setAvailableKbs] = useState<AnyKnowledgeBaseConfig[]>([]);
   const [kbsLoading, setKbsLoading] = useState(false);
   const [pendingKbs, setPendingKbs] = useState<AgentKnowledgeBaseConfig[]>([]);
   const [selectedKb, setSelectedKb] = useState<string>('');
@@ -259,7 +260,10 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                   (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
                 }
               >
-                {getAvailableKbsForSelect().map(kb => (
+                {getAvailableKbsForSelect().map(kb => {
+                  const isBailian = kb.type === KnowledgeBaseType.BAILIAN;
+                  const bailianKb = isBailian ? (kb as any) : null;
+                  return (
                   <Select.Option 
                     key={kb.id} 
                     value={kb.id}
@@ -272,19 +276,23 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                         color: '#8c8c8c', 
                         lineHeight: '1.4'
                       }}>
-                        工作空间: {kb.workspaceId} | 索引: {kb.indexId}
+                        {isBailian
+                          ? `工作空间: ${bailianKb.workspaceId} | 索引: ${bailianKb.indexId}`
+                          : `地址: ${(kb as ElasticSearchKnowledgeBaseConfig).url} | 索引: ${(kb as ElasticSearchKnowledgeBaseConfig).indexName}`
+                        }
                       </div>
                       <Space style={{ marginTop: '4px' }}>
-                        <Tag size="small" color="purple">Bailian</Tag>
-                        <Tag size="small" color={kb.enabled ? 'green' : 'red'}>
+                        <Tag color={isBailian ? 'purple' : 'orange'}>{isBailian ? 'Bailian' : 'ES'}</Tag>
+                        <Tag color={kb.enabled ? 'green' : 'red'}>
                           {kb.enabled ? '在线' : '离线'}
                         </Tag>
-                        {kb.enableRewrite && <Tag size="small" color="blue">重写</Tag>}
-                        {kb.enableRerank && <Tag size="small" color="cyan">重排</Tag>}
+                        {isBailian && bailianKb.enableRewrite && <Tag color="blue">重写</Tag>}
+                        {isBailian && bailianKb.enableRerank && <Tag color="cyan">重排</Tag>}
                       </Space>
                     </div>
                   </Select.Option>
-                ))}
+                  );
+                })}
               </Select>
               <Button 
                 type="primary" 
@@ -365,11 +373,13 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                               <span style={{ fontWeight: 500, fontSize: 14 }}>
                                 {kbInfo?.name || kb.knowledgeId}
                               </span>
-                              <Tag size="small" color="purple">Bailian</Tag>
-                              <Tag size="small" color={kbOnlineStatus ? 'green' : 'red'}>
+                              <Tag color={kbInfo?.type === KnowledgeBaseType.BAILIAN ? 'purple' : 'orange'}>
+                                {kbInfo?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ES'}
+                              </Tag>
+                              <Tag color={kbOnlineStatus ? 'green' : 'red'}>
                                 {kbOnlineStatus ? '在线' : '离线'}
                               </Tag>
-                              <Tag size="small" color={kb.mode === 'agentic' ? 'orange' : 'blue'}>
+                              <Tag color={kb.mode === 'agentic' ? 'orange' : 'blue'}>
                                 {kb.mode === 'agentic' ? '智能模式' : '通用模式'}
                               </Tag>
                             </Space>
@@ -382,8 +392,10 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                                   color: '#8c8c8c', 
                                   lineHeight: '1.4'
                                 }}>
-                                  <div>工作空间: {kbInfo.workspaceId}</div>
-                                  <div style={{ marginTop: '2px' }}>索引ID: {kbInfo.indexId}</div>
+                                  {kbInfo.type === KnowledgeBaseType.BAILIAN
+                                    ? <><div>工作空间: {(kbInfo as any).workspaceId}</div><div style={{ marginTop: '2px' }}>索引ID: {(kbInfo as any).indexId}</div></>
+                                    : <><div>地址: {(kbInfo as ElasticSearchKnowledgeBaseConfig).url}</div><div style={{ marginTop: '2px' }}>索引: {(kbInfo as ElasticSearchKnowledgeBaseConfig).indexName}</div></>
+                                  }
                                 </div>
                               )}
                               <Space wrap>

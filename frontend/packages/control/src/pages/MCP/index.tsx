@@ -276,7 +276,6 @@ const MCPPage: React.FC = () => {
           columns={columns}
           dataSource={mcpClients}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
           loading={loading}
         />
       </Card>

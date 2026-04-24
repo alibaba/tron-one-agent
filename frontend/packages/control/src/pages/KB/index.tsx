@@ -20,7 +20,7 @@ import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip } from
 import { EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
-import { BailianKnowledgeBaseConfig } from '../../types/kb.interface';
+import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../types/kb.interface';
 import { KnowledgeBaseType } from '../../types/common.interface';
 import { AgentConfig } from '../../types/agent.interface';
 import KbManageButton from './components/KbManageButton';
@@ -30,11 +30,11 @@ import kbStyles from './index.module.less';
 
 const KBPage: React.FC = () => {
   const navigate = useNavigate();
-  const [knowledgeBases, setKnowledgeBases] = useState<BailianKnowledgeBaseConfig[]>([]);
+  const [knowledgeBases, setKnowledgeBases] = useState<AnyKnowledgeBaseConfig[]>([]);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const columns: ColumnsType<BailianKnowledgeBaseConfig> = [
+  const columns: ColumnsType<AnyKnowledgeBaseConfig> = [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -51,25 +51,42 @@ const KBPage: React.FC = () => {
       dataIndex: 'type',
       key: 'type',
       render: (type: KnowledgeBaseType) => (
-        <Tag color="purple">
-          {type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'Unknown'}
-        </Tag>
+        <>
+          <Tag color={type === KnowledgeBaseType.BAILIAN ? 'purple' : 'orange'}>
+            {type === KnowledgeBaseType.BAILIAN ? 'Bailian' : type === KnowledgeBaseType.ELASTIC_SEARCH ? 'ElasticSearch' : 'Unknown'}
+          </Tag>
+        </>
       ),
     },
     {
-      title: '工作空间ID',
-      dataIndex: 'workspaceId',
-      key: 'workspaceId',
-    },
-    {
-      title: '索引ID',
-      dataIndex: 'indexId',
-      key: 'indexId',
+      title: '关键配置',
+      key: 'config',
+      render: (_, record: AnyKnowledgeBaseConfig) => {
+        if (record.type === KnowledgeBaseType.BAILIAN) {
+          const bailian = record as any;
+          return (
+            <Space size="small" wrap>
+              <span>工作空间: {bailian.workspaceId}</span>
+              <span>索引: {bailian.indexId}</span>
+            </Space>
+          );
+        }
+        if (record.type === KnowledgeBaseType.ELASTIC_SEARCH) {
+          const es = record as ElasticSearchKnowledgeBaseConfig;
+          return (
+            <Space size="small" wrap>
+              <span>地址: {es.url}</span>
+              <span>索引: {es.indexName}</span>
+            </Space>
+          );
+        }
+        return <span>-</span>;
+      },
     },
     {
       title: '已关联Agents',
       key: 'relatedAgents',
-      render: (_, record: BailianKnowledgeBaseConfig) => {
+      render: (_, record: AnyKnowledgeBaseConfig) => {
         const relatedAgents = getRelatedAgents(record.id);
         return (
           <Tooltip 
@@ -90,7 +107,7 @@ const KBPage: React.FC = () => {
       title: '状态',
       dataIndex: 'enabled',
       key: 'enabled',
-      render: (enabled: boolean, record: BailianKnowledgeBaseConfig) => (
+      render: (enabled: boolean, record: AnyKnowledgeBaseConfig) => (
         <Switch
           checked={enabled}
           onChange={(checked) => handleToggleEnabled(record.id, checked)}
@@ -99,28 +116,34 @@ const KBPage: React.FC = () => {
     },
     {
       title: '重写',
-      dataIndex: 'enableRewrite',
       key: 'enableRewrite',
-      render: (enabled: boolean) => (
-        <Tag color={enabled ? 'green' : 'red'}>
-          {enabled ? '启用' : '禁用'}
-        </Tag>
-      ),
+      render: (_, record: AnyKnowledgeBaseConfig) => {
+        if (record.type !== KnowledgeBaseType.BAILIAN) return <span>-</span>;
+        const bailian = record as any;
+        return (
+          <Tag color={bailian.enableRewrite ? 'green' : 'red'}>
+            {bailian.enableRewrite ? '启用' : '禁用'}
+          </Tag>
+        );
+      },
     },
     {
       title: '重排',
-      dataIndex: 'enableRerank',
       key: 'enableRerank',
-      render: (enabled: boolean) => (
-        <Tag color={enabled ? 'green' : 'red'}>
-          {enabled ? '启用' : '禁用'}
-        </Tag>
-      ),
+      render: (_, record: AnyKnowledgeBaseConfig) => {
+        if (record.type !== KnowledgeBaseType.BAILIAN) return <span>-</span>;
+        const bailian = record as any;
+        return (
+          <Tag color={bailian.enableRerank ? 'green' : 'red'}>
+            {bailian.enableRerank ? '启用' : '禁用'}
+          </Tag>
+        );
+      },
     },
     {
       title: '操作',
       key: 'action',
-      render: (_, record: BailianKnowledgeBaseConfig) => (
+      render: (_, record: AnyKnowledgeBaseConfig) => (
         <Space size="middle">
           <KbManageButton
             editingKb={record}
@@ -202,6 +225,15 @@ const KBPage: React.FC = () => {
   const handleDelete = (id: string) => {
     const knowledgeBase = knowledgeBases.find(kb => kb.id === id);
     
+    // 根据类型获取配置摘要
+    const configSummary = knowledgeBase
+      ? knowledgeBase.type === KnowledgeBaseType.BAILIAN
+        ? `工作空间: ${(knowledgeBase as any).workspaceId}`
+        : knowledgeBase.type === KnowledgeBaseType.ELASTIC_SEARCH
+          ? `地址: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).url} | 索引: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).indexName}`
+          : '-'
+      : '';
+    
     Modal.confirm({
       title: '确认删除知识库',
       content: (
@@ -215,7 +247,8 @@ const KBPage: React.FC = () => {
           }}>
             <p><strong>名称：</strong>{knowledgeBase?.name}</p>
             <p><strong>ID：</strong>{knowledgeBase?.id}</p>
-            <p><strong>工作空间：</strong>{knowledgeBase?.workspaceId}</p>
+            <p><strong>类型：</strong>{knowledgeBase?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ElasticSearch'}</p>
+            <p><strong>配置：</strong>{configSummary}</p>
           </div>
           <p style={{ color: '#ff4d4f', fontWeight: 500 }}>
             ⚠️ 此操作不可撤销，请确认是否继续？
@@ -266,7 +299,6 @@ const KBPage: React.FC = () => {
           columns={columns}
           dataSource={knowledgeBases}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
           loading={loading}
           scroll={{ x: 1200 }}
         />

@@ -17,9 +17,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Descriptions, Button, Tag, Space, Typography, Spin, message } from 'antd';
+import { Card, Descriptions, Button, Tag, Space, Typography, Spin, message, Divider } from 'antd';
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
-import { BailianKnowledgeBaseConfig } from '../../types/kb.interface';
+import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../types/kb.interface';
 import { KnowledgeBaseType } from '../../types/common.interface';
 import { getKbById } from '../../services/kb';
 
@@ -28,7 +28,7 @@ const { Text } = Typography;
 const KBDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [knowledgeBase, setKnowledgeBase] = useState<BailianKnowledgeBaseConfig | null>(null);
+  const [knowledgeBase, setKnowledgeBase] = useState<AnyKnowledgeBaseConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 加载知识库详情
@@ -76,6 +76,97 @@ const KBDetail: React.FC = () => {
     );
   }
 
+  // 渲染 Bailian 类型详情
+  const renderBailianDetail = (kb: any) => (
+    <Descriptions column={2} bordered>
+      <Descriptions.Item label="ID">{kb.id}</Descriptions.Item>
+      <Descriptions.Item label="名称">{kb.name}</Descriptions.Item>
+      <Descriptions.Item label="类型">
+        <Tag color="purple">Bailian</Tag>
+      </Descriptions.Item>
+      <Descriptions.Item label="状态">
+        <Tag color={kb.enabled ? 'green' : 'red'}>
+          {kb.enabled ? '启用' : '禁用'}
+        </Tag>
+      </Descriptions.Item>
+      <Descriptions.Item label="工作空间ID">
+        <Text code>{kb.workspaceId}</Text>
+      </Descriptions.Item>
+      <Descriptions.Item label="索引ID">
+        <Text code>{kb.indexId}</Text>
+      </Descriptions.Item>
+      <Descriptions.Item label="启用重写">
+        <Tag color={kb.enableRewrite ? 'green' : 'red'}>
+          {kb.enableRewrite ? '启用' : '禁用'}
+        </Tag>
+      </Descriptions.Item>
+      <Descriptions.Item label="启用重排">
+        <Tag color={kb.enableRerank ? 'green' : 'red'}>
+          {kb.enableRerank ? '启用' : '禁用'}
+        </Tag>
+      </Descriptions.Item>
+    </Descriptions>
+  );
+
+  // 渲染 ElasticSearch 类型详情
+  const renderESDetail = (kb: ElasticSearchKnowledgeBaseConfig) => (
+    <>
+      <Descriptions column={2} bordered>
+        <Descriptions.Item label="ID">{kb.id}</Descriptions.Item>
+        <Descriptions.Item label="名称">{kb.name}</Descriptions.Item>
+        <Descriptions.Item label="类型">
+          <Tag color="orange">ElasticSearch</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="状态">
+          <Tag color={kb.enabled ? 'green' : 'red'}>
+            {kb.enabled ? '启用' : '禁用'}
+          </Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label="服务地址" span={2}>
+          <Text code>{kb.url}</Text>
+        </Descriptions.Item>
+        <Descriptions.Item label="用户名">
+          {kb.username || <Text type="secondary">未设置</Text>}
+        </Descriptions.Item>
+        <Descriptions.Item label="密码">
+          {kb.password ? <Text code>******</Text> : <Text type="secondary">未设置</Text>}
+        </Descriptions.Item>
+        <Descriptions.Item label="索引名称">
+          <Text code>{kb.indexName}</Text>
+        </Descriptions.Item>
+        <Descriptions.Item label="向量维度">
+          {kb.dimensions || <Text type="secondary">未设置</Text>}
+        </Descriptions.Item>
+      </Descriptions>
+
+      {/* Embedding 模型配置 */}
+      {kb.embeddingModelConfig && (
+        <>
+          <Divider orientation="left" plain style={{ fontSize: 13, marginTop: 24, marginBottom: 16 }}>
+            Embedding 模型配置
+          </Divider>
+          <Descriptions column={2} bordered size="small">
+            <Descriptions.Item label="API Key">
+              {kb.embeddingModelConfig.apiKey
+                ? <Text code>******</Text>
+                : <Text type="secondary">未设置</Text>
+              }
+            </Descriptions.Item>
+            <Descriptions.Item label="Base URL">
+              {kb.embeddingModelConfig.baseUrl || <Text type="secondary">默认</Text>}
+            </Descriptions.Item>
+            <Descriptions.Item label="模型名称">
+              {kb.embeddingModelConfig.modelName || <Text type="secondary">未设置</Text>}
+            </Descriptions.Item>
+            <Descriptions.Item label="Embedding 维度">
+              {kb.embeddingModelConfig.dimensions || <Text type="secondary">未设置</Text>}
+            </Descriptions.Item>
+          </Descriptions>
+        </>
+      )}
+    </>
+  );
+
   return (
     <div style={{ padding: '24px' }}>
       <Card
@@ -97,43 +188,12 @@ const KBDetail: React.FC = () => {
           </Button>
         }
       >
-        <Descriptions column={2} bordered>
-          <Descriptions.Item label="ID">{knowledgeBase.id}</Descriptions.Item>
-          <Descriptions.Item label="名称">{knowledgeBase.name}</Descriptions.Item>
-          <Descriptions.Item label="类型">
-            <Tag color="purple">
-              {knowledgeBase.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'Unknown'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="状态">
-            <Tag color={knowledgeBase.enabled ? 'green' : 'red'}>
-              {knowledgeBase.enabled ? '启用' : '禁用'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="工作空间ID">
-            <Text code>{knowledgeBase.workspaceId}</Text>
-          </Descriptions.Item>
-          <Descriptions.Item label="索引ID">
-            <Text code>{knowledgeBase.indexId}</Text>
-          </Descriptions.Item>
-          <Descriptions.Item label="启用重写">
-            <Tag color={knowledgeBase.enableRewrite ? 'green' : 'red'}>
-              {knowledgeBase.enableRewrite ? '启用' : '禁用'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="启用重排">
-            <Tag color={knowledgeBase.enableRerank ? 'green' : 'red'}>
-              {knowledgeBase.enableRerank ? '启用' : '禁用'}
-            </Tag>
-          </Descriptions.Item>
-          {/* {knowledgeBase.apiKey && (
-            <Descriptions.Item label="API Key">
-              <Text code style={{ fontSize: '12px' }}>
-                {knowledgeBase.apiKey.startsWith('$os{') ? knowledgeBase.apiKey : '***'}
-              </Text>
-            </Descriptions.Item>
-          )} */}
-        </Descriptions>
+        {knowledgeBase.type === KnowledgeBaseType.BAILIAN
+          ? renderBailianDetail(knowledgeBase)
+          : knowledgeBase.type === KnowledgeBaseType.ELASTIC_SEARCH
+            ? renderESDetail(knowledgeBase as ElasticSearchKnowledgeBaseConfig)
+            : <Text type="secondary">未知的知识库类型</Text>
+        }
       </Card>
     </div>
   );

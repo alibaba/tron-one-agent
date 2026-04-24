@@ -26,6 +26,7 @@ import {
   DatabaseOutlined,
   ThunderboltOutlined,
   BugOutlined,
+  BulbOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { getThemeConfig } from "../../config/theme";
@@ -65,6 +66,11 @@ const AppLayout: React.FC = () => {
       key: "/skills",
       icon: <ThunderboltOutlined />,
       label: "Skills管理",
+    },
+    {
+      key: "/memory",
+      icon: <BulbOutlined />,
+      label: "长期记忆",
     },
     {
       key: "/debug",

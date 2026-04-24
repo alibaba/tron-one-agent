@@ -16,16 +16,16 @@
 
 
 import { get, post, patch, del } from './request';
-import { BailianKnowledgeBaseConfig } from '../types/kb.interface';
+import { AnyKnowledgeBaseConfig } from '../types/kb.interface';
 import { ApiResponse } from '../types/common.interface';
 
 /**
  * 创建知识库
  * @param kbData 知识库配置数据
  */
-export const createKb = async (kbData: Omit<BailianKnowledgeBaseConfig, 'id'>): Promise<BailianKnowledgeBaseConfig> => {
+export const createKb = async (kbData: Omit<AnyKnowledgeBaseConfig, 'id'>): Promise<AnyKnowledgeBaseConfig> => {
   try {
-    return await post<BailianKnowledgeBaseConfig>('/api/control/kb', kbData);
+    return await post<AnyKnowledgeBaseConfig>('/api/control/kb', kbData);
   } catch (error) {
     console.error('创建知识库失败:', error);
     throw error;
@@ -35,9 +35,9 @@ export const createKb = async (kbData: Omit<BailianKnowledgeBaseConfig, 'id'>): 
 /**
  * 获取所有知识库列表
  */
-export const getAllKbs = async (): Promise<ApiResponse<BailianKnowledgeBaseConfig[]>> => {
+export const getAllKbs = async (): Promise<ApiResponse<AnyKnowledgeBaseConfig[]>> => {
   try {
-    return await get<ApiResponse<BailianKnowledgeBaseConfig[]>>('/api/control/kb');
+    return await get<ApiResponse<AnyKnowledgeBaseConfig[]>>('/api/control/kb');
   } catch (error) {
     console.error('获取知识库列表失败:', error);
     throw error;
@@ -48,9 +48,9 @@ export const getAllKbs = async (): Promise<ApiResponse<BailianKnowledgeBaseConfi
  * 根据ID获取知识库详情
  * @param kbId 知识库ID
  */
-export const getKbById = async (kbId: string): Promise<ApiResponse<BailianKnowledgeBaseConfig>> => {
+export const getKbById = async (kbId: string): Promise<ApiResponse<AnyKnowledgeBaseConfig>> => {
   try {
-    return await get<ApiResponse<BailianKnowledgeBaseConfig>>(`/api/control/kb/${kbId}`);
+    return await get<ApiResponse<AnyKnowledgeBaseConfig>>(`/api/control/kb/${kbId}`);
   } catch (error) {
     console.error(`获取知识库详情失败 (ID: ${kbId}):`, error);
     throw error;
@@ -64,10 +64,10 @@ export const getKbById = async (kbId: string): Promise<ApiResponse<BailianKnowle
  */
 export const updateKb = async (
   kbId: string, 
-  updateData: Partial<BailianKnowledgeBaseConfig>
-): Promise<BailianKnowledgeBaseConfig> => {
+  updateData: Partial<AnyKnowledgeBaseConfig>
+): Promise<AnyKnowledgeBaseConfig> => {
   try {
-    return await patch<BailianKnowledgeBaseConfig>(`/api/control/kb/${kbId}`, updateData);
+    return await patch<AnyKnowledgeBaseConfig>(`/api/control/kb/${kbId}`, updateData);
   } catch (error) {
     console.error(`更新知识库失败 (ID: ${kbId}):`, error);
     throw error;

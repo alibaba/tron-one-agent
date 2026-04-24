@@ -18,6 +18,7 @@
 package com.aliyun.tam.x.tron.api.request;
 
 import com.aliyun.tam.x.tron.core.config.*;
+import io.agentscope.core.memory.LongTermMemoryMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -87,4 +88,14 @@ public class PatchAgentConfigRequest {
      * Skills
      */
     private List<AgentSkillConfig> skills;
+
+    /**
+     * Enable long-term memory
+     */
+    private Boolean enableLongTermMemory;
+
+    /**
+     * Long-term memory mode (RECALL, WRITE, BOTH)
+     */
+    private LongTermMemoryMode longTermMemoryMode;
 }
