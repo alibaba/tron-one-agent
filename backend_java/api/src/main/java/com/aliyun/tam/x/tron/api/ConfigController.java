@@ -173,11 +173,11 @@ public class ConfigController {
         if (patchAgentConfig.getSkills() != null) {
             agentConfig.setSkills(patchAgentConfig.getSkills());
         }
-        if (patchAgentConfig.getEnableLongTermMemory() != null) {
-            agentConfig.setEnableLongTermMemory(patchAgentConfig.getEnableLongTermMemory());
-        }
         if (patchAgentConfig.getLongTermMemoryMode() != null) {
             agentConfig.setLongTermMemoryMode(patchAgentConfig.getLongTermMemoryMode());
+        }
+        if (patchAgentConfig.getLongTermMemoryId() != null) {
+            agentConfig.setLongTermMemoryId(patchAgentConfig.getLongTermMemoryId());
         }
         agentConfig.setVersion(System.currentTimeMillis());
         agentRepository.saveConfig(agentId, agentConfig);

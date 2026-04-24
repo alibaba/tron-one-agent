@@ -117,11 +117,9 @@ public class AgentConfig implements VersionableConfig<AgentConfig> {
     private List<ContentType> supportInputTypes = Lists.newArrayList(ContentType.TEXT);
 
     @Builder.Default
-    private Boolean enableLongTermMemory = Boolean.TRUE;
-
-    @Builder.Default
     private LongTermMemoryMode longTermMemoryMode = LongTermMemoryMode.BOTH;
 
+    private String longTermMemoryId;
 
     @Builder.Default
     private Boolean enableSessionRenaming = Boolean.TRUE;

@@ -90,12 +90,26 @@ public class LongTermMemoryRegistry {
     }
 
     public LongTermMemory create(String userId) {
-        List<LongTermMemoryConfig> configs = getConfigs();
-        LongTermMemoryConfig config = configs.stream()
-                .filter(c -> Boolean.TRUE.equals(c.getEnabled()))
-                .findFirst()
-                .orElse(null);
+        return create(userId, null);
+    }
+
+    public LongTermMemory create(String userId, String memoryId) {
+        LongTermMemoryConfig config;
+        if (StringUtils.hasText(memoryId)) {
+            config = getConfigById(memoryId);
+            if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
+                log.warn("Long term memory config not found or disabled for id: {}", memoryId);
+                config = null;
+            }
+        } else {
+            List<LongTermMemoryConfig> configs = getConfigs();
+            config = configs.stream()
+                    .filter(c -> Boolean.TRUE.equals(c.getEnabled()))
+                    .findFirst()
+                    .orElse(null);
+        }
         if (config == null) {
+            log.warn("No long term memory config found for user: {}", userId);
             return new LongTermMemory() {
                 @Override
                 public Mono<Void> record(List<Msg> msgs) {

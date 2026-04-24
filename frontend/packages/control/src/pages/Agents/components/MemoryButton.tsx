@@ -15,12 +15,12 @@
  */
 
 import React, { useState } from 'react';
-import { Button, Modal, Form, Switch, Radio, Space, Typography, message } from 'antd';
+import { Button, Modal, Form, Select, message } from 'antd';
 import { BulbOutlined } from '@ant-design/icons';
 import { AgentConfig } from '../../../types/agent.interface';
+import { LongTermMemoryConfig } from '../../../types/memory.interface';
 import { updateAgent } from '../../../services/agent';
-
-const { Text } = Typography;
+import { getAllMemories } from '../../../services/memory';
 
 interface MemoryButtonProps {
   agent: AgentConfig;
@@ -33,11 +33,21 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [memories, setMemories] = useState<LongTermMemoryConfig[]>([]);
+
+  const loadMemories = async () => {
+    try {
+      const response = await getAllMemories();
+      setMemories((response.data || []).filter((m: LongTermMemoryConfig) => m.enabled));
+    } catch (error) {
+      console.error('加载记忆配置列表失败:', error);
+    }
+  };
 
   const handleClick = () => {
+    loadMemories();
     form.setFieldsValue({
-      enableLongTermMemory: agent.enableLongTermMemory ?? true,
-      longTermMemoryMode: agent.longTermMemoryMode || 'BOTH',
+      longTermMemoryId: agent.longTermMemoryId || undefined,
     });
     setIsModalVisible(true);
   };
@@ -49,8 +59,7 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
 
       if (agent.id) {
         await updateAgent(agent.id, {
-          enableLongTermMemory: values.enableLongTermMemory,
-          longTermMemoryMode: values.enableLongTermMemory ? values.longTermMemoryMode : undefined,
+          longTermMemoryId: values.longTermMemoryId || '',
         });
         message.success('长期记忆配置保存成功');
 
@@ -95,58 +104,19 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="enableLongTermMemory"
-            label="启用长期记忆"
-            valuePropName="checked"
-            tooltip="开启后Agent将具备长期记忆能力，能跨会话记住用户信息"
+            name="longTermMemoryId"
+            label="关联记忆配置"
+            tooltip="选择要关联的长期记忆配置，不选则自动使用第一个可用配置"
           >
-            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            <Select
+              allowClear
+              placeholder="请选择记忆配置（可选）"
+              options={memories.map(m => ({
+                label: `${m.name} (${m.id})`,
+                value: m.id,
+              }))}
+            />
           </Form.Item>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, curr) => prev.enableLongTermMemory !== curr.enableLongTermMemory}
-          >
-            {({ getFieldValue }) => {
-              const enabled = getFieldValue('enableLongTermMemory');
-              return enabled ? (
-                <Form.Item
-                  name="longTermMemoryMode"
-                  label="记忆模式"
-                  rules={[{ required: true, message: '请选择记忆模式' }]}
-                  tooltip="RECALL: 仅检索记忆 | WRITE: 仅写入记忆 | BOTH: 同时支持读写"
-                >
-                  <Radio.Group>
-                    <Radio value="RECALL">
-                      <Space direction="vertical" size={0}>
-                        <Text>仅检索 (RECALL)</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Agent只读取长期记忆，不写入新内容</Text>
-                      </Space>
-                    </Radio>
-                    <Radio value="WRITE">
-                      <Space direction="vertical" size={0}>
-                        <Text>仅写入 (WRITE)</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Agent只写入长期记忆，不读取已有内容</Text>
-                      </Space>
-                    </Radio>
-                    <Radio value="BOTH">
-                      <Space direction="vertical" size={0}>
-                        <Text>读写 (BOTH)</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>Agent同时支持读写长期记忆（推荐）</Text>
-                      </Space>
-                    </Radio>
-                  </Radio.Group>
-                </Form.Item>
-              ) : null;
-            }}
-          </Form.Item>
-
-          <div style={{ padding: 12, background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 6 }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              💡 长期记忆能让Agent记住用户的偏好、历史对话中的关键信息，提供更个性化的服务。
-              需要先在"长期记忆管理"中配置记忆库。
-            </Text>
-          </div>
         </Form>
       </Modal>
     </>

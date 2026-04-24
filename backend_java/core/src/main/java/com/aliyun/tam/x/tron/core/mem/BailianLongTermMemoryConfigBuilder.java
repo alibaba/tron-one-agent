@@ -19,26 +19,14 @@ package com.aliyun.tam.x.tron.core.mem;
 
 import com.aliyun.tam.x.tron.core.config.BailianLongTermMemoryConfig;
 import com.aliyun.tam.x.tron.core.config.LongTermMemoryConfig;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 @Component
-@Slf4j
 public class BailianLongTermMemoryConfigBuilder implements LongTermMemoryConfigBuilder {
 
     @Value("${tron.dashscope.api-key}")
     private String apiKey;
-
-    @Value("${memory.long.bailian.memory_library_id:}")
-    private String memoryLibraryId;
-
-    @Value("${memory.long.bailian.project_id:}")
-    private String projectId;
-
-    @Value("${memory.long.bailian.profile_schema:}")
-    private String profileSchema;
 
     @Override
     public String getId() {
@@ -47,17 +35,13 @@ public class BailianLongTermMemoryConfigBuilder implements LongTermMemoryConfigB
 
     @Override
     public LongTermMemoryConfig getConfig() {
-        if (!StringUtils.hasText(apiKey)) {
-            log.warn("api-key is not configured for bailian long term memory");
-            return null;
-        }
         return BailianLongTermMemoryConfig.builder()
                 .id(getId())
-                .name("百炼长期记忆")
+                .name("百炼长期记忆配置样例")
                 .apiKey(apiKey)
-                .memoryLibraryId(memoryLibraryId)
-                .projectId(projectId)
-                .profileSchema(profileSchema)
+                .memoryLibraryId("your_memory_library_id")
+                .projectId("your_project_id")
+                .profileSchema("your_profile_schema")
                 .build();
     }
 }

@@ -16,6 +16,7 @@
 
 export interface LongTermMemoryConfig {
   id: string;
+  type?: number;
   enabled: boolean;
   version?: number;
   name: string;

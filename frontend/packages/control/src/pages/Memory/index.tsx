@@ -58,6 +58,13 @@ const MemoryPage: React.FC = () => {
       render: (val: string) => val || '-',
     },
     {
+      title: '用户画像Schema',
+      dataIndex: 'profileSchema',
+      key: 'profileSchema',
+      ellipsis: true,
+      render: (val: string) => val || '-',
+    },
+    {
       title: '已关联Agents',
       key: 'relatedAgents',
       render: (_, record: LongTermMemoryConfig) => {
@@ -143,8 +150,8 @@ const MemoryPage: React.FC = () => {
     }
   };
 
-  const getRelatedAgents = (_memoryId: string): AgentConfig[] => {
-    return agents.filter(agent => agent.enableLongTermMemory);
+  const getRelatedAgents = (memoryId: string): AgentConfig[] => {
+    return agents.filter(agent => agent.enableLongTermMemory && agent.longTermMemoryId === memoryId);
   };
 
   useEffect(() => {
@@ -181,10 +188,10 @@ const MemoryPage: React.FC = () => {
       setSubmitting(true);
 
       if (editingMemory) {
-        await updateMemory(editingMemory.id, values);
+        await updateMemory(editingMemory.id, { ...values, type: editingMemory.type ?? 1 });
         message.success('记忆配置更新成功');
       } else {
-        await createMemory(values);
+        await createMemory({ ...values, type: 1 });
         message.success('记忆配置创建成功');
       }
 
@@ -291,21 +298,17 @@ const MemoryPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item
+            name="profileSchema"
+            label="用户画像Schema"
+          >
+            <Input placeholder="请输入用户画像Schema" />
+          </Form.Item>
+
+          <Form.Item
             name="apiKey"
             label="API Key"
           >
             <Input.Password placeholder="请输入API Key（可选）" />
-          </Form.Item>
-
-          <Form.Item
-            name="profileSchema"
-            label="用户画像Schema"
-            tooltip="用户画像的JSON Schema定义，用于结构化存储用户信息"
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder='例如: {"type":"object","properties":{"name":{"type":"string"},"interests":{"type":"array","items":{"type":"string"}}}}'
-            />
           </Form.Item>
         </Form>
       </Modal>

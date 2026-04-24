@@ -547,25 +547,15 @@ const AgentDetail: React.FC = () => {
               </MemoryButton>
             }
           >
-            <Descriptions column={2} bordered size="small">
-              <Descriptions.Item label="启用状态">
-                <Tag color={agent.enableLongTermMemory !== false ? "green" : "red"}>
-                  {agent.enableLongTermMemory !== false ? "已启用" : "已禁用"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="记忆模式">
-                {agent.enableLongTermMemory !== false ? (
-                  <Tag color="blue">{agent.longTermMemoryMode || "BOTH"}</Tag>
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="关联记忆配置">
+                {agent.longTermMemoryId ? (
+                  <Tag color="purple">{agent.longTermMemoryId}</Tag>
                 ) : (
-                  <Text type="secondary">-</Text>
+                  <Text type="secondary">自动选择</Text>
                 )}
               </Descriptions.Item>
             </Descriptions>
-            {agent.enableLongTermMemory !== false && (
-              <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 6, fontSize: 12, color: "#8c8c8c" }}>
-                💡 长期记忆开启后，Agent能跨会话记住用户偏好和关键信息。如需切换记忆库，请前往"长期记忆管理"页面。
-              </div>
-            )}
           </Card>
 
           {/* 子Agent区域 - 仅在Multi类型时显示 */}

@@ -105,6 +105,7 @@ export interface AgentConfig {
   skills: AgentSkillConfig[];
   enableLongTermMemory?: boolean;
   longTermMemoryMode?: string;
+  longTermMemoryId?: string;
 }
 
 export interface UpdateAgentRequest {
@@ -121,6 +122,7 @@ export interface UpdateAgentRequest {
   skills?: AgentSkillConfig[];
   enableLongTermMemory?: boolean;
   longTermMemoryMode?: string;
+  longTermMemoryId?: string;
 }
 
 export interface CreateSessionRequest {

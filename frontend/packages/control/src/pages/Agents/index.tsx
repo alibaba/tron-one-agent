@@ -49,6 +49,7 @@ import SystemPromptButton from "./components/SystemPromptButton";
 import SubAgentButton from "./components/SubAgentButton";
 import ChatConfigButton from "./components/ChatConfigButton";
 import SkillButton from "./components/SkillButton";
+import MemoryButton from "./components/MemoryButton";
 import agentsStyles from "./index.module.less";
 
 const AgentsPage: React.FC = () => {
@@ -141,6 +142,7 @@ const AgentsPage: React.FC = () => {
             <ToolsButton agent={record} onSuccess={handleSuccess} />
             <McpButton agent={record} onSuccess={handleSuccess} />
             <SkillButton agent={record} onSuccess={handleSuccess} />
+            <MemoryButton agent={record} onSuccess={handleSuccess} />
           </Space>
         </Space>
       ),
@@ -239,6 +241,7 @@ const AgentsPage: React.FC = () => {
             <ToolsButton agent={record} onSuccess={handleSuccess} />
             <McpButton agent={record} onSuccess={handleSuccess} />
             <SkillButton agent={record} onSuccess={handleSuccess} />
+            <MemoryButton agent={record} onSuccess={handleSuccess} />
           </Space>
         </Space>
       ),

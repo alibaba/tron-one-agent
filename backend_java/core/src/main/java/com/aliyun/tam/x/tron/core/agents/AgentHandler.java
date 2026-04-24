@@ -101,6 +101,7 @@ class AgentHandlerLoggingWrapper implements AgentHandler {
 
             long costInNano = timerSample.stop(Timer.builder("one.agent.e2el")
                     .tag("agent.id", agentId)
+                    .tag("error", "none")
                     .publishPercentileHistogram()
                     .register(Metrics.globalRegistry));
 

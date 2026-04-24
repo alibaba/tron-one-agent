@@ -98,4 +98,9 @@ public class PatchAgentConfigRequest {
      * Long-term memory mode (RECALL, WRITE, BOTH)
      */
     private LongTermMemoryMode longTermMemoryMode;
+
+    /**
+     * Long-term memory config ID
+     */
+    private String longTermMemoryId;
 }

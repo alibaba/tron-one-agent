@@ -173,7 +173,7 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
     @Autowired
     private ResourceLoader resourceLoader;
 
-    @Autowired(required = false)
+    @Autowired
     private LongTermMemoryRegistry longTermMemoryRegistry;
 
     private final String agentId;
@@ -237,8 +237,8 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .knowledges(knowledges)
                     .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
 
-            if (longTermMemoryRegistry != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
-                agentBuilder.longTermMemory(longTermMemoryRegistry.create(userId))
+            if (config.getLongTermMemoryId() != null) {
+                agentBuilder.longTermMemory(longTermMemoryRegistry.create(userId, config.getLongTermMemoryId()))
                         .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
             }
             ReActAgentHandler handler = new ReActAgentHandler(config, agentBuilder.build());
@@ -270,8 +270,8 @@ public abstract class BaseAgentBuilder implements AgentBuilder {
                     .knowledges(knowledges)
                     .ragMode(RAGMode.valueOf(config.getRagMode().toUpperCase()));
 
-            if (longTermMemoryRegistry != null && Boolean.TRUE.equals(config.getEnableLongTermMemory())) {
-                mainAgentBuilder.longTermMemory(longTermMemoryRegistry.create(userId))
+            if (config.getLongTermMemoryId() != null) {
+                mainAgentBuilder.longTermMemory(longTermMemoryRegistry.create(userId, config.getLongTermMemoryId()))
                         .longTermMemoryMode(config.getLongTermMemoryMode() == null ? LongTermMemoryMode.BOTH : config.getLongTermMemoryMode());
             }
 
