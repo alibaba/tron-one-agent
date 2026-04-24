@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-
 package com.aliyun.tam.x.tron.core.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Knowledge base type enum
- */
-public enum KnowledgeBaseType {
-    /**
-     * Bailian knowledge base
-     */
-    BAILIAN(1),
-    ELASTIC_SEARCH(2),
+public enum EmbeddingModelProvider {
+    DASHSCOPE(1),
     ;
 
     private final int value;
 
-    KnowledgeBaseType(int value) {
+    EmbeddingModelProvider(int value) {
         this.value = value;
     }
 
@@ -43,12 +35,12 @@ public enum KnowledgeBaseType {
     }
 
     @JsonCreator
-    public static KnowledgeBaseType fromValue(int value) {
-        for (KnowledgeBaseType type : KnowledgeBaseType.values()) {
+    public static EmbeddingModelProvider fromValue(int value) {
+        for (EmbeddingModelProvider type : EmbeddingModelProvider.values()) {
             if (type.value == value) {
                 return type;
             }
         }
-        throw new IllegalArgumentException("Unknown knowledge base type value: " + value);
+        throw new IllegalArgumentException("Unknown embedding mode provider type value: " + value);
     }
 }

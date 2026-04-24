@@ -524,14 +524,6 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                   (event as any).newStatus !== SessionMessageStatus.EXECUTING
                 ) {
                   setRunning(false);
-                  setChatState((prev) => ({
-                    ...prev,
-                    messages: prev.messages.map((msg) =>
-                      msg.id === newMessageId
-                        ? { ...msg, status: SessionMessageStatus.SUCCEED }
-                        : msg
-                    ),
-                  }));
                 }
               },
               onError: (error: Error) => {
@@ -541,7 +533,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                   ...prev,
                   messages: prev.messages.map((msg) =>
                     msg.id === newMessageId
-                      ? { ...msg, status: SessionMessageStatus.FAILED }
+                      ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: error.message || "对话失败" }
                       : msg
                   ),
                 }));
@@ -568,7 +560,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
             ...prev,
             messages: prev.messages.map((msg) =>
               msg.id === newMessageId
-                ? { ...msg, status: SessionMessageStatus.FAILED }
+                ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: (error as Error).message || "对话创建失败" }
                 : msg
             ),
           }));

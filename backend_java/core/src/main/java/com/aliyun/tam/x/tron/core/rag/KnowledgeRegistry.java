@@ -19,28 +19,67 @@ package com.aliyun.tam.x.tron.core.rag;
 
 import com.aliyun.tam.x.tron.core.config.AgentKnowledgeBaseConfig;
 import com.aliyun.tam.x.tron.core.config.BailianKnowledgeBaseConfig;
+import com.aliyun.tam.x.tron.core.config.ElasticSearchKnowledgeBaseConfig;
 import com.aliyun.tam.x.tron.core.config.KnowledgeBaseConfig;
 import com.aliyun.tam.x.tron.core.domain.repository.KnowledgeBaseRepository;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.agentscope.core.embedding.EmbeddingModel;
 import io.agentscope.core.rag.Knowledge;
 import io.agentscope.core.rag.integration.bailian.BailianConfig;
 import io.agentscope.core.rag.integration.bailian.BailianKnowledge;
 import io.agentscope.core.rag.integration.bailian.RerankConfig;
 import io.agentscope.core.rag.integration.bailian.RewriteConfig;
+import io.agentscope.core.rag.knowledge.SimpleKnowledge;
+import io.agentscope.core.rag.store.ElasticsearchStore;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class KnowledgeRegistry {
     private final List<KnowledgeBaseConfigBuilder> knowledgeBaseConfigBuilders;
 
     private final KnowledgeBaseRepository knowledgeBaseRepository;
+
+    private final LoadingCache<KnowledgeBaseConfig, Optional<Knowledge>> knowledgeCache = CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .expireAfterAccess(10, MINUTES)
+            .<KnowledgeBaseConfig, Optional<Knowledge>>removalListener(notification -> {
+                Knowledge value = notification.getValue().orElse(null);
+                if (value == null) {
+                    return;
+                }
+                if (value instanceof SimpleKnowledge sk && sk.getEmbeddingStore() instanceof Closeable close) {
+                    try {
+                        close.close();
+                    } catch (IOException e) {
+                        log.error("Error closing knowledge base", e);
+                    }
+                }
+            })
+            .build(new CacheLoader<>() {
+                @Override
+                public Optional<Knowledge> load(KnowledgeBaseConfig key) throws Exception {
+                    return Optional.ofNullable(buildKnowledge(key));
+                }
+            });
 
     public List<Knowledge> buildKnowledgeBases(List<AgentKnowledgeBaseConfig> configs) {
         List<Knowledge> result = Lists.newArrayList();
@@ -62,7 +101,7 @@ public class KnowledgeRegistry {
                 continue;
             }
 
-            Knowledge knowledge = buildKnowledge(kbConfig);
+            Knowledge knowledge = getKnowledge(kbConfig);
             if (knowledge != null) {
                 result.add(knowledge);
             }
@@ -99,11 +138,19 @@ public class KnowledgeRegistry {
         if (kbConfig == null) {
             return null;
         }
-
-        return buildKnowledge(kbConfig);
+        return getKnowledge(kbConfig);
     }
 
-    private Knowledge buildKnowledge(KnowledgeBaseConfig kbConfig) {
+    private Knowledge getKnowledge(KnowledgeBaseConfig kbConfig) {
+        Optional<Knowledge> knowledge = knowledgeCache.getIfPresent(kbConfig);
+        if (knowledge == null || knowledge.isEmpty()) {
+            return null;
+        }
+        return knowledge.get();
+    }
+
+
+    private Knowledge buildKnowledge(KnowledgeBaseConfig kbConfig) throws Exception {
         if (kbConfig instanceof BailianKnowledgeBaseConfig config) {
             BailianConfig.Builder builder = BailianConfig.builder()
                     .workspaceId(config.getWorkspaceId())
@@ -129,6 +176,22 @@ public class KnowledgeRegistry {
             }
             return BailianKnowledge.builder()
                     .config(builder.build())
+                    .build();
+        } else if (kbConfig instanceof ElasticSearchKnowledgeBaseConfig config) {
+            config.getEmbeddingModelConfig().setDimensions(config.getDimensions());
+            EmbeddingModel embeddingModel = config.getEmbeddingModelConfig().buildModel();
+
+            ElasticsearchStore vectorStore = ElasticsearchStore.builder()
+                    .url(config.getUrl())
+                    .username(config.getUsername())
+                    .password(config.getPassword())
+                    .indexName(config.getIndexName())
+                    .dimensions(config.getDimensions())
+                    .build();
+
+            return SimpleKnowledge.builder()
+                    .embeddingModel(embeddingModel)
+                    .embeddingStore(vectorStore)
                     .build();
         }
         return null;

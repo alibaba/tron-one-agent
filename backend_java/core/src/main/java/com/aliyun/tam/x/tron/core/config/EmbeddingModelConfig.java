@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-
 package com.aliyun.tam.x.tron.core.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.agentscope.core.embedding.EmbeddingModel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -32,33 +31,17 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "provider")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = BailianKnowledgeBaseConfig.class, name = "1"),
-        @JsonSubTypes.Type(value = ElasticSearchKnowledgeBaseConfig.class, name = "2"),
+        @JsonSubTypes.Type(value = DashscopeEmbeddingModelConfig.class, name = "1"),
 })
-public abstract class KnowledgeBaseConfig {
-    /**
-     * Bailian knowledge base ID
-     */
-    private String id;
-
-    /**
-     * Bailian knowledge base enabled status
-     */
-    @Builder.Default
-    private Boolean enabled = true;
-
-    /**
-     * Bailian knowledge base name
-     */
-    private String name;
-
+public abstract class EmbeddingModelConfig {
     @JsonIgnore
-    public abstract KnowledgeBaseType getTypeEnum();
+    public abstract EmbeddingModelProvider getProviderEnum();
 
-    public int getType() {
-        return getTypeEnum().getValue();
+    public int getProvider() {
+        return getProviderEnum().getValue();
     }
+
+    public abstract EmbeddingModel buildModel();
 }
