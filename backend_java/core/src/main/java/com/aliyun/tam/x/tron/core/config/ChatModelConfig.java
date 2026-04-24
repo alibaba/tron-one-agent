@@ -33,39 +33,22 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatModelConfig {
-    /**
-     * Chat model type
-     */
-    private ChatModelType type;
 
     @Encrypted
-    /**
-     * API key
-     */
     private String apiKey;
-    
-    /**
-     * Model name
-     */
+
+    private ChatModelType type;
+
     private String modelName;
-    
-    /**
-     * Base URL
-     */
+
     private String baseUrl;
-    
-    /**
-     * Enable streaming
-     */
+
     @Builder.Default
     private Boolean stream = true;
 
     @Builder.Default
     private Boolean thinking = false;
 
-    /**
-     * Generate kwargs
-     */
     private Map<String, Object> generateKwargs;
 
 }
