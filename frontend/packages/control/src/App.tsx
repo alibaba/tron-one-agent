@@ -22,9 +22,24 @@ import zhCN from 'antd/locale/zh_CN';
 import { router } from './router';
 import './styles/global.less';
 
+const themeConfig = {
+  token: {
+    colorPrimary: '#1677ff',
+    borderRadius: 8,
+    fontSize: 14,
+    fontFamily: "PingFang SC, Microsoft YaHei, Helvetica Neue, system-ui, sans-serif",
+    colorText: '#1a1a1a',
+    colorTextSecondary: '#8c8c8c',
+    colorBorder: '#e8e8e8',
+    colorBgContainer: '#ffffff',
+    colorBgLayout: '#f5f7fa',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+  },
+};
+
 const App: React.FC = () => {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider locale={zhCN} theme={themeConfig}>
       <RouterProvider router={router} />
     </ConfigProvider>
   );

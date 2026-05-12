@@ -315,7 +315,7 @@ const AgentDetail: React.FC = () => {
                 return (
                   <List.Item>
                     <List.Item.Meta
-                      avatar={<ToolOutlined style={{ color: "#1890ff" }} />}
+                      avatar={<ToolOutlined style={{ color: "#1677ff" }} />}
                       title={
                         <Space>
                           <span>{tool.name}</span>
@@ -369,7 +369,7 @@ const AgentDetail: React.FC = () => {
                   return (
                     <List.Item>
                       <List.Item.Meta
-                        avatar={<ApiOutlined style={{ color: "#1890ff" }} />}
+                        avatar={<ApiOutlined style={{ color: "#1677ff" }} />}
                         title={
                           <Space>
                             <span>{mcpInfo?.name || mcp.clientId}</span>
@@ -593,7 +593,7 @@ const AgentDetail: React.FC = () => {
                             />
                           ) : (
                             <TeamOutlined
-                              style={{ color: "#1890ff", fontSize: 16 }}
+                              style={{ color: "#1677ff", fontSize: 16 }}
                             />
                           )
                         }

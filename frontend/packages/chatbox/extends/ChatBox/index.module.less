@@ -24,16 +24,16 @@
   max-height: 100%; // 添加最大高度限制
 
   .chatHeader {
-    flex-shrink: 0; // 防止header被压缩
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    color: #262626;
-    font-weight: 600;
-    font-size: 16px;
-    background: #fff;
-    border-bottom: 1px solid #e8e8e8;
+    color: @color-ink;
+    font-weight: @font-weight-semibold;
+    font-size: @font-size-body-strong;
+    background: @color-canvas;
+    border-bottom: 1px solid @color-hairline;
   }
 
   .chatMessagesWrap {
@@ -43,10 +43,10 @@
   }
 
   .chatInputContainer {
-    flex-shrink: 0; // 防止输入框被压缩
-    padding: 16px 24px;
-    background: #fff;
-    border-top: 1px solid #e8e8e8;
+    flex-shrink: 0;
+    padding: @spacing-md @spacing-lg;
+    background: @color-canvas;
+    border-top: 1px solid @color-hairline;
   }
 }
 
@@ -54,22 +54,22 @@
   position: absolute;
   left: calc(50% - 18px);
   bottom: 0px;
-  padding: 8px;
+  padding: @spacing-xs;
   width: 36px;
   height: 36px;
-  background: #8c6dd4;
+  background: @color-primary;
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: @shadow-card;
   z-index: 100;
   transition: all 0.3s ease;
 
   &:hover {
-    background: #9c85d4;
+    background: @color-primary-hover;
     transform: translateY(-2px);
   }
 
@@ -92,18 +92,18 @@
   display: inline-flex;
   align-items: center;
   padding: 5px 12px;
-  font-size: 13px;
-  color: #7c3aed;
-  background: #ede9fe;
-  border: 1px solid #ddd6fe;
-  border-radius: 8px;
+  font-size: @font-size-caption;
+  color: @color-primary;
+  background: @color-gradient-card-blue;
+  border: 1px solid #bae0ff;
+  border-radius: @radius-md;
   cursor: pointer;
   transition: all 0.2s ease;
-  line-height: 1.4;
+  line-height: @line-height-dense;
   width: fit-content;
 
   &:hover {
-    background: #ddd6fe;
-    border-color: #c4b5fd;
+    background: #bae0ff;
+    border-color: @color-primary;
   }
 }

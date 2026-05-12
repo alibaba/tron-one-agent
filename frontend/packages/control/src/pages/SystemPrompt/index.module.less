@@ -18,7 +18,7 @@
 .container {
   .ant-card {
     .ant-card-head {
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid @color-divider-soft;
     }
   }
 }
@@ -26,13 +26,13 @@
 .promptList {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
+  gap: @spacing-md;
+  margin-top: @spacing-md;
 }
 
 .promptCard {
   height: 280px;
-  
+
   .ant-card-body {
     height: calc(100% - 57px);
     display: flex;
@@ -42,137 +42,136 @@
 
 .promptPreview {
   flex: 1;
-  padding: 12px;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px solid #f0f0f0;
+  padding: @spacing-sm;
+  background: @color-surface-pearl;
+  border-radius: @radius-sm;
+  border: 1px solid @color-divider-soft;
   overflow: hidden;
 }
 
 .promptMeta {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  margin-top: @spacing-xs;
+  padding-top: @spacing-xs;
+  border-top: 1px solid @color-divider-soft;
 }
 
 .markdownPreview {
   max-height: 600px;
   overflow-y: auto;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #f0f0f0;
-  
-  // Markdown 样式优化
+  padding: @spacing-md;
+  background: @color-surface-pearl;
+  border-radius: @radius-md;
+  border: 1px solid @color-divider-soft;
+
   h1, h2, h3, h4, h5, h6 {
-    color: #262626;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    font-weight: 600;
-    
+    color: @color-ink;
+    margin-top: @spacing-lg;
+    margin-bottom: @spacing-md;
+    font-weight: @font-weight-semibold;
+
     &:first-child {
       margin-top: 0;
     }
   }
-  
+
   h1 {
     font-size: 28px;
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 8px;
+    border-bottom: 2px solid @color-divider-soft;
+    padding-bottom: @spacing-xs;
   }
-  
+
   h2 {
     font-size: 24px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid @color-divider-soft;
     padding-bottom: 6px;
   }
-  
+
   h3 {
     font-size: 20px;
   }
-  
+
   p {
-    line-height: 1.6;
-    margin-bottom: 16px;
-    color: #595959;
+    line-height: @line-height-body;
+    margin-bottom: @spacing-md;
+    color: @color-body-muted;
   }
-  
+
   ul, ol {
-    margin-bottom: 16px;
-    padding-left: 24px;
-    
+    margin-bottom: @spacing-md;
+    padding-left: @spacing-lg;
+
     li {
-      margin-bottom: 8px;
-      line-height: 1.6;
-      color: #595959;
+      margin-bottom: @spacing-xs;
+      line-height: @line-height-body;
+      color: @color-body-muted;
     }
   }
-  
+
   code {
-    background: #f5f5f5;
+    background: @color-canvas-parchment;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: @radius-xs;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 13px;
-    color: #d63384;
+    font-size: @font-size-caption;
+    color: @color-accent-purple;
   }
-  
+
   pre {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    padding: 16px;
+    background: @color-surface-pearl;
+    border: 1px solid @color-hairline;
+    border-radius: @radius-sm;
+    padding: @spacing-md;
     overflow-x: auto;
-    margin-bottom: 16px;
-    
+    margin-bottom: @spacing-md;
+
     code {
       background: none;
       padding: 0;
-      color: #212529;
-      font-size: 14px;
+      color: @color-ink;
+      font-size: @font-size-body;
     }
   }
-  
+
   blockquote {
-    border-left: 4px solid #1890ff;
-    padding-left: 16px;
-    margin: 16px 0;
-    color: #595959;
+    border-left: 4px solid @color-primary;
+    padding-left: @spacing-md;
+    margin: @spacing-md 0;
+    color: @color-body-muted;
     font-style: italic;
   }
-  
+
   strong {
-    font-weight: 600;
-    color: #262626;
+    font-weight: @font-weight-semibold;
+    color: @color-ink;
   }
-  
+
   em {
     font-style: italic;
-    color: #595959;
+    color: @color-body-muted;
   }
-  
+
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
-    
+    margin-bottom: @spacing-md;
+
     th, td {
-      border: 1px solid #f0f0f0;
-      padding: 8px 12px;
+      border: 1px solid @color-divider-soft;
+      padding: @spacing-xs @spacing-sm;
       text-align: left;
     }
-    
+
     th {
-      background: #fafafa;
-      font-weight: 600;
+      background: @color-surface-pearl;
+      font-weight: @font-weight-semibold;
     }
   }
-  
+
   hr {
     border: none;
-    border-top: 1px solid #f0f0f0;
-    margin: 24px 0;
+    border-top: 1px solid @color-divider-soft;
+    margin: @spacing-lg 0;
   }
 }

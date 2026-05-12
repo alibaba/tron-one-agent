@@ -277,7 +277,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                             <ToolOutlined 
                               style={{ 
                                 fontSize: '16px',
-                                color: tool.enabled ? '#1890ff' : '#d9d9d9'
+                                color: tool.enabled ? '#1677ff' : '#d9d9d9'
                               }} 
                             />
                           }

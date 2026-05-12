@@ -18,111 +18,110 @@
 .container {
   .ant-card {
     .ant-card-head {
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid @color-divider-soft;
     }
   }
 }
 
-// Markdown 预览样式优化
+// Markdown preview style
 .ant-form-item {
   .ant-form-item-control-input-content {
     div[style*="background: #fafafa"] {
-      // Markdown 样式优化
       h1, h2, h3, h4, h5, h6 {
-        color: #262626;
+        color: @color-ink;
         margin-top: 16px;
         margin-bottom: 8px;
-        font-weight: 600;
-        
+        font-weight: @font-weight-semibold;
+
         &:first-child {
           margin-top: 0;
         }
       }
-      
+
       h1 {
         font-size: 20px;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid @color-divider-soft;
         padding-bottom: 4px;
       }
-      
+
       h2 {
         font-size: 18px;
       }
-      
+
       h3 {
         font-size: 16px;
       }
-      
+
       p {
-        line-height: 1.6;
+        line-height: @line-height-body;
         margin-bottom: 8px;
-        color: #595959;
+        color: @color-body-muted;
       }
-      
+
       ul, ol {
         margin-bottom: 8px;
         padding-left: 20px;
-        
+
         li {
           margin-bottom: 4px;
           line-height: 1.5;
-          color: #595959;
+          color: @color-body-muted;
         }
       }
-      
+
       code {
-        background: #f5f5f5;
+        background: @color-canvas-parchment;
         padding: 2px 4px;
-        border-radius: 3px;
+        border-radius: @radius-xs;
         font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: 12px;
-        color: #d63384;
+        font-size: @font-size-fine-print;
+        color: @color-accent-purple;
       }
-      
+
       pre {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
+        background: @color-surface-pearl;
+        border: 1px solid @color-hairline;
+        border-radius: @radius-xs;
         padding: 8px;
         overflow-x: auto;
         margin-bottom: 8px;
-        
+
         code {
           background: none;
           padding: 0;
-          color: #212529;
-          font-size: 12px;
+          color: @color-ink;
+          font-size: @font-size-fine-print;
         }
       }
-      
+
       blockquote {
-        border-left: 3px solid #1890ff;
-        padding-left: 12px;
+        border-left: 3px solid @color-primary;
+        padding-left: @spacing-sm;
         margin: 8px 0;
-        color: #595959;
+        color: @color-body-muted;
         font-style: italic;
       }
-      
+
       strong {
-        font-weight: 600;
-        color: #262626;
+        font-weight: @font-weight-semibold;
+        color: @color-ink;
       }
-      
+
       table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 8px;
-        font-size: 12px;
-        
+        font-size: @font-size-fine-print;
+
         th, td {
-          border: 1px solid #f0f0f0;
+          border: 1px solid @color-divider-soft;
           padding: 4px 8px;
           text-align: left;
         }
-        
+
         th {
-          background: #fafafa;
-          font-weight: 600;
+          background: @color-surface-pearl;
+          font-weight: @font-weight-semibold;
         }
       }
     }

@@ -561,7 +561,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             />
                           ) : (
                             <TeamOutlined
-                              style={{ color: "#1890ff", fontSize: 16 }}
+                              style={{ color: "#1677ff", fontSize: 16 }}
                             />
                           )
                         }

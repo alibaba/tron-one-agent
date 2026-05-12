@@ -111,16 +111,16 @@ const AppLayout: React.FC = () => {
       >
         <div className={layoutStyles.logo}>
           <Space>
-            <RobotOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
+            <RobotOutlined style={{ fontSize: "24px", color: "#1677ff" }} />
             {!collapsed && (
-              <Title level={4} style={{ margin: 0, color: "#fff" }}>
+              <Title level={4} style={{ margin: 0, color: "#1a1a1a" }}>
                 {themeConfig.title}
               </Title>
             )}
           </Space>
         </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}

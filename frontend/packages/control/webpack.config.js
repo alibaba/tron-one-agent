@@ -85,6 +85,7 @@ module.exports = (env, argv) => {
                 lessOptions: {
                   javascriptEnabled: true,
                 },
+                additionalData: `@import "${path.resolve(__dirname, 'src/styles/tokens.less')}";\n`,
               },
             },
           ],
@@ -101,6 +102,7 @@ module.exports = (env, argv) => {
                 lessOptions: {
                   javascriptEnabled: true,
                 },
+                additionalData: `@import "${path.resolve(__dirname, 'src/styles/tokens.less')}";\n`,
               },
             },
           ],

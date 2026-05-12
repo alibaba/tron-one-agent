@@ -23,11 +23,10 @@
   margin: 0 !important;
   padding: 0 !important;
   overflow-x: scroll;
-  color: #24292f !important;
-  font-size: 14px !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
-    sans-serif !important;
-  line-height: 1.6 !important;
+  color: @color-ink !important;
+  font-size: @font-size-body !important;
+  font-family: @font-family !important;
+  line-height: @line-height-body !important;
   background-color: transparent !important;
 
   &::-webkit-scrollbar {
@@ -47,35 +46,35 @@
 
 /* 标题样式 - 使用!important确保生效 */
 .textContent.markdownBody h1 {
-  margin: 16px 0 8px 0 !important;
-  padding-bottom: 8px !important;
-  color: #24292f !important;
-  font-weight: 600 !important;
+  margin: @spacing-md 0 @spacing-xs 0 !important;
+  padding-bottom: @spacing-xs !important;
+  color: @color-ink !important;
+  font-weight: @font-weight-semibold !important;
   font-size: 20px !important;
-  border-bottom: 2px solid #d0d7de !important;
+  border-bottom: 2px solid @color-divider-soft !important;
 }
 
 .textContent.markdownBody h2 {
-  margin: 16px 0 8px 0 !important;
+  margin: @spacing-md 0 @spacing-xs 0 !important;
   padding-bottom: 4px !important;
-  color: #24292f !important;
-  font-weight: 600 !important;
+  color: @color-ink !important;
+  font-weight: @font-weight-semibold !important;
   font-size: 18px !important;
-  border-bottom: 1px solid #d0d7de !important;
+  border-bottom: 1px solid @color-divider-soft !important;
 }
 
 .textContent.markdownBody h3 {
   margin: 14px 0 6px 0 !important;
-  color: #24292f !important;
-  font-weight: 600 !important;
+  color: @color-ink !important;
+  font-weight: @font-weight-semibold !important;
   font-size: 16px !important;
 }
 
 .textContent.markdownBody h4 {
-  margin: 12px 0 6px 0 !important;
-  color: #24292f !important;
-  font-weight: 600 !important;
-  font-size: 14px !important;
+  margin: @spacing-sm 0 6px 0 !important;
+  color: @color-ink !important;
+  font-weight: @font-weight-semibold !important;
+  font-size: @font-size-body !important;
 }
 
 .textContent.markdownBody h1:first-child,
@@ -97,7 +96,7 @@
 /* 段落样式 */
 .textContent.markdownBody p {
   margin: 8px 0 !important;
-  line-height: 1.6 !important;
+  line-height: @line-height-body !important;
 }
 
 .textContent.markdownBody p:first-child {
@@ -142,8 +141,8 @@
 
 /* 强调样式 */
 .textContent.markdownBody strong {
-  color: #24292f !important;
-  font-weight: 600 !important;
+  color: @color-ink !important;
+  font-weight: @font-weight-semibold !important;
 }
 
 .textContent.markdownBody.userContent strong {
@@ -187,12 +186,12 @@
 
 /* 引用样式 */
 .textContent.markdownBody blockquote {
-  margin: 12px 0 !important;
+  margin: @spacing-sm 0 !important;
   padding: 0 1em !important;
-  color: #656d76 !important;
+  color: @color-body-muted !important;
   background-color: rgba(175, 184, 193, 0.05) !important;
-  border-left: 0.25em solid #d0d7de !important;
-  border-radius: 0 6px 6px 0 !important;
+  border-left: 0.25em solid @color-divider-soft !important;
+  border-radius: 0 @radius-sm @radius-sm 0 !important;
 }
 
 .textContent.markdownBody.userContent blockquote {
@@ -206,23 +205,23 @@
   display: table !important;
   width: 100% !important;
   max-width: 100% !important;
-  margin: 12px 0 !important;
+  margin: @spacing-sm 0 !important;
   overflow: auto !important;
-  font-size: 14px !important;
+  font-size: @font-size-body !important;
   border-collapse: collapse !important;
   border-spacing: 0 !important;
 }
 
 .textContent.markdownBody table th,
 .textContent.markdownBody table td {
-  padding: 8px 12px !important;
+  padding: 8px @spacing-sm !important;
   text-align: left !important;
-  border: 1px solid #d0d7de !important;
+  border: 1px solid @color-divider-soft !important;
 }
 
 .textContent.markdownBody table th {
-  font-weight: 600 !important;
-  background-color: #f6f8fa !important;
+  font-weight: @font-weight-semibold !important;
+  background-color: @color-canvas-parchment !important;
 }
 
 .textContent.markdownBody.userContent table th {
@@ -240,7 +239,7 @@
   height: 0.25em !important;
   margin: 20px 0 !important;
   padding: 0 !important;
-  background-color: #d0d7de !important;
+  background-color: @color-divider-soft !important;
   border: 0 !important;
 }
 
@@ -250,7 +249,7 @@
 
 /* 链接样式 */
 .textContent.markdownBody a {
-  color: #0969da !important;
+  color: @color-primary !important;
   text-decoration: none !important;
 }
 

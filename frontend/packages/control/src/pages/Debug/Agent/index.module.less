@@ -28,13 +28,13 @@
   .pageCardBody {
     flex: 1;
     display: flex;
-    gap: 24px;
-    min-height: 0; // 关键！防止flex容器被内容擑开
-  
+    gap: @spacing-lg;
+    min-height: 0;
+
     .mainWrap {
       flex: 1;
       overflow: hidden;
-      border: 1px solid #f0f0f0;
+      border: 1px solid @color-divider-soft;
       min-height: 0;
     }
     .operateWrap {
@@ -44,7 +44,7 @@
       flex-direction: column;
       min-height: 0;
       overflow: hidden;
-  
+
       :global {
         .ant-card-body {
           flex: 1;

@@ -66,7 +66,7 @@ const TaskContentRender: React.FC<TaskContentProps> = ({ task, onToggleExpand })
       case TaskStatus.WAITING:
         return "#ffa500";
       case TaskStatus.EXECUTING:
-        return "#1890ff";
+        return "#1677ff";
       case TaskStatus.SUCCEED:
         return "#52c41a";
       case TaskStatus.FAILED:

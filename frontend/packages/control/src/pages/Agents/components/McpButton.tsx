@@ -399,7 +399,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                         ]}
                       >
                         <List.Item.Meta
-                          avatar={<ApiOutlined style={{ color: "#1890ff" }} />}
+                          avatar={<ApiOutlined style={{ color: "#1677ff" }} />}
                           title={
                             <Space>
                               <span>{mcp.name}</span>

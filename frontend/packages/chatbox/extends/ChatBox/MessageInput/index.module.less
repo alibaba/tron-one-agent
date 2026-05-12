@@ -16,9 +16,9 @@
 
 
 .messageInput {
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #d9d9d9;
+  background: @color-canvas;
+  border-radius: @radius-md;
+  border: 1px solid @color-surface-chip-translucent;
   overflow: hidden;
 }
 
@@ -33,10 +33,10 @@
   position: relative;
   width: 80px;
   height: 80px;
-  border-radius: 6px;
+  border-radius: @radius-sm;
   overflow: hidden;
-  border: 1px solid #e8e8e8;
-  background: #fafafa;
+  border: 1px solid @color-hairline;
+  background: @color-surface-pearl;
 
   img {
     width: 100%;
@@ -138,24 +138,24 @@
 .attachButton {
   background: none;
   border: none;
-  color: #8c8c8c;
+  color: @color-body-muted;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
+  padding: @spacing-xs;
+  border-radius: @radius-sm;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: @font-size-body-strong;
   height: 36px;
 
   &:hover:not(:disabled) {
-    background: #f0f0f0;
-    color: #8c6dd4;
+    background: @color-divider-soft;
+    color: @color-primary;
   }
 
   &:disabled {
-    color: #d9d9d9;
+    color: @color-surface-chip-translucent;
     cursor: not-allowed;
   }
 }
@@ -165,7 +165,7 @@
   border: none;
   outline: none;
   resize: none;
-  font-size: 14px;
+  font-size: @font-size-body;
   line-height: 1.5;
   font-family: inherit;
   min-height: 20px;
@@ -177,17 +177,17 @@
   }
 
   &:disabled {
-    background: #f5f5f5;
+    background: @color-canvas-parchment;
     cursor: not-allowed;
     opacity: 0.6;
   }
 }
 
 .sendButton {
-  background: #8c6dd4;
+  background: @color-primary;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: @radius-sm;
   padding: 8px 12px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -198,11 +198,11 @@
   height: 36px;
 
   &:hover:not(:disabled) {
-    background: #9c85d4;
+    background: @color-primary-hover;
   }
 
   &:disabled {
-    background: #d9d9d9;
+    background: @color-surface-chip-translucent;
     cursor: not-allowed;
   }
 }
@@ -215,7 +215,7 @@
   }
 
   &:disabled {
-    background: #d9d9d9;
+    background: @color-surface-chip-translucent;
   }
 }
 
@@ -223,26 +223,26 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
-  background: #fafafa;
-  border-top: 1px solid #e8e8e8;
+  padding: @spacing-xs @spacing-sm;
+  background: @color-surface-pearl;
+  border-top: 1px solid @color-hairline;
 }
 
 .toolButton {
   background: none;
   border: none;
-  color: #8c8c8c;
+  color: @color-body-muted;
   cursor: pointer;
   padding: 6px;
-  border-radius: 4px;
+  border-radius: @radius-xs;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover {
-    background: #e6f7ff;
-    color: #1890ff;
+    background: @color-gradient-card-blue;
+    color: @color-primary;
   }
 }
 
@@ -260,24 +260,24 @@
 .voiceButton {
   background: none;
   border: none;
-  color: #8c8c8c;
+  color: @color-body-muted;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
+  padding: @spacing-xs;
+  border-radius: @radius-sm;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: @font-size-body-strong;
   height: 36px;
 
   &:hover:not(:disabled) {
-    background: #f0f0f0;
-    color: #8c6dd4;
+    background: @color-divider-soft;
+    color: @color-primary;
   }
 
   &:disabled {
-    color: #d9d9d9;
+    color: @color-surface-chip-translucent;
     cursor: not-allowed;
   }
 
@@ -295,15 +295,15 @@
 .voiceCancelButton {
   background: none;
   border: none;
-  color: #8c8c8c;
+  color: @color-body-muted;
   cursor: pointer;
   padding: 6px;
-  border-radius: 4px;
+  border-radius: @radius-xs;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: @font-size-body;
 
   &:hover {
     background: #fff1f0;

@@ -16,26 +16,26 @@
 
 
 .taskContent {
-  background: #fff;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  margin: 12px 0;
+  background: @color-canvas;
+  border: 1px solid @color-surface-chip-translucent;
+  border-radius: @radius-md;
+  margin: @spacing-sm 0;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: @shadow-hairline;
 }
 
 .taskHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  background: #fafafa;
-  border-bottom: 1px solid #e8e8e8;
+  padding: @spacing-md 20px;
+  background: @color-surface-pearl;
+  border-bottom: 1px solid @color-hairline;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background: #f0f0f0;
+    background: @color-divider-soft;
   }
 }
 
@@ -46,17 +46,17 @@
 }
 
 .taskTitle {
-  font-weight: 600;
-  color: #262626;
-  font-size: 14px;
+  font-weight: @font-weight-semibold;
+  color: @color-ink;
+  font-size: @font-size-body;
 }
 
 .taskTime {
-  font-size: 12px;
-  color: #8c8c8c;
-  background: #f5f5f5;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
+  background: @color-canvas-parchment;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: @radius-xs;
 }
 
 .taskStatusIcon {
@@ -70,11 +70,11 @@
 }
 
 .taskDescription {
-  padding: 16px 20px;
-  font-size: 13px;
-  color: #595959;
-  background: #f9f9f9;
-  border-bottom: 1px solid #e8e8e8;
+  padding: @spacing-md 20px;
+  font-size: @font-size-caption;
+  color: @color-body-muted;
+  background: @color-canvas-parchment;
+  border-bottom: 1px solid @color-hairline;
   line-height: 1.5;
 }
 
@@ -85,9 +85,9 @@
 .taskTextContent {
   margin: 8px 0;
   padding: 8px 12px;
-  background: #f9f9f9;
-  border-radius: 6px;
-  border-left: 3px solid #1890ff;
+  background: @color-canvas-parchment;
+  border-radius: @radius-sm;
+  border-left: 3px solid @color-primary;
 }
 
 .taskContentItem {

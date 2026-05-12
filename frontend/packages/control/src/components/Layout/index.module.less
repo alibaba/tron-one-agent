@@ -20,129 +20,120 @@
 }
 
 .sider {
+  background: @color-canvas !important;
+  border-right: 1px solid @color-hairline;
+
   .logo {
     height: 64px;
-    padding: 16px;
+    padding: @spacing-md;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #001529;
-    
+    border-bottom: 1px solid @color-hairline;
+
     .ant-typography-h4 {
-      font-weight: 600;
+      font-weight: @font-weight-semibold;
       font-size: 18px;
-      letter-spacing: 0.5px;
-      color: #fff !important;
+      letter-spacing: @letter-spacing-none;
+      color: @color-ink !important;
       margin: 0;
     }
   }
-  
-  // 菜单样式优化 - 使用更具体的选择器
-  :global(.ant-layout-sider-dark) {
-    .ant-menu-dark {
-      .ant-menu-item {
-        font-weight: 500;
-        font-size: 14px;
-        letter-spacing: 0.3px;
-        color: rgba(255, 255, 255, 0.75) !important;
-        
+
+  // Light menu styles per DESIGN.md
+  :global(.ant-menu-light) {
+    background: @color-canvas;
+    border-inline-end: none !important;
+
+    .ant-menu-item {
+      font-weight: @font-weight-regular;
+      font-size: @font-size-body;
+      letter-spacing: @letter-spacing-none;
+      color: @color-ink !important;
+      margin: 0;
+      width: 100%;
+      border-radius: 0;
+
+      .ant-menu-title-content {
+        font-weight: @font-weight-regular;
+        color: @color-ink !important;
+      }
+
+      .anticon {
+        color: @color-ink-muted-80 !important;
+      }
+
+      &:hover {
+        color: @color-primary !important;
+        background-color: @color-gradient-card-blue !important;
+
         .ant-menu-title-content {
-          font-weight: 500;
-          color: rgba(255, 255, 255, 0.75) !important;
+          font-weight: @font-weight-semibold;
+          color: @color-primary !important;
         }
-        
+
         .anticon {
-          color: rgba(255, 255, 255, 0.75) !important;
-        }
-        
-        // Badge 内的文字也要设置颜色
-        .ant-badge {
-          .ant-badge-count {
-            color: #fff !important;
-          }
-        }
-        
-        &:hover {
-          color: rgba(255, 255, 255, 0.9) !important;
-          
-          .ant-menu-title-content {
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9) !important;
-          }
-          
-          .anticon {
-            color: rgba(255, 255, 255, 0.9) !important;
-          }
-        }
-        
-        &.ant-menu-item-selected {
-          background-color: #1890ff !important;
-          color: #fff !important;
-          
-          .ant-menu-title-content {
-            font-weight: 600;
-            color: #fff !important;
-          }
-          
-          .anticon {
-            color: #fff !important;
-          }
+          color: @color-primary !important;
         }
       }
-      
-      .ant-menu-item-icon {
-        font-size: 16px;
-        margin-right: 12px;
-      }
-      
-      // Badge 样式优化
-      .ant-badge {
-        .ant-badge-count {
-          font-size: 11px;
-          font-weight: 600;
-          min-width: 18px;
-          height: 18px;
-          line-height: 18px;
-          border-radius: 9px;
-          box-shadow: 0 0 0 1px #001529;
-          color: #fff !important;
+
+      &.ant-menu-item-selected {
+        background-color: @color-gradient-card-blue !important;
+        color: @color-primary !important;
+
+        .ant-menu-title-content {
+          font-weight: @font-weight-semibold;
+          color: @color-primary !important;
+        }
+
+        .anticon {
+          color: @color-primary !important;
         }
       }
     }
-  }
-  
-  // 全局菜单样式覆盖
-  :global(.ant-menu-dark .ant-menu-item) {
-    color: rgba(255, 255, 255, 0.75) !important;
-    
-    .ant-menu-title-content {
-      color: rgba(255, 255, 255, 0.75) !important;
-    }
-    
-    .anticon {
-      color: rgba(255, 255, 255, 0.75) !important;
-    }
-    
-    &:hover {
-      color: rgba(255, 255, 255, 0.9) !important;
-      
-      .ant-menu-title-content {
-        color: rgba(255, 255, 255, 0.9) !important;
+
+    .ant-menu-submenu-title {
+      font-weight: @font-weight-regular;
+      font-size: @font-size-body;
+      letter-spacing: @letter-spacing-none;
+      color: @color-ink !important;
+
+      &:hover {
+        color: @color-primary !important;
       }
-      
+
       .anticon {
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: @color-ink-muted-80 !important;
       }
     }
-    
-    &.ant-menu-item-selected {
-      color: #fff !important;
-      
-      .ant-menu-title-content {
-        color: #fff !important;
+
+    .ant-menu-submenu {
+      &.ant-menu-submenu-selected > .ant-menu-submenu-title {
+        color: @color-primary !important;
       }
-      
-      .anticon {
-        color: #fff !important;
+
+      .ant-menu-sub {
+        .ant-menu-item {
+          padding-left: 48px !important;
+        }
+      }
+    }
+
+    .ant-menu-item-icon {
+      font-size: 16px;
+      margin-right: @spacing-sm;
+    }
+
+    .ant-badge {
+      .ant-badge-count {
+        font-size: 11px;
+        font-weight: @font-weight-semibold;
+        min-width: 18px;
+        height: 18px;
+        line-height: 18px;
+        border-radius: @radius-pill;
+        box-shadow: 0 0 0 1px @color-canvas;
+        color: @color-on-primary !important;
+        background: @color-primary;
       }
     }
   }
@@ -150,27 +141,37 @@
 
 .header {
   padding: 0;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
+  background: @color-canvas;
+  border-bottom: 1px solid @color-hairline;
+  height: 56px;
+  display: flex;
+  align-items: center;
+
   .trigger {
     font-size: 18px;
-    line-height: 64px;
-    padding: 0 24px;
+    line-height: 56px;
+    padding: 0 @spacing-lg;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-weight: 500;
-    
+    font-weight: @font-weight-regular;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    border: none;
+    color: @color-ink-muted-80;
+
     &:hover {
-      color: #1890ff;
-      background-color: #f5f5f5;
+      color: @color-primary;
+      background-color: @color-gradient-card-blue;
     }
   }
 }
 
 .content {
-  margin: 24px 16px;
-  background: #fff;
-  border-radius: 8px;
+  margin: @spacing-lg @spacing-md;
+  background: @color-canvas;
+  border-radius: @radius-md;
   overflow: auto;
+  box-shadow: @shadow-card;
+  min-height: calc(100vh - 56px - 2 * @spacing-lg);
 }

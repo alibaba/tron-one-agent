@@ -28,10 +28,10 @@
   .pageCardBody {
     flex: 1;
     display: flex;
-    gap: 24px;
+    gap: @spacing-lg;
 
     .section {
-      margin-bottom: 24px;
+      margin-bottom: @spacing-lg;
       width: 100%;
       overflow: hidden;
 
@@ -42,8 +42,8 @@
 
     .parametersWrap {
       .parameters {
-        border: 1px dashed #e8e8e8;
-        padding: 12px;
+        border: 1px dashed @color-hairline;
+        padding: @spacing-sm;
       }
       :global {
         #root {
@@ -54,18 +54,18 @@
 
     .schemaCard,
     .resultCard {
-      background-color: #f9f9f9;
-      border-radius: 4px;
+      background-color: @color-canvas-parchment;
+      border-radius: @radius-xs;
 
       .jsonDisplay {
         margin: 0;
-        padding: 16px;
-        background-color: #fff;
-        border: 1px solid #e8e8e8;
-        border-radius: 4px;
+        padding: @spacing-md;
+        background-color: @color-canvas;
+        border: 1px solid @color-hairline;
+        border-radius: @radius-xs;
         font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
-        font-size: 12px;
-        line-height: 1.4;
+        font-size: @font-size-fine-print;
+        line-height: @line-height-dense;
         white-space: pre-wrap;
         word-break: break-all;
         max-height: 400px;

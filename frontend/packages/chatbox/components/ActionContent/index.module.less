@@ -16,9 +16,9 @@
 
 
 .actionContent {
-  background: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
+  background: @color-canvas;
+  border: 1px solid @color-hairline;
+  border-radius: @radius-sm;
   margin: 8px 0;
   overflow: hidden;
 }
@@ -27,13 +27,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #f9f9f9;
+  padding: @spacing-sm @spacing-md;
+  background: @color-canvas-parchment;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background: #f0f0f0;
+    background: @color-divider-soft;
   }
 }
 
@@ -44,17 +44,17 @@
 }
 
 .actionTitle {
-  font-weight: 500;
-  color: #262626;
-  font-size: 14px;
+  font-weight: @font-weight-medium;
+  color: @color-ink;
+  font-size: @font-size-body;
 }
 
 .actionTime {
-  font-size: 12px;
-  color: #8c8c8c;
-  background: #f5f5f5;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
+  background: @color-canvas-parchment;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: @radius-xs;
 }
 
 .actionStatusIcon {
@@ -62,32 +62,32 @@
 }
 
 .expandIcon {
-  font-size: 12px;
-  color: #8c8c8c;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
   transition: transform 0.2s;
 }
 
 .actionContentDetail {
-  padding: 16px;
-  background: #fafafa;
-  border-top: 1px solid #e8e8e8;
+  padding: @spacing-md;
+  background: @color-surface-pearl;
+  border-top: 1px solid @color-hairline;
 }
 
 .actionContentText {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 13px;
+  font-size: @font-size-caption;
   line-height: 1.5;
-  color: #262626;
+  color: @color-ink;
   margin: 0;
-  background: #fff;
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #e8e8e8;
+  background: @color-canvas;
+  padding: @spacing-sm;
+  border-radius: @radius-xs;
+  border: 1px solid @color-hairline;
 
   code {
-    background: #f6f8fa;
+    background: @color-canvas-parchment;
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: @radius-xs;
     font-size: 0.85em;
   }
 }

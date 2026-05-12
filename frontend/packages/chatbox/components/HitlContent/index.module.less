@@ -16,9 +16,9 @@
 
 
 .hitlContainer {
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  background: #fff;
+  border: 1px solid @color-hairline;
+  border-radius: @radius-lg;
+  background: @color-canvas;
   overflow: hidden;
 }
 
@@ -34,8 +34,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: #8c8c8c;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
 
   i {
     font-size: 11px;
@@ -47,8 +47,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 10px @spacing-md;
+  border-bottom: 1px solid @color-divider-soft;
 }
 
 .tabHeaderLeft {
@@ -60,16 +60,16 @@
 }
 
 .headerLabel {
-  color: #262626;
-  font-weight: 500;
+  color: @color-ink;
+  font-weight: @font-weight-medium;
 }
 
 .headerDot {
-  color: #d9d9d9;
+  color: @color-surface-chip-translucent;
 }
 
 .headerType {
-  color: #8c8c8c;
+  color: @color-body-muted;
 }
 
 .tabHeaderRight {
@@ -86,19 +86,19 @@
   height: 24px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: @radius-xs;
   cursor: pointer;
-  color: #8c8c8c;
+  color: @color-body-muted;
   padding: 0;
   transition: all 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: #f5f5f5;
-    color: #262626;
+    background: @color-canvas-parchment;
+    color: @color-ink;
   }
 
   &:disabled {
-    color: #d9d9d9;
+    color: @color-surface-chip-translucent;
     cursor: not-allowed;
   }
 
@@ -108,8 +108,8 @@
 }
 
 .pageIndicator {
-  font-size: 12px;
-  color: #8c8c8c;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
   min-width: 32px;
   text-align: center;
 }
@@ -121,10 +121,10 @@
 
 .questionText {
   font-size: 15px;
-  font-weight: 500;
-  color: #262626;
+  font-weight: @font-weight-medium;
+  color: @color-ink;
   line-height: 1.5;
-  margin-bottom: 16px;
+  margin-bottom: @spacing-md;
 }
 
 // Options list
@@ -137,18 +137,18 @@
 .optionRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 8px;
+  gap: @spacing-sm;
+  padding: @spacing-sm 14px;
+  border-radius: @radius-md;
   cursor: pointer;
   transition: background 0.15s ease;
 
   &:hover {
-    background: #fafafa;
+    background: @color-surface-pearl;
   }
 
   &.optionRowSelected {
-    background: #f6f4ff;
+    background: @color-gradient-card-blue;
   }
 }
 
@@ -159,17 +159,17 @@
 
 .optionLabel {
   display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #262626;
-  line-height: 1.4;
+  font-size: @font-size-body;
+  font-weight: @font-weight-semibold;
+  color: @color-ink;
+  line-height: @line-height-dense;
 }
 
 .optionDesc {
   display: block;
-  font-size: 12px;
-  color: #8c8c8c;
-  line-height: 1.4;
+  font-size: @font-size-fine-print;
+  color: @color-body-muted;
+  line-height: @line-height-dense;
   margin-top: 2px;
 }
 
@@ -184,13 +184,13 @@
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 2px solid #d9d9d9;
+  border: 2px solid @color-surface-chip-translucent;
   border-radius: 50%;
   transition: all 0.15s ease;
   position: relative;
 
   &.checked {
-    border-color: #7c3aed;
+    border-color: @color-primary;
 
     &::after {
       content: '';
@@ -200,7 +200,7 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #7c3aed;
+      background: @color-primary;
     }
   }
 }
@@ -212,16 +212,16 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border: 2px solid #d9d9d9;
-  border-radius: 4px;
+  border: 2px solid @color-surface-chip-translucent;
+  border-radius: @radius-xs;
   transition: all 0.15s ease;
   font-size: 10px;
   color: transparent;
 
   &.checked {
-    border-color: #7c3aed;
-    background: #7c3aed;
-    color: #fff;
+    border-color: @color-primary;
+    background: @color-primary;
+    color: @color-on-primary;
   }
 
   i {
@@ -234,8 +234,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 10px 16px;
-  border-top: 1px solid #f0f0f0;
+  padding: 10px @spacing-md;
+  border-top: 1px solid @color-divider-soft;
 }
 
 .footerRight {
@@ -247,16 +247,16 @@
 .skipBtn {
   border: none;
   background: transparent;
-  color: #8c8c8c;
-  font-size: 13px;
+  color: @color-body-muted;
+  font-size: @font-size-caption;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 6px @spacing-sm;
+  border-radius: @radius-sm;
   transition: all 0.15s ease;
 
   &:hover {
-    background: #f5f5f5;
-    color: #595959;
+    background: @color-canvas-parchment;
+    color: @color-body-muted;
   }
 }
 
@@ -264,13 +264,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 6px @spacing-md;
   border: none;
-  border-radius: 8px;
-  background: #262626;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: @radius-md;
+  background: @color-ink;
+  color: @color-on-dark;
+  font-size: @font-size-caption;
+  font-weight: @font-weight-medium;
   cursor: pointer;
   transition: all 0.15s ease;
 
@@ -292,13 +292,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 6px @spacing-md;
   border: none;
-  border-radius: 8px;
-  background: #262626;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: @radius-md;
+  background: @color-ink;
+  color: @color-on-dark;
+  font-size: @font-size-caption;
+  font-weight: @font-weight-medium;
   cursor: pointer;
   transition: all 0.15s ease;
 
@@ -349,11 +349,11 @@
 .resultHeader {
   display: inline-block;
   font-size: 11px;
-  font-weight: 600;
-  color: #667eea;
-  background: #eef2ff;
+  font-weight: @font-weight-semibold;
+  color: @color-primary;
+  background: @color-gradient-card-blue;
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: @radius-xs;
   margin-right: 6px;
 }
 
@@ -365,13 +365,13 @@
 .otherInput {
   width: 100%;
   margin-top: 4px;
-  padding: 6px 8px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #262626;
+  padding: 6px @spacing-xs;
+  border: 1px solid @color-surface-chip-translucent;
+  border-radius: @radius-sm;
+  font-size: @font-size-fine-print;
+  color: @color-ink;
   outline: none;
-  background: #fff;
+  background: @color-canvas;
   transition: border-color 0.2s;
 
   &::placeholder {
@@ -379,6 +379,6 @@
   }
 
   &:focus {
-    border-color: #667eea;
+    border-color: @color-primary;
   }
 }

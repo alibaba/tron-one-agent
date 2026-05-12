@@ -855,7 +855,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                       {wsConnected ? "已连接" : "未连接"}
                     </Tag>
                     <ReloadOutlined
-                      style={{ cursor: "pointer", fontSize: 14, color: "#1890ff" }}
+                      style={{ cursor: "pointer", fontSize: 14, color: "#1677ff" }}
                       onClick={() => {
                         if (agentIdChanged && sessionId) {
                           connectWebSocket(agentIdChanged, sessionId);

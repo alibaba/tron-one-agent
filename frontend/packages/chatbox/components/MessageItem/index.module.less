@@ -41,7 +41,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, @color-primary 0%, @color-primary-hover 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,26 +72,26 @@
 }
 
 .messageSender {
-  font-size: 12px;
-  font-weight: 600;
-  color: #262626;
+  font-size: @font-size-fine-print;
+  font-weight: @font-weight-semibold;
+  color: @color-ink;
 }
 
 .messageTime {
   font-size: 11px;
-  color: #8c8c8c;
+  color: @color-body-muted;
   line-height: normal;
 }
 
 .messageBody {
-  background: #f5f5f5;
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: @color-canvas-parchment;
+  border-radius: @radius-lg;
+  padding: @spacing-sm @spacing-md;
   word-wrap: break-word;
-  line-height: 1.6;
+  line-height: @line-height-body;
 
   .messageItem.user & {
-    background: #8b5cf6;
+    background: @color-primary;
     color: white;
   }
 }
@@ -117,7 +117,7 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #8c8c8c;
+  color: @color-body-muted;
 
   .messageItem.user & {
     justify-content: flex-end;
@@ -148,19 +148,19 @@
 .messageUsage {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: @spacing-sm;
   font-size: 11px;
-  color: #8c8c8c;
+  color: @color-body-muted;
 }
 
 // 功能按钮区域
 .actionButtons {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  gap: @spacing-xs;
+  margin-top: @spacing-xs;
+  padding-top: @spacing-xs;
+  border-top: 1px solid @color-divider-soft;
 }
 
 .actionButton {
@@ -171,19 +171,19 @@
   height: 28px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: @radius-xs;
   cursor: pointer;
-  color: #8c8c8c;
+  color: @color-body-muted;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f5f5f5;
-    color: #595959;
+    background: @color-canvas-parchment;
+    color: @color-body-muted;
   }
 
   &.active {
-    color: #1677ff;
-    background: #e6f4ff;
+    color: @color-primary;
+    background: @color-gradient-card-blue;
 
     &:hover {
       background: #bae0ff;
@@ -206,17 +206,17 @@
   background: transparent;
   border-radius: 50%;
   cursor: pointer;
-  color: #8c8c8c;
+  color: @color-body-muted;
   padding: 0;
   transition: all 0.2s ease;
 
   &:hover {
-    color: #667eea;
-    background: #f0f0f0;
+    color: @color-primary;
+    background: @color-divider-soft;
   }
 
   &.ttsPlaying {
-    color: #667eea;
+    color: @color-primary;
     animation: ttsPulse 1.5s ease-in-out infinite;
 
     &:hover {
@@ -234,17 +234,17 @@
   50% { opacity: 0.5; }
 }
 
-// Thinking 内容样式
+// Thinking content style
 .thinkingContent {
   margin: 8px 0;
-  border: 1px solid #a78bfa;
-  border-radius: 8px;
-  background: #f5f3ff;
+  border: 1px solid @color-primary;
+  border-radius: @radius-md;
+  background: @color-gradient-card-blue;
   overflow: hidden;
 
   &[open] {
     .thinkingSummary {
-      border-bottom: 1px solid #a78bfa;
+      border-bottom: 1px solid @color-primary;
     }
   }
 }
@@ -258,12 +258,12 @@
   -webkit-user-select: none;
   user-select: none;
   font-size: 13px;
-  color: #7c3aed;
-  background: #ede9fe;
+  color: @color-primary;
+  background: #dbeafe;
   transition: background 0.2s ease;
 
   &:hover {
-    background: #ddd6fe;
+    background: #bfdbfe;
   }
 
   &::-webkit-details-marker {
@@ -290,8 +290,8 @@
 .thinkingBody {
   padding: 12px;
   font-size: 13px;
-  color: #5b21b6;
-  background: #faf5ff;
+  color: @color-primary-hover;
+  background: #eff6ff;
   max-height: 300px;
   overflow-y: auto;
 }

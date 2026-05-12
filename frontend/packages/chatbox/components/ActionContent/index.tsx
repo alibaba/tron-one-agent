@@ -62,7 +62,7 @@ const ActionContentRender: React.FC<ActionContentProps> = ({ action, onToggleExp
   const getStatusColor = (status: ActionStatus) => {
     switch (status) {
       case ActionStatus.EXECUTING:
-        return "#1890ff";
+        return "#1677ff";
       case ActionStatus.SUCCEED:
         return "#52c41a";
       case ActionStatus.FAILED:
