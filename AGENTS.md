@@ -6,6 +6,16 @@ This file provides guidance to the AI agent when working with code in this repos
 
 Tron OneAgent — enterprise AI agent platform. Java 17 backend + React frontend monorepo.
 
+## API Contract
+
+`backend_java_api.yaml` (OpenAPI 3.0) is the **single source of truth** for all REST and WebSocket APIs. Any API change must follow this workflow:
+
+1. **Update `backend_java_api.yaml` first** — add/modify/remove endpoints, request/response schemas, or parameters.
+2. **Backend implements** the spec — controllers, DTOs, and tests must match the contract.
+3. **Frontend consumes** the spec — API call paths, request bodies, and response types must align with the contract.
+
+Never add, rename, or remove an API endpoint in code without updating the spec file first.
+
 ## Backend (`backend_java/`)
 
 Multi-module Spring Boot 3.5 app. Three-layer architecture: `api` → `core` → `infra`. Dependencies flow downward only.

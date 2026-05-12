@@ -1,0 +1,1963 @@
+openapi: "3.0.3"
+info:
+  title: Tron OneAgent API
+  description: |
+    Enterprise AI Agent Platform — REST and WebSocket APIs.
+
+    ## WebSocket Endpoints
+
+    | Path | Protocol | Description |
+    |------|----------|-------------|
+    | `/ws/agents/{agent_id}/sessions/{session_id}` | JSON-RPC 2.0 | Agent chat & event streaming |
+    | `/asr` | Custom JSON | Automatic Speech Recognition (streaming) |
+    | `/tts` | Custom JSON | Text-to-Speech (streaming) |
+
+    See the **WebSockets** section at the bottom for message schemas.
+  version: "1.0.0"
+  contact:
+    name: Tron OneAgent Team
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Health check
+  - name: Sessions
+    description: Agent session management and chat
+  - name: A2A
+    description: Agent-to-Agent protocol (Google A2A / JSON-RPC)
+  - name: Config - Agents
+    description: Agent configuration CRUD
+  - name: Config - Tools
+    description: Tool listing
+  - name: Config - MCP
+    description: MCP client configuration CRUD
+  - name: Config - Knowledge Bases
+    description: Knowledge base configuration CRUD
+  - name: Config - Skills
+    description: Skill upload and configuration CRUD
+  - name: Config - Memory
+    description: Long-term memory configuration CRUD
+  - name: Debug
+    description: Debug endpoints for tools, MCP clients, and knowledge bases
+  - name: Files
+    description: File upload and download
+
+paths:
+
+  # ── Health ──────────────────────────────────────────────────────────────
+  /health/check:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "ok"
+
+  # ── Sessions ────────────────────────────────────────────────────────────
+  /agents/{agent_id}/sessions:
+    post:
+      tags: [Sessions]
+      summary: Create a new session
+      operationId: createSession
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/XUserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "201":
+          description: Session created; body is the session ID
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "a1b2c3d4e5f6"
+        "404":
+          description: Agent not found
+          content:
+            text/plain:
+              schema:
+                type: string
+
+    get:
+      tags: [Sessions]
+      summary: List sessions for an agent
+      operationId: listSessions
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/PageNo"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated session list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResultSessionDTO"
+        "404":
+          description: Agent not found
+
+  /agents/{agent_id}/sessions/{session_id}:
+    get:
+      tags: [Sessions]
+      summary: Get a session with its recent messages
+      operationId: getSession
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/XUserId"
+      responses:
+        "200":
+          description: Session with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionDTO"
+        "404":
+          description: Agent or session not found
+
+    delete:
+      tags: [Sessions]
+      summary: Delete a session
+      operationId: deleteSession
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/XUserId"
+      responses:
+        "200":
+          description: Session deleted
+        "404":
+          description: Agent or session not found
+
+  /agents/{agent_id}/sessions/{session_id}/messages:
+    get:
+      tags: [Sessions]
+      summary: List messages in a session
+      operationId: listSessionMessages
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/XUserId"
+        - $ref: "#/components/parameters/PageNo"
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 10
+      responses:
+        "200":
+          description: Paginated message list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResultSessionMessageDTO"
+        "404":
+          description: Agent or session not found
+
+  /agents/{agent_id}/sessions/{session_id}/events:
+    get:
+      tags: [Sessions]
+      summary: Pull session events (event-sourcing feed)
+      operationId: listSessionEvents
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/XUserId"
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        "200":
+          description: List of session events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionEvent"
+        "404":
+          description: Agent or session not found
+
+  /agents/{agent_id}/sessions/{session_id}/chat:
+    post:
+      tags: [Sessions]
+      summary: |
+        Send a chat message to the agent.
+
+        Two response modes are supported based on the `Accept` header:
+        - `Accept: application/json` → 200 with `"success"` (events delivered via WebSocket / SSE polling)
+        - `Accept: text/event-stream` → 200 with SSE stream of `SessionEvent` objects
+      operationId: chat
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/XUserId"
+        - name: X-User-Name
+          in: header
+          schema:
+            type: string
+          description: Display name of the user
+        - name: Accept
+          in: header
+          schema:
+            type: string
+            enum: [application/json, text/event-stream]
+          description: Response mode selector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: |
+            If `Accept: application/json` → `"success"`.
+            If `Accept: text/event-stream` → SSE stream of SessionEvent.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "success"
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SessionEvent"
+        "400":
+          description: Session is already executing
+        "404":
+          description: Agent or session not found
+
+  # ── A2A (Agent-to-Agent) ────────────────────────────────────────────────
+  /a2a/{agent_id}/.well-known/agent-card.json:
+    get:
+      tags: [A2A]
+      summary: Get the A2A Agent Card for an agent
+      operationId: getAgentCard
+      parameters:
+        - $ref: "#/components/parameters/AgentIdA2A"
+      responses:
+        "200":
+          description: Agent Card (A2A spec AgentCard JSON)
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Agent not found
+
+  /a2a/{agent_id}/:
+    post:
+      tags: [A2A]
+      summary: A2A JSON-RPC endpoint
+      description: |
+        Accepts JSON-RPC 2.0 requests conforming to the Google A2A specification.
+        Supported methods: `tasks/send`, `tasks/sendSubscribe`, `tasks/get`, `tasks/cancel`.
+      operationId: a2aJsonRpc
+      parameters:
+        - $ref: "#/components/parameters/AgentIdA2A"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonRpcRequest"
+      responses:
+        "200":
+          description: JSON-RPC response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcResponse"
+        "404":
+          description: Agent not found
+
+  # ── Config – Agents ─────────────────────────────────────────────────────
+  /control/agents:
+    get:
+      tags: [Config - Agents]
+      summary: List all agent configurations
+      operationId: getAgentConfigs
+      responses:
+        "200":
+          description: Agent config list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_AgentConfigList"
+
+  /control/agents/{agent_id}:
+    get:
+      tags: [Config - Agents]
+      summary: Get a single agent configuration
+      operationId: getAgentConfig
+      parameters:
+        - $ref: "#/components/parameters/ConfigAgentId"
+      responses:
+        "200":
+          description: Agent config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_AgentConfig"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+    patch:
+      tags: [Config - Agents]
+      summary: Patch an agent configuration (partial update)
+      operationId: patchAgentConfig
+      parameters:
+        - $ref: "#/components/parameters/ConfigAgentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchAgentConfigRequest"
+      responses:
+        "200":
+          description: Updated agent config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_AgentConfig"
+        "404":
+          description: Agent not found
+
+  # ── Config – Tools ──────────────────────────────────────────────────────
+  /control/tools:
+    get:
+      tags: [Config - Tools]
+      summary: List all registered tools (name + description)
+      operationId: getTools
+      responses:
+        "200":
+          description: Tool list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_ToolList"
+
+  # ── Config – MCP ────────────────────────────────────────────────────────
+  /control/mcps:
+    get:
+      tags: [Config - MCP]
+      summary: List all MCP client configurations
+      operationId: getMcpConfigs
+      responses:
+        "200":
+          description: MCP config list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_McpClientConfigList"
+
+    post:
+      tags: [Config - MCP]
+      summary: Create an MCP client configuration
+      operationId: createMcpConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpClientConfig"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  /control/mcps/{mcp_id}:
+    get:
+      tags: [Config - MCP]
+      summary: Get a single MCP client configuration
+      operationId: getMcpConfig
+      parameters:
+        - name: mcp_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MCP config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_McpClientConfig"
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Config - MCP]
+      summary: Patch an MCP client configuration
+      operationId: patchMcpConfig
+      parameters:
+        - name: mcp_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchMcpClientConfigRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+    delete:
+      tags: [Config - MCP]
+      summary: Delete an MCP client configuration
+      operationId: deleteMcpConfig
+      parameters:
+        - name: mcp_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  # ── Config – Knowledge Bases ────────────────────────────────────────────
+  /control/kb:
+    get:
+      tags: [Config - Knowledge Bases]
+      summary: List all knowledge base configurations
+      operationId: getKbConfigs
+      responses:
+        "200":
+          description: Knowledge base config list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_KnowledgeBaseConfigList"
+
+    post:
+      tags: [Config - Knowledge Bases]
+      summary: Create a knowledge base configuration
+      operationId: createKbConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KnowledgeBaseConfig"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  /control/kb/{kb_id}:
+    get:
+      tags: [Config - Knowledge Bases]
+      summary: Get a single knowledge base configuration
+      operationId: getKbConfig
+      parameters:
+        - name: kb_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Knowledge base config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_KnowledgeBaseConfig"
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Config - Knowledge Bases]
+      summary: Patch a knowledge base configuration
+      operationId: patchKbConfig
+      parameters:
+        - name: kb_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchKnowledgeBaseConfigRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+    delete:
+      tags: [Config - Knowledge Bases]
+      summary: Delete a knowledge base configuration
+      operationId: deleteKbConfig
+      parameters:
+        - name: kb_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  # ── Config – Skills ─────────────────────────────────────────────────────
+  /control/skills:
+    get:
+      tags: [Config - Skills]
+      summary: List all skill configurations
+      operationId: getSkills
+      responses:
+        "200":
+          description: Skill list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_SkillConfigList"
+
+    post:
+      tags: [Config - Skills]
+      summary: Upload a skill (ZIP file)
+      operationId: uploadSkill
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: Existing skill ID for update, omit for create
+                file:
+                  type: string
+                  format: binary
+                  description: Skill ZIP file
+              required: [file]
+      responses:
+        "200":
+          description: Skill ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_Long"
+
+  /control/skills/{skill_id}:
+    get:
+      tags: [Config - Skills]
+      summary: Get a single skill configuration
+      operationId: getSkill
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Skill config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_SkillConfig"
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Config - Skills]
+      summary: Patch a skill (enable/disable)
+      operationId: patchSkill
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+    delete:
+      tags: [Config - Skills]
+      summary: Delete a skill
+      operationId: deleteSkill
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  /control/skills/{skill_id}/download:
+    get:
+      tags: [Config - Skills]
+      summary: Download a skill ZIP file
+      operationId: downloadSkill
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Skill ZIP file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not found
+
+  # ── Config – Memory ─────────────────────────────────────────────────────
+  /control/memory:
+    get:
+      tags: [Config - Memory]
+      summary: List all long-term memory configurations
+      operationId: getLongTermMemoryConfigs
+      responses:
+        "200":
+          description: Memory config list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_LongTermMemoryConfigList"
+
+    post:
+      tags: [Config - Memory]
+      summary: Create a long-term memory configuration
+      operationId: createLongTermMemoryConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LongTermMemoryConfig"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  /control/memory/{memory_id}:
+    get:
+      tags: [Config - Memory]
+      summary: Get a single long-term memory configuration
+      operationId: getLongTermMemoryConfig
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Memory config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_LongTermMemoryConfig"
+        "404":
+          description: Not found
+
+    patch:
+      tags: [Config - Memory]
+      summary: Patch a long-term memory configuration
+      operationId: patchLongTermMemoryConfig
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LongTermMemoryConfig"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+    delete:
+      tags: [Config - Memory]
+      summary: Delete a long-term memory configuration
+      operationId: deleteLongTermMemoryConfig
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  # ── Debug ───────────────────────────────────────────────────────────────
+  /debug/tools/{tool_name}/schema:
+    get:
+      tags: [Debug]
+      summary: Get the JSON schema for a tool
+      operationId: getToolSchema
+      parameters:
+        - name: tool_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OpenAI-style function schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "function"
+                  function:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      parameters:
+                        type: object
+        "404":
+          description: Tool not found
+
+  /debug/tools/{tool_name}:
+    post:
+      tags: [Debug]
+      summary: Invoke a tool directly with input arguments
+      operationId: debugTool
+      parameters:
+        - name: tool_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Tool input as a JSON object (key-value pairs)
+      responses:
+        "200":
+          description: Tool output
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: Bad request
+        "404":
+          description: Tool not found
+
+  /debug/mcp/{client_id}/tools:
+    get:
+      tags: [Debug]
+      summary: List tools from an MCP client
+      operationId: getMcpTools
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MCP tool list
+          content:
+            application/json:
+              schema: {}
+        "404":
+          description: MCP client not found
+
+  /debug/mcp/{client_id}/tools/{func_name}:
+    post:
+      tags: [Debug]
+      summary: Invoke an MCP tool function
+      operationId: debugMcpTool
+      parameters:
+        - name: client_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: func_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: MCP tool input as a JSON object
+      responses:
+        "200":
+          description: MCP tool result content
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: Bad request
+        "404":
+          description: MCP client not found
+
+  /debug/knowledge_base/{knowledge_base_id}:
+    post:
+      tags: [Debug]
+      summary: Query a knowledge base for relevant documents
+      operationId: debugKnowledgeBase
+      parameters:
+        - name: knowledge_base_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: Search query
+                limit:
+                  type: integer
+                  default: 5
+                  description: Max documents to return
+                score_threshold:
+                  type: number
+                  format: double
+                  default: 0.2
+                  description: Minimum relevance score (0–1)
+              required: [query]
+      responses:
+        "200":
+          description: Retrieved documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        "400":
+          description: Bad request
+        "404":
+          description: Knowledge base not found
+
+  # ── Files ───────────────────────────────────────────────────────────────
+  /file:
+    post:
+      tags: [Files]
+      summary: Upload a file (images only)
+      operationId: uploadFile
+      parameters:
+        - $ref: "#/components/parameters/XUserId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (jpg, jpeg, png)
+              required: [file]
+      responses:
+        "201":
+          description: File uploaded; Location header contains the file URL
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: Invalid file name or type
+
+  /file/{id}:
+    get:
+      tags: [Files]
+      summary: Download / serve a file
+      operationId: getFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
+
+  # ── WebSockets ──────────────────────────────────────────────────────────
+  /ws/agents/{agent_id}/sessions/{session_id}:
+    x-websocket:
+      description: |
+        **Agent WebSocket** — JSON-RPC 2.0 over WebSocket.
+
+        **On connect** the server sends:
+        - `{"jsonrpc":"2.0","method":"session","params":<SessionDTO>}`  (session snapshot)
+        - `{"jsonrpc":"2.0","method":"event","params":<SessionEvent>}`  (replayed events if an executing message exists)
+
+        **Client → Server (requests):**
+
+        | Method   | Params        | Result           | Description |
+        |----------|---------------|------------------|-------------|
+        | `chat`   | `ChatRequest` | `Long` (messageId) | Send a chat message |
+        | `cancel` | `String`      | `null`             | Cancel the current execution |
+
+        **Server → Client (notifications):**
+
+        | Method    | Params          | Description |
+        |-----------|-----------------|-------------|
+        | `event`   | `SessionEvent`  | Streamed events (text chunks, tool calls, status changes, TTS data, HITL, etc.) |
+        | `session` | `SessionDTO`    | Initial session snapshot on connect |
+
+        **Headers/params required:** `X-User-Id` (required), `X-User-Name` (optional)
+      summary: Agent chat WebSocket (JSON-RPC 2.0)
+
+  /asr:
+    x-websocket:
+      description: |
+        **ASR WebSocket** — streaming automatic speech recognition.
+
+        **Client → Server:**
+        ```json
+        {"dataBase64": "<base64 audio chunk>", "completed": false}
+        ```
+
+        **Server → Client:**
+        ```json
+        {"success": true, "text": "<transcribed text>", "finished": false, "error": null}
+        {"success": true, "text": null, "finished": true, "error": null}
+        ```
+
+        Send `completed: true` to signal end of audio stream. The server closes the WebSocket after `finished: true`.
+      summary: ASR WebSocket (streaming speech-to-text)
+
+  /tts:
+    x-websocket:
+      description: |
+        **TTS WebSocket** — streaming text-to-speech.
+
+        **Client → Server:**
+        ```json
+        {"text": "<text to synthesize>", "completed": false}
+        ```
+
+        **Server → Client:**
+        ```json
+        {"success": true, "dataBase64": "<base64 audio chunk>", "finished": false, "error": null}
+        {"success": true, "dataBase64": null, "finished": true, "error": null}
+        ```
+
+        Send `completed: true` to signal end of text stream. The server closes the WebSocket after `finished: true`.
+      summary: TTS WebSocket (streaming text-to-speech)
+
+
+# ── Components ────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+    AgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Agent identifier
+
+    AgentIdA2A:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Agent identifier (A2A)
+
+    ConfigAgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Agent identifier
+
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Session identifier
+
+    XUserId:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Authenticated user identifier
+
+    PageNo:
+      name: pageNo
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+
+  schemas:
+
+    # ── Generic Control Response wrapper ──────────────────────────────────
+    ControlResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload (varies by endpoint)
+
+    ControlResponse_AgentConfigList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentConfig"
+
+    ControlResponse_AgentConfig:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AgentConfig"
+
+    ControlResponse_ToolList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  description:
+                    type: string
+
+    ControlResponse_McpClientConfigList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/McpClientConfig"
+
+    ControlResponse_McpClientConfig:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/McpClientConfig"
+
+    ControlResponse_KnowledgeBaseConfigList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/KnowledgeBaseConfig"
+
+    ControlResponse_KnowledgeBaseConfig:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/KnowledgeBaseConfig"
+
+    ControlResponse_SkillConfigList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/SkillConfig"
+
+    ControlResponse_SkillConfig:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/SkillConfig"
+
+    ControlResponse_LongTermMemoryConfigList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/LongTermMemoryConfig"
+
+    ControlResponse_LongTermMemoryConfig:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/LongTermMemoryConfig"
+
+    ControlResponse_Long:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: integer
+              format: int64
+
+    # ── Request DTOs ──────────────────────────────────────────────────────
+    CreateSessionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Session display name
+
+    ChatRequest:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDTO"
+          description: List of content items (text, images, HITL results, etc.)
+        enableTts:
+          type: boolean
+          default: false
+          description: Enable server-side TTS streaming via SSE
+
+    # ── Response DTOs ─────────────────────────────────────────────────────
+    SessionDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Session ID
+        userId:
+          type: string
+        agentId:
+          type: string
+        name:
+          type: string
+          default: ""
+        lastAppliedEventId:
+          type: integer
+          format: int64
+          default: 0
+        gmtCreated:
+          type: string
+          format: date-time
+        gmtModified:
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/PageResultSessionMessageDTO"
+
+    PageResultSessionDTO:
+      type: object
+      properties:
+        totalRecords:
+          type: integer
+          format: int64
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionDTO"
+        pageNum:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    PageResultSessionMessageDTO:
+      type: object
+      properties:
+        totalRecords:
+          type: integer
+          format: int64
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionMessageDTO"
+        pageNum:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    SessionMessageDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: integer
+          description: "Message type: 1 = User, 2 = Agent"
+        status:
+          type: integer
+          description: "Status: 1 = Executing, 2 = Succeed, 3 = Failed"
+        errorMessage:
+          type: string
+        agentId:
+          type: string
+        userId:
+          type: string
+        sessionId:
+          type: string
+        name:
+          type: string
+          description: User display name (user messages only)
+        contents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDTO"
+        gmtCreate:
+          type: string
+          format: date-time
+        gmtModified:
+          type: string
+          format: date-time
+        gmtFinished:
+          type: string
+          format: date-time
+          description: Completion time (agent messages only)
+        usage:
+          $ref: "#/components/schemas/AgentChatUsageDTO"
+
+    AgentChatUsageDTO:
+      type: object
+      properties:
+        times:
+          type: integer
+          description: Number of LLM calls
+        costInMs:
+          type: integer
+          format: int64
+          description: Total cost in milliseconds
+        promptTokens:
+          type: integer
+          format: int64
+          description: Total prompt tokens
+        completionTokens:
+          type: integer
+          format: int64
+          description: Total completion tokens
+
+    ContentDTO:
+      type: object
+      required: [type]
+      properties:
+        id:
+          description: Content identifier (Long for most types, String for HITL)
+        type:
+          type: integer
+          description: |
+            Content type:
+            - 1 = TEXT
+            - 2 = IMAGE
+            - 3 = VIDEO
+            - 4 = AUDIO
+            - 5 = TASK
+            - 6 = ACTION
+            - 7 = HITL
+        text:
+          type: string
+        status:
+          type: integer
+          description: Status code (meaning varies by type)
+        url:
+          type: string
+          description: Media URL
+        base64Data:
+          type: string
+          description: Base64-encoded media data
+        mediaType:
+          type: string
+          description: Media MIME type
+        agentId:
+          type: string
+          description: Sub-agent ID (task content)
+        title:
+          type: string
+        description:
+          type: string
+        method:
+          type: string
+          description: HITL method name
+        properties:
+          type: object
+          additionalProperties: true
+          description: HITL form properties
+        agentMessageId:
+          type: integer
+          format: int64
+          description: Associated agent message ID (HITL)
+        result:
+          type: string
+          description: Result value (task / HITL)
+        contents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDTO"
+          description: Nested contents (task / action)
+        gmtCreated:
+          type: string
+          format: date-time
+        gmtModified:
+          type: string
+          format: date-time
+        gmtFinished:
+          type: string
+          format: date-time
+
+    SessionEvent:
+      type: object
+      description: |
+        Event-sourcing event. Polymorphic — the `type` field determines the concrete shape.
+        Common event types include:
+        - `TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT`, `TEXT_MESSAGE_END`
+        - `TOOL_CALL_START`, `TOOL_CALL_ARGS`, `TOOL_CALL_END`, `TOOL_CALL_RESULT`
+        - `AGENT_MESSAGE_STATUS_CHANGED`
+        - `TTS_RESPONSE` (TTS audio data)
+        - `HITL` (human-in-the-loop interaction)
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          description: Event type discriminator
+        messageId:
+          type: integer
+          format: int64
+        agentId:
+          type: string
+        sessionId:
+          type: string
+        userId:
+          type: string
+        data:
+          description: Event payload (varies by type)
+
+    # ── Config models ─────────────────────────────────────────────────────
+    AgentConfig:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        enabled:
+          type: boolean
+        version:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/LocalAgentType"
+        chatModel:
+          $ref: "#/components/schemas/ChatModelConfig"
+        fastChatModel:
+          $ref: "#/components/schemas/ChatModelConfig"
+        systemPrompt:
+          type: string
+        maxIters:
+          type: integer
+          default: 10
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentToolConfig"
+        mcpClients:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentMcpConfig"
+        ragMode:
+          type: string
+          default: "AGENTIC"
+          description: "RAG mode: AGENTIC or GENERIC"
+        knowledgeBases:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentKnowledgeBaseConfig"
+        subAgents:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubAgentConfig"
+        skills:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSkillConfig"
+        supportInputTypes:
+          type: array
+          items:
+            type: integer
+          description: Supported input content types
+        longTermMemoryMode:
+          type: string
+          default: "BOTH"
+          description: "Long-term memory mode: RECALL, WRITE, or BOTH"
+        longTermMemoryId:
+          type: string
+        enableSessionRenaming:
+          type: boolean
+          default: true
+        enableSuggestion:
+          type: boolean
+          default: true
+        enableQuestion:
+          type: boolean
+          default: true
+
+    LocalAgentType:
+      type: string
+      description: "Local agent type: REACT, CHAT, etc."
+      example: "REACT"
+
+    ChatModelConfig:
+      type: object
+      properties:
+        apiKey:
+          type: string
+          description: API key (encrypted)
+        type:
+          $ref: "#/components/schemas/ChatModelType"
+        modelName:
+          type: string
+          example: "qwen-plus"
+        baseUrl:
+          type: string
+          format: uri
+        stream:
+          type: boolean
+          default: true
+        thinking:
+          type: boolean
+          default: false
+        generateKwargs:
+          type: object
+          additionalProperties: true
+          description: Additional generation parameters
+
+    ChatModelType:
+      type: string
+      description: "Model provider: DASHSCOPE, OPENAI, OLLAMA, etc."
+      example: "DASHSCOPE"
+
+    AgentToolConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        name:
+          type: string
+          description: Tool name
+
+    AgentMcpConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        clientId:
+          type: string
+          description: MCP client ID
+        enableFuncs:
+          type: array
+          items:
+            type: string
+          description: Functions to enable
+        disableFuncs:
+          type: array
+          items:
+            type: string
+          description: Functions to disable
+
+    SubAgentConfig:
+      type: object
+      description: |
+        Polymorphic by `type` field:
+        - `"1"` → LocalSubAgentConfig
+        - `"2"` → A2ASubAgentConfig
+      properties:
+        type:
+          type: string
+          description: "1 = Local, 2 = A2A"
+        enabled:
+          type: boolean
+          default: true
+        agentId:
+          type: string
+          description: Sub-agent identifier
+
+    AgentKnowledgeBaseConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        knowledgeId:
+          type: string
+          description: Knowledge base configuration ID
+        mode:
+          type: string
+          default: "AGENTIC"
+          description: "Mode: AGENTIC or GENERIC"
+        agenticToolDescription:
+          type: string
+        defaultLimit:
+          type: integer
+          default: 5
+        defaultScoreThreshold:
+          type: number
+          format: double
+
+    AgentSkillConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        name:
+          type: string
+          description: Skill name
+
+    McpClientConfig:
+      type: object
+      properties:
+        id:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        version:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        transport:
+          type: string
+          default: "sse"
+          description: "Transport protocol: sse or http"
+        url:
+          type: string
+          format: uri
+        initializeTimeout:
+          type: integer
+          default: 10
+          description: Initialize timeout in seconds
+        timeout:
+          type: integer
+          default: 30
+          description: Request timeout in seconds
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Custom HTTP headers (encrypted)
+
+    KnowledgeBaseConfig:
+      type: object
+      description: |
+        Polymorphic by `type` field:
+        - `"1"` → BailianKnowledgeBaseConfig
+        - `"2"` → ElasticSearchKnowledgeBaseConfig
+      properties:
+        id:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        version:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: integer
+          description: "1 = Bailian, 2 = ElasticSearch"
+        workspaceId:
+          type: string
+          description: Bailian workspace ID
+        indexId:
+          type: string
+          description: Bailian index ID
+        enableRewrite:
+          type: boolean
+          default: true
+        enableRerank:
+          type: boolean
+          default: true
+
+    LongTermMemoryConfig:
+      type: object
+      description: |
+        Polymorphic by `type` field:
+        - `"1"` → BailianLongTermMemoryConfig
+      properties:
+        id:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        version:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: integer
+          description: "1 = Bailian"
+        apiKey:
+          type: string
+          description: Bailian API key (encrypted)
+        memoryLibraryId:
+          type: string
+          description: Bailian memory library ID
+        projectId:
+          type: string
+          description: Bailian project ID
+        profileSchema:
+          type: string
+          description: Profile schema definition
+
+    SkillConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        description:
+          type: string
+        instruction:
+          type: string
+        baseDir:
+          type: string
+          description: Skill base directory
+        files:
+          type: array
+          items:
+            type: string
+          description: List of file paths in the skill
+        fileId:
+          type: integer
+          format: int64
+          description: ZIP file storage ID
+        checksum:
+          type: string
+        builtin:
+          type: boolean
+          default: false
+
+    # ── Patch request DTOs ────────────────────────────────────────────────
+    PatchAgentConfigRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        enabled:
+          type: boolean
+        type:
+          $ref: "#/components/schemas/LocalAgentType"
+        chatModel:
+          $ref: "#/components/schemas/ChatModelConfig"
+        systemPrompt:
+          type: string
+        maxIters:
+          type: integer
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentToolConfig"
+        mcpClients:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentMcpConfig"
+        ragMode:
+          type: string
+        knowledgeBases:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentKnowledgeBaseConfig"
+        subAgents:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubAgentConfig"
+        skills:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentSkillConfig"
+        longTermMemoryMode:
+          type: string
+          description: "RECALL, WRITE, or BOTH"
+        longTermMemoryId:
+          type: string
+
+    PatchMcpClientConfigRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        enabled:
+          type: boolean
+        name:
+          type: string
+        description:
+          type: string
+        transport:
+          type: string
+          description: "streamable_http or sse"
+        url:
+          type: string
+        timeout:
+          type: integer
+          description: Request timeout in seconds
+        sseReadTimeout:
+          type: integer
+          description: SSE read timeout in seconds
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+
+    PatchKnowledgeBaseConfigRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        enabled:
+          type: boolean
+        name:
+          type: string
+        workspaceId:
+          type: string
+        indexId:
+          type: string
+        enableRewrite:
+          type: boolean
+        enableRerank:
+          type: boolean
+
+    # ── JSON-RPC 2.0 ──────────────────────────────────────────────────────
+    JsonRpcRequest:
+      type: object
+      required: [jsonrpc, method]
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        method:
+          type: string
+          description: "e.g. tasks/send, tasks/sendSubscribe, tasks/get, tasks/cancel"
+        params:
+          description: Request parameters (varies by method)
+        id:
+          description: Request ID (string or number)
+
+    JsonRpcResponse:
+      type: object
+      required: [jsonrpc, id]
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        id:
+          description: Matches request ID
+        result:
+          description: Present on success
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+            data:
+              description: Optional error detail
+
+    # ── TTS Response (SSE and WebSocket) ──────────────────────────────────
+    TtsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        dataBase64:
+          type: string
+          description: Base64-encoded audio data
+        finished:
+          type: boolean
+          default: false
+        error:
+          type: string

@@ -14,9 +14,22 @@
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java)
 - [backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java)
 - [backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/JsonUtils.java](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/JsonUtils.java)
+- [backend_java/checkstyle.xml](file://backend_java/checkstyle.xml)
 - [frontend/package.json](file://frontend/package.json)
 - [frontend/packages/control/package.json](file://frontend/packages/control/package.json)
+- [frontend/.prettierrc](file://frontend/.prettierrc)
+- [frontend/DESIGN.md](file://frontend/DESIGN.md)
+- [LICENSE.txt](file://LICENSE.txt)
+- [AGENTS.md](file://AGENTS.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive backend coding standards with Google Java Style checkstyle configuration
+- Integrated Prettier code formatting standards for frontend development
+- Established unified design system guidelines from DESIGN.md
+- Added licensing requirements and Apache 2.0 compliance
+- Enhanced development workflow with automated code quality tools
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -24,14 +37,17 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Contribution Workflow and Community Guidelines](#contribution-workflow-and-community-guidelines)
-10. [Appendices](#appendices)
+6. [Development Standards and Code Quality](#development-standards-and-code-quality)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Contribution Workflow and Community Guidelines](#contribution-workflow-and-community-guidelines)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document provides comprehensive development guidelines for contributing to Tron OneAgent. It covers code standards and conventions for Java backend, TypeScript/React frontend, and Python skill implementation; testing strategies (unit, integration, and functional testing); debugging techniques and local development workflows; encryption utilities and security best practices; performance optimization and profiling; and the contribution workflow and community guidelines. The goal is to help contributors implement new features, extend existing functionality, and maintain high-quality code consistently.
+
+**Updated** Added comprehensive development standards including Google Java Style checkstyle configuration, Prettier code formatting, and unified design system guidelines.
 
 ## Project Structure
 Tron OneAgent follows a multi-module Maven layout for the Java backend and a monorepo-style Yarn workspaces layout for the frontend. The backend is organized into modules for API, core business logic, infrastructure, utilities, and bootstrapping. The frontend uses a workspace with multiple packages (e.g., control, chatbox, client).
@@ -45,26 +61,35 @@ CORE["core module"]
 INFRA["infra module"]
 UTILS["utils module"]
 BOOT["bootstrap module"]
+CHECKSTYLE["checkstyle.xml<br/>Google Java Style"]
 end
 subgraph "Frontend (TypeScript/React)"
 FE_PKG["frontend/package.json"]
 CONTROL["packages/control"]
 CHATBOX["packages/chatbox"]
 CLIENT["packages/client"]
+PRETTIER[".prettierrc<br/>Prettier Formatting"]
+DESIGN["DESIGN.md<br/>Unified Design System"]
 end
 POM --> API
 POM --> CORE
 POM --> INFRA
 POM --> UTILS
 POM --> BOOT
+POM --> CHECKSTYLE
 FE_PKG --> CONTROL
 FE_PKG --> CHATBOX
 FE_PKG --> CLIENT
+FE_PKG --> PRETTIER
+FE_PKG --> DESIGN
 ```
 
 **Diagram sources**
 - [backend_java/pom.xml:11-16](file://backend_java/pom.xml#L11-L16)
 - [frontend/package.json:4-6](file://frontend/package.json#L4-L6)
+- [backend_java/checkstyle.xml:6](file://backend_java/checkstyle.xml#L6)
+- [frontend/.prettierrc:1-8](file://frontend/.prettierrc#L1-L8)
+- [frontend/DESIGN.md:1-314](file://frontend/DESIGN.md#L1-L314)
 
 **Section sources**
 - [README.md:109-156](file://README.md#L109-L156)
@@ -83,7 +108,7 @@ FE_PKG --> CLIENT
   - Chatbox: Chat UI components.
   - Client: Frontend client libraries and integrations.
 
-Key runtime configuration and logging are centralized in the bootstrap module’s YAML and Logback files.
+Key runtime configuration and logging are centralized in the bootstrap module's YAML and Logback files.
 
 **Section sources**
 - [backend_java/pom.xml:11-16](file://backend_java/pom.xml#L11-L16)
@@ -257,6 +282,114 @@ Skills are implemented as Python scripts under the skills directory. A minimal s
 - [backend_java/skills/weather/scripts/weather.py](file://backend_java/skills/weather/scripts/weather.py)
 - [backend_java/skills/weather/SKILL.md](file://backend_java/skills/weather/SKILL.md)
 
+## Development Standards and Code Quality
+
+### Backend Coding Standards with Google Java Style
+
+The backend enforces comprehensive code quality through Google Java Style checkstyle configuration with project-specific relaxations for modern development practices.
+
+#### Checkstyle Configuration
+The project uses a customized Google Java Style configuration that maintains consistency while accommodating modern Java features:
+
+- **Naming Conventions**: Package names, type names, method names, constant names, local variable names, member names, and parameter names follow Google's strict conventions
+- **Import Management**: Unused imports are flagged, star imports are restricted except for static members
+- **Coding Standards**: Boolean expressions are simplified, string equality checks are enforced, and single statement per line enforcement maintains readability
+- **Design Principles**: One top-level class per file promotes modularity
+- **Whitespace Rules**: Generic whitespace, method parameter padding, and parentheses padding are standardized
+
+#### Project-Specific Relaxations
+The configuration includes relaxations for contemporary development tools:
+- **Lombok Support**: Annotations like `@Data`, `@Builder`, `@Slf4j`, and `@RequiredArgsConstructor` are fully supported
+- **MapStruct Compatibility**: Integration with MapStruct for object mapping is accommodated
+
+#### Integration with Build Process
+The checkstyle configuration integrates seamlessly with the Maven build process:
+- Run `mvn checkstyle:check -q` for fast compilation checks
+- Configuration severity is set to warning level for development flexibility
+
+**Section sources**
+- [backend_java/checkstyle.xml:6](file://backend_java/checkstyle.xml#L6)
+- [backend_java/checkstyle.xml:11-46](file://backend_java/checkstyle.xml#L11-L46)
+- [AGENTS.md:25](file://AGENTS.md#L25)
+
+### Frontend Formatting Standards with Prettier
+
+The frontend enforces consistent code formatting through Prettier configuration, ensuring uniform styling across TypeScript, JavaScript, and CSS files.
+
+#### Prettier Configuration
+The project uses the following formatting standards:
+- **Semicolons**: Required for consistency
+- **Single Quotes**: Preferred over double quotes for JSX and strings
+- **Trailing Commas**: Applied to all multi-line lists and objects
+- **Print Width**: Set to 100 characters for optimal readability
+- **Tab Width**: 2 spaces for indentation consistency
+
+#### Integration with Development Workflow
+Prettier integrates with the existing development tools:
+- Works alongside ESLint for comprehensive code quality
+- Ensures consistent formatting across team contributions
+- Supports automatic formatting in pre-commit hooks
+
+**Section sources**
+- [frontend/.prettierrc:1-8](file://frontend/.prettierrc#L1-L8)
+
+### Unified Design System Guidelines
+
+The frontend follows a comprehensive design system defined in DESIGN.md, ensuring visual consistency and maintainable UI development.
+
+#### Design System Architecture
+The design system provides a single source of truth for all visual elements:
+
+**Color System**
+- **Primary Brand**: Cloud Blue `#1677ff` as the exclusive interactive color
+- **Gradient System**: Cloud Gradient (`linear-gradient(135deg, #e6f0ff, #f0e6ff)`) as the signature visual element
+- **Feature Card Colors**: Purple, Blue, Teal, and Dark variants for domain categorization
+- **Surface Colors**: White, Cool Parchment, Deep Navy Tiles, and Pure Black for different contexts
+
+**Typography System**
+- **Font Stack**: PingFang SC, Microsoft YaHei, Helvetica Neue, system-ui, sans-serif
+- **Hierarchy**: Hero display (56px), Display (40px), Lead (24px), Body (14px) with zero letter-spacing
+- **Weights**: 300, 400, 500, 600, 700 for consistent typographic scale
+
+**Layout and Spacing**
+- **Base Unit**: 8px with tokens for xxs (4px), xs (8px), sm (12px), md (16px), lg (24px), xl (32px), xxl (48px)
+- **Section Padding**: 80px vertical padding for product tiles
+- **Card Spacing**: 24px internal padding with 20-24px gaps between cards
+
+#### Component Library Standards
+Components follow specific patterns:
+- **Buttons**: Primary (Cloud Blue), Secondary Outline, Dark Utility, Pearl Capsule, Store Hero, Icon Circular
+- **Cards**: Product Tiles (Light, Parchment, Dark variants), Feature Cards (Domain-specific colors)
+- **Inputs**: Search Input with 44px height and proper spacing
+- **Navigation**: Global Nav (Black), Sub-nav Frosted with backdrop-filter blur
+
+#### Implementation Requirements
+All frontend UI must follow these rules:
+- Use only Cloud Blue `#1677ff` for interactive elements
+- Feature card colors must signal domain (purple=AI, blue=compute, teal=data, dark=premium)
+- Body text at 14px with PingFang SC/Microsoft YaHei at weight 600
+- CSS Modules + Less variables should reference DESIGN.md tokens
+- Never inline hex values directly in components
+
+**Section sources**
+- [frontend/DESIGN.md:1-314](file://frontend/DESIGN.md#L1-L314)
+- [frontend/DESIGN.md:414-470](file://frontend/DESIGN.md#L414-L470)
+- [frontend/DESIGN.md:570-593](file://frontend/DESIGN.md#L570-L593)
+
+### Licensing Requirements
+
+All source files must include the Apache 2.0 license header, ensuring legal compliance and proper attribution.
+
+#### License Header Requirements
+Every newly created source file (`.java`, `.ts`, `.tsx`, `.js`, `.jsx`, `.less`, `.css`) must begin with the Apache 2.0 license header wrapped in a `/* ... */` block comment. The canonical header text is defined in `LICENSE.txt` at the repository root.
+
+#### Automated Enforcement
+A PostToolUse hook validates license headers on every write operation, ensuring compliance across the entire codebase.
+
+**Section sources**
+- [LICENSE.txt:1-14](file://LICENSE.txt#L1-L14)
+- [AGENTS.md:80-83](file://AGENTS.md#L80-L83)
+
 ## Dependency Analysis
 The backend uses Maven with dependency management for Spring Boot, MyBatis-Plus, Jackson BOM, OpenTelemetry, AgentScope, DashScope, and A2A SDKs. The frontend uses Yarn workspaces and Webpack for building.
 
@@ -269,8 +402,10 @@ POM --> OTel["OpenTelemetry BOM"]
 POM --> AgentScope["AgentScope"]
 POM --> DashScope["DashScope SDK"]
 POM --> A2A["A2A SDK"]
+POM --> Checkstyle["Checkstyle Plugin"]
 FE_Pkg["frontend/package.json"] --> WS["Yarn Workspaces"]
 FE_Pkg --> CtrlPkg["packages/control/package.json"]
+FE_Pkg --> Prettier["Prettier Plugin"]
 ```
 
 **Diagram sources**
@@ -373,9 +508,6 @@ Local development quickstart:
   - Reference the weather skill as a template.
 
   **Section sources**
-  - [backend_java/skills/weather/scripts/weather.py](file://backend_java/skills/weather/scripts/weather.py)
-  - [backend_java/skills/weather/SKILL.md](file://backend_java/skills/weather/SKILL.md)
-
 - Extending the OneAgentHandler:
   - Register new tools via the toolkit and integrate with the event sink to stream content and actions.
   - Track usage and timing metrics for observability.
@@ -395,3 +527,30 @@ Local development quickstart:
   **Section sources**
   - [frontend/package.json:7-10](file://frontend/package.json#L7-L10)
   - [frontend/packages/control/package.json:5-58](file://frontend/packages/control/package.json#L5-L58)
+
+### Development Standards Compliance
+
+#### Backend Development Checklist
+- [ ] Follow Google Java Style with checkstyle configuration
+- [ ] Use Lombok annotations appropriately
+- [ ] Include Apache 2.0 license header in all new files
+- [ ] Run `mvn checkstyle:check -q` before committing
+- [ ] Maintain consistent import ordering and naming conventions
+
+#### Frontend Development Checklist
+- [ ] Follow DESIGN.md design system guidelines
+- [ ] Use Prettier for consistent formatting
+- [ ] Implement CSS Modules with Less variables
+- [ ] Reference DESIGN.md tokens instead of inline hex values
+- [ ] Use TypeScript strict mode with unused locals disabled
+
+#### Code Quality Tools
+- **Backend**: Checkstyle plugin integrated into Maven build
+- **Frontend**: Prettier configuration with automatic formatting
+- **Shared**: License header validation through PostToolUse hook
+
+**Section sources**
+- [backend_java/checkstyle.xml:6](file://backend_java/checkstyle.xml#L6)
+- [frontend/.prettierrc:1-8](file://frontend/.prettierrc#L1-L8)
+- [frontend/DESIGN.md:1-314](file://frontend/DESIGN.md#L1-L314)
+- [LICENSE.txt:1-14](file://LICENSE.txt#L1-L14)
