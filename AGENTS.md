@@ -76,3 +76,7 @@ All frontend UI must follow `frontend/DESIGN.md` — the single source of truth 
 
 - All code, comments, commit messages in English
 - Branch naming: `feat/xxx`, `fix/xxx`, `chore/xxx`
+
+### License Header
+
+Every newly created source file (`.java`, `.ts`, `.tsx`, `.js`, `.jsx`, `.less`, `.css`) **must** begin with the Apache 2.0 license header wrapped in a `/* ... */` block comment. The canonical header text is in `LICENSE.txt` at the repository root. A PostToolUse hook validates its presence on every Write operation.

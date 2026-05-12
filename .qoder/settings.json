@@ -2,6 +2,16 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$QODER_FILE_PATH\"; if echo \"$file\" | grep -qE '\\.(java|ts|tsx|js|jsx|less|css)$'; then if ! head -1 \"$file\" | grep -q '^/\\*'; then echo \"ERROR: File $file is missing the license header. Every new source file must start with the Apache 2.0 license comment (see LICENSE.txt).\"; exit 1; fi; fi",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {
