@@ -151,7 +151,7 @@ const MemoryPage: React.FC = () => {
   };
 
   const getRelatedAgents = (memoryId: string): AgentConfig[] => {
-    return agents.filter(agent => agent.enableLongTermMemory && agent.longTermMemoryId === memoryId);
+    return agents.filter(agent => agent.longTermMemoryId === memoryId);
   };
 
   useEffect(() => {

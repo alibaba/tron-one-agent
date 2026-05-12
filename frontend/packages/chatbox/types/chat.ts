@@ -21,9 +21,10 @@ import { EventSourceService } from "./EventSource";
 import { SessionMessageStatus } from "./enums";
 
 export interface PageResult<T> {
-  pageNo: number;
+  pageNum: number;
   pageSize: number;
   totalRecords: number;
+  totalPages: number;
   records: T[];
 }
 export interface Session {

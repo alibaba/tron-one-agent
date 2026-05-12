@@ -163,9 +163,10 @@ export interface SessionListItem {
 }
 
 export interface SessionListResult {
-  pageNo: number;
+  pageNum: number;
   pageSize: number;
   totalRecords: number;
+  totalPages: number;
   records: SessionListItem[];
 }
 

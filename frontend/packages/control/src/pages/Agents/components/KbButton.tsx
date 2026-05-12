@@ -75,7 +75,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
         enabled: agentKb.enabled,
         knowledgeId: agentKb.knowledgeId,
         mode: agentKb.mode,
-        agentic_tool_description: agentKb.agentic_tool_description,
+        agenticToolDescription: agentKb.agenticToolDescription,
         defaultLimit: agentKb.defaultLimit,
         defaultScoreThreshold: agentKb.defaultScoreThreshold
       }));
@@ -97,8 +97,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
     const newKbConfig: AgentKnowledgeBaseConfig = {
       enabled: true,
       knowledgeId: selectedKb,
-      mode: 'generic',
-      agentic_tool_description: null,
+      mode: 'GENERIC',
+      agenticToolDescription: null,
       defaultLimit: 10,
       defaultScoreThreshold: 0.7
     };
@@ -121,7 +121,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
     setEditingKb(kb);
     configForm.setFieldsValue({
       mode: kb.mode,
-      agentic_tool_description: kb.agentic_tool_description || '',
+      agenticToolDescription: kb.agenticToolDescription || '',
       defaultLimit: kb.defaultLimit || 10,
       defaultScoreThreshold: kb.defaultScoreThreshold || 0.7
     });
@@ -137,7 +137,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
             ? { 
                 ...kb, 
                 mode: values.mode,
-                agentic_tool_description: values.agentic_tool_description || null,
+                agenticToolDescription: values.agenticToolDescription || null,
                 defaultLimit: Number(values.defaultLimit),
                 defaultScoreThreshold: Number(values.defaultScoreThreshold)
               } 
@@ -204,7 +204,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
       return (
         original.enabled !== pending.enabled ||
         original.mode !== pending.mode ||
-        original.agentic_tool_description !== pending.agentic_tool_description ||
+        original.agenticToolDescription !== pending.agenticToolDescription ||
         original.defaultLimit !== pending.defaultLimit ||
         original.defaultScoreThreshold !== pending.defaultScoreThreshold
       );
@@ -379,8 +379,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                               <Tag color={kbOnlineStatus ? 'green' : 'red'}>
                                 {kbOnlineStatus ? '在线' : '离线'}
                               </Tag>
-                              <Tag color={kb.mode === 'agentic' ? 'orange' : 'blue'}>
-                                {kb.mode === 'agentic' ? '智能模式' : '通用模式'}
+                              <Tag color={kb.mode === 'AGENTIC' ? 'orange' : 'blue'}>
+                                {kb.mode === 'AGENTIC' ? '智能模式' : '通用模式'}
                               </Tag>
                             </Space>
                           }
@@ -399,14 +399,14 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                                 </div>
                               )}
                               <Space wrap>
-                                <Tag size="small" color="geekblue">
+                                <Tag color="geekblue">
                                   限制: {kb.defaultLimit || 10}
                                 </Tag>
-                                <Tag size="small" color="cyan">
+                                <Tag color="cyan">
                                   阈值: {kb.defaultScoreThreshold || 0.7}
                                 </Tag>
-                                {kb.mode === 'agentic' && kb.agentic_tool_description && (
-                                  <Tag size="small" color="orange">
+                                {kb.mode === 'AGENTIC' && kb.agenticToolDescription && (
+                                  <Tag color="orange">
                                     已配置工具描述
                                   </Tag>
                                 )}
@@ -474,8 +474,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
             rules={[{ required: true, message: '请选择知识库模式' }]}
           >
             <Radio.Group>
-              <Radio value="generic">通用模式</Radio>
-              <Radio value="agentic">智能模式</Radio>
+              <Radio value="GENERIC">通用模式</Radio>
+              <Radio value="AGENTIC">智能模式</Radio>
             </Radio.Group>
           </Form.Item>
 
@@ -485,9 +485,9 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
           >
             {({ getFieldValue }) => {
               const mode = getFieldValue('mode');
-              return mode === 'agentic' ? (
+              return mode === 'AGENTIC' ? (
                 <Form.Item
-                  name="agentic_tool_description"
+                  name="agenticToolDescription"
                   label="智能工具描述"
                   tooltip="在智能模式下，描述该知识库作为工具的功能和用途"
                 >

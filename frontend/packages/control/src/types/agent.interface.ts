@@ -77,7 +77,7 @@ export interface AgentMcpConfig {
 export interface AgentKnowledgeBaseConfig {
   enabled: boolean;
   knowledgeId: string;
-  mode: "agentic" | "generic";
+  mode: "AGENTIC" | "GENERIC";
   agenticToolDescription?: string | null;
   defaultLimit?: number;
   defaultScoreThreshold?: number | null;
@@ -92,6 +92,7 @@ export interface AgentConfig {
   id?: string;
   name: string;
   enabled: boolean;
+  version?: number;
   type: LocalAgentType;
   chatModel?: ChatModelConfig;
   fastChatModel?: ChatModelConfig;
@@ -99,28 +100,32 @@ export interface AgentConfig {
   maxIters?: number;
   tools: AgentToolConfig[];
   mcpClients: AgentMcpConfig[];
+  ragMode?: string;
   knowledgeBases: AgentKnowledgeBaseConfig[];
   subAgents: SubAgent[];
   supportInputTypes: Array<ContentType.TEXT | ContentType.IMAGE | ContentType.VIDEO | ContentType.AUDIO>;
   skills: AgentSkillConfig[];
-  enableLongTermMemory?: boolean;
   longTermMemoryMode?: string;
   longTermMemoryId?: string;
+  enableSessionRenaming?: boolean;
+  enableSuggestion?: boolean;
+  enableQuestion?: boolean;
 }
 
 export interface UpdateAgentRequest {
   name?: string;
   enabled?: boolean;
+  type?: LocalAgentType;
   systemPrompt?: string;
   maxIters?: number;
   chatModel?: ChatModelConfig;
   fastChatModel?: ChatModelConfig;
   tools?: any[];
   mcpClients?: AgentMcpConfig[];
+  ragMode?: string;
   knowledgeBases?: AgentKnowledgeBaseConfig[];
   subAgents?: any[];
   skills?: AgentSkillConfig[];
-  enableLongTermMemory?: boolean;
   longTermMemoryMode?: string;
   longTermMemoryId?: string;
 }

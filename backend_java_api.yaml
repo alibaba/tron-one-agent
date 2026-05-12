@@ -96,6 +96,10 @@ paths:
       tags: [Sessions]
       summary: List sessions for an agent
       operationId: listSessions
+      description: |
+        Returns a paginated list of sessions. Each session in the list is a simplified
+        view containing only `id`, `name`, `lastAppliedEventId`, `gmtCreated`, and `gmtModified`.
+        For full details including messages, use `GET /agents/{agent_id}/sessions/{session_id}`.
       parameters:
         - $ref: "#/components/parameters/AgentId"
         - $ref: "#/components/parameters/XUserId"
@@ -134,6 +138,7 @@ paths:
       tags: [Sessions]
       summary: Delete a session
       operationId: deleteSession
+      description: "Deletes the session. Returns 200 with empty body (Content-Type: application/json)."
       parameters:
         - $ref: "#/components/parameters/AgentId"
         - $ref: "#/components/parameters/SessionId"
@@ -1296,8 +1301,10 @@ components:
           description: Session ID
         userId:
           type: string
+          description: Populated only in single-session detail view (GET /agents/{agent_id}/sessions/{session_id})
         agentId:
           type: string
+          description: Populated only in single-session detail view (GET /agents/{agent_id}/sessions/{session_id})
         name:
           type: string
           default: ""
@@ -1359,7 +1366,7 @@ components:
           description: "Message type: 1 = User, 2 = Agent"
         status:
           type: integer
-          description: "Status: 1 = Executing, 2 = Succeed, 3 = Failed"
+          description: "Status: 2 = Executing, 3 = Succeed, 4 = Failed, 5 = Cancelled"
         errorMessage:
           type: string
         agentId:
@@ -1412,18 +1419,19 @@ components:
       required: [type]
       properties:
         id:
-          description: Content identifier (Long for most types, String for HITL)
+          description: "Content identifier. Can be either an integer (int64) for most content types, or a string (UUID) for HITL content."
         type:
           type: integer
           description: |
             Content type:
             - 1 = TEXT
-            - 2 = IMAGE
-            - 3 = VIDEO
-            - 4 = AUDIO
-            - 5 = TASK
-            - 6 = ACTION
-            - 7 = HITL
+            - 2 = THINKING
+            - 3 = IMAGE
+            - 4 = VIDEO
+            - 5 = AUDIO
+            - 6 = HITL
+            - 100 = TASK
+            - 200 = ACTION
         text:
           type: string
         status:
@@ -1478,30 +1486,67 @@ components:
       type: object
       description: |
         Event-sourcing event. Polymorphic — the `type` field determines the concrete shape.
-        Common event types include:
-        - `TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT`, `TEXT_MESSAGE_END`
-        - `TOOL_CALL_START`, `TOOL_CALL_ARGS`, `TOOL_CALL_END`, `TOOL_CALL_RESULT`
-        - `AGENT_MESSAGE_STATUS_CHANGED`
-        - `TTS_RESPONSE` (TTS audio data)
-        - `HITL` (human-in-the-loop interaction)
+
+        Event type enum values:
+        - `10` = NEW_USER_INPUT
+        - `20` = NEW_AGENT_MESSAGE
+        - `21` = AGENT_MESSAGE_APPEND_CONTENT
+        - `22` = AGENT_MESSAGE_STATUS_CHANGED
+        - `30` = TASK_APPEND_CONTENT
+        - `31` = TASK_STATUS_CHANGED
+        - `40` = ACTION_APPEND_CONTENT
+        - `41` = ACTION_STATUS_CHANGED
+        - `1001` = TTS_RESPONSE
+        - `2002` = FOLLOW_UP_SUGGESTION
       properties:
         id:
           type: integer
           format: int64
         type:
-          type: string
-          description: Event type discriminator
-        messageId:
           type: integer
-          format: int64
+          description: SessionEventType numeric value (see enum above)
         agentId:
           type: string
         sessionId:
           type: string
         userId:
           type: string
-        data:
-          description: Event payload (varies by type)
+        gmtCreated:
+          type: string
+          format: date-time
+        # ── Event-type-specific fields (flat, not nested under "data") ──
+        msg:
+          $ref: "#/components/schemas/SessionMessageDTO"
+          description: Present on NEW_USER_INPUT & NEW_AGENT_MESSAGE
+        messageId:
+          type: integer
+          format: int64
+          description: Agent message ID (AGENT_MESSAGE_APPEND_CONTENT, AGENT_MESSAGE_STATUS_CHANGED, TASK_*, ACTION_*)
+        newContents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDTO"
+          description: New content items (AGENT_MESSAGE_APPEND_CONTENT, TASK_APPEND_CONTENT, ACTION_APPEND_CONTENT)
+        newStatus:
+          type: integer
+          description: New status value (AGENT_MESSAGE_STATUS_CHANGED, TASK_STATUS_CHANGED, ACTION_STATUS_CHANGED)
+        gmtFinished:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+        usage:
+          $ref: "#/components/schemas/AgentChatUsageDTO"
+        taskId:
+          type: integer
+          format: int64
+          description: Task content ID (TASK_APPEND_CONTENT, TASK_STATUS_CHANGED)
+        actionId:
+          type: integer
+          format: int64
+          description: Action content ID (ACTION_APPEND_CONTENT, ACTION_STATUS_CHANGED)
+        result:
+          type: string
 
     # ── Config models ─────────────────────────────────────────────────────
     AgentConfig:
@@ -1573,9 +1618,9 @@ components:
           default: true
 
     LocalAgentType:
-      type: string
-      description: "Local agent type: REACT, CHAT, etc."
-      example: "REACT"
+      type: integer
+      description: "Local agent type: 1 = REACT, 2 = ONE"
+      example: 1
 
     ChatModelConfig:
       type: object
@@ -1603,9 +1648,9 @@ components:
           description: Additional generation parameters
 
     ChatModelType:
-      type: string
-      description: "Model provider: DASHSCOPE, OPENAI, OLLAMA, etc."
-      example: "DASHSCOPE"
+      type: integer
+      description: "Model provider: 1 = DASHSCOPE, 2 = OPENAI_COMPATIBLE"
+      example: 1
 
     AgentToolConfig:
       type: object
@@ -1740,20 +1785,22 @@ components:
         name:
           type: string
         type:
-          type: integer
-          description: "1 = Bailian, 2 = ElasticSearch"
+          type: string
+          description: "Polymorphic discriminator: \"1\" = Bailian, \"2\" = ElasticSearch"
         workspaceId:
           type: string
-          description: Bailian workspace ID
+          description: "Bailian workspace ID (only when type = \"1\")"
         indexId:
           type: string
-          description: Bailian index ID
+          description: "Bailian index ID (only when type = \"1\")"
         enableRewrite:
           type: boolean
           default: true
+          description: "Enable rewrite (only when type = \"1\")"
         enableRerank:
           type: boolean
           default: true
+          description: "Enable rerank (only when type = \"1\")"
 
     LongTermMemoryConfig:
       type: object
@@ -1772,8 +1819,8 @@ components:
         name:
           type: string
         type:
-          type: integer
-          description: "1 = Bailian"
+          type: string
+          description: "Polymorphic discriminator: \"1\" = Bailian"
         apiKey:
           type: string
           description: Bailian API key (encrypted)
@@ -1829,7 +1876,9 @@ components:
         enabled:
           type: boolean
         type:
-          $ref: "#/components/schemas/LocalAgentType"
+          type: string
+          description: "Agent type (e.g. REACT, CHAT). NOTE: This field is accepted but currently ignored by the server."
+          example: "REACT"
         chatModel:
           $ref: "#/components/schemas/ChatModelConfig"
         systemPrompt:
@@ -1877,7 +1926,7 @@ components:
           type: string
         transport:
           type: string
-          description: "streamable_http or sse"
+          description: "Transport protocol: http or sse"
         url:
           type: string
         timeout:

@@ -18,10 +18,12 @@
 export interface McpClientConfig {
   id: string;
   enabled?: boolean;
+  version?: number;
   name: string;
   description: string;
   transport: "streamable_http" | "sse";
   url: string;
+  initializeTimeout?: number;
   timeout?: number;
   sse_read_timeout?: number;
   headers?: Record<string, string>;
