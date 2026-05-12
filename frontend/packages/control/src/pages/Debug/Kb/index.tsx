@@ -35,7 +35,6 @@ import styles from "./index.module.less";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
 
 interface KnowledgeBase {
   id: string;

@@ -309,7 +309,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
 
         // 检查基本属性
         if (original.enabled !== pending.enabled) return true;
-        if (original.capacities !== pending.capacities) return true;
+        if ((original as any).capacities !== (pending as any).capacities) return true;
 
         // 检查A2A Agent特有属性
         const isA2A = pending.type === SubAgentType.A2A;
@@ -388,7 +388,6 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
     // 填充表单
     a2aForm.setFieldsValue({
       agentId: a2aAgent.agentId,
-      capacities: a2aAgent.capacities,
       enabled: a2aAgent.enabled ?? true,
       name: a2aAgent.agentCard.name,
       description: a2aAgent.agentCard.description,

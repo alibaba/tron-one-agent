@@ -39,7 +39,7 @@ import { useNavigate } from "react-router-dom";
 import type { ColumnsType } from "antd/es/table";
 import { AgentConfig } from "../../types/agent.interface";
 import { LocalAgentType } from "../../types/common.interface";
-import { getAllAgents, updateAgent } from "../../services/agent";
+import { getAllAgents } from "../../services/agent";
 import RenameButton from "./components/RenameButton";
 import StatusToggleButton from "./components/StatusToggleButton";
 import ToolsButton from "./components/ToolsButton";
@@ -268,25 +268,7 @@ const AgentsPage: React.FC = () => {
     loadAgents();
   }, []);
 
-  const handleToggleEnabled = async (id: string, enabled: boolean) => {
-    try {
-      await updateAgent(id, { enabled });
-      setAgents((prev) =>
-        prev.map((agent) => (agent.id === id ? { ...agent, enabled } : agent))
-      );
-      message.success(`Agent已${enabled ? "启用" : "禁用"}`);
-    } catch (error) {
-      console.error("状态更新失败:", error);
-      message.error("状态更新失败，请重试");
-    }
-  };
-
   const handleView = (agent: AgentConfig) => {
-    navigate(`/agents/${agent.id}`);
-  };
-
-  const handleEdit = (agent: AgentConfig) => {
-    // 编辑功能暂未实现，可以跳转到详情页面
     navigate(`/agents/${agent.id}`);
   };
 

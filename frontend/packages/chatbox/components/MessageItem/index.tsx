@@ -15,7 +15,7 @@
  */
 
 
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useCallback, useEffect, useRef } from "react";
 import TaskContentRender from "../TaskContent";
 import ActionContentRender from "../ActionContent";
 import TextContentRender from "../TextContent";
@@ -135,8 +135,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
   ttsWsUrl,
   ttsAutoPlay = false,
   isLastMessage = false,
-  onLike,
-  onDislike,
   onHitlSubmit,
 }) => {
   const isUser = message.type === SessionMessageType.USER;
@@ -150,8 +148,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
   }, [ttsWsUrl]);
 
   // TTS 状态
-  const [isLiked, setIsLiked] = useState(false);
-  const [isDisliked, setIsDisliked] = useState(false);
 
   // 提取消息中的所有文本内容，转换为纯文本用于 TTS
   const textContent = useMemo(() => {
@@ -256,24 +252,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
       }
     }
   }, [ttsAutoPlay, supportAgentTTS, isAgent, isLastMessage, textContent, message.status, isPlaying, speak]);
-
-  // 处理点赞
-  const handleLike = useCallback(() => {
-    if (!isLiked) {
-      setIsLiked(true);
-      setIsDisliked(false);
-      onLike?.(message.id);
-    }
-  }, [isLiked, message.id, onLike]);
-
-  // 处理点踩
-  const handleDislike = useCallback(() => {
-    if (!isDisliked) {
-      setIsDisliked(true);
-      setIsLiked(false);
-      onDislike?.(message.id);
-    }
-  }, [isDisliked, message.id, onDislike]);
 
   // 组件卸载时停止 TTS
   useEffect(() => {

@@ -66,7 +66,6 @@ export function MultiModeMessageInput({
     isRecording,
     startRecording, 
     stopRecording,
-    cancelRecording 
   } = useASR({
     wsUrl: voiceInput?.wsUrl,
     onText: handleASRText,
@@ -127,12 +126,6 @@ export function MultiModeMessageInput({
       startRecording();
     }
   }, [isRecording, startRecording, stopRecording]);
-
-  // 取消录音
-  const handleVoiceCancel = useCallback(() => {
-    cancelRecording();
-    onChange('');
-  }, [cancelRecording, onChange]);
 
   return (
     <div className={styles.messageInput}>

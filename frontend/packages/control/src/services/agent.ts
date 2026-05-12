@@ -21,15 +21,16 @@ import {
   UpdateAgentRequest,
   CreateSessionRequest,
 } from "../types/agent.interface";
+import { ApiResponse } from "../types/common.interface";
 import { ContentType, EventItem } from "chatbox";
 import { getUserId, getUserName } from "../utils/userInfo";
 
 /**
  * 查询所有agents
  */
-export const getAllAgents = async (): Promise<AgentConfig[]> => {
+export const getAllAgents = async (): Promise<ApiResponse<AgentConfig[]>> => {
   try {
-    return await get<AgentConfig[]>("/api/control/agents");
+    return await get<ApiResponse<AgentConfig[]>>("/api/control/agents");
   } catch (error) {
     console.error("获取Agent列表失败:", error);
     throw error;
@@ -40,9 +41,9 @@ export const getAllAgents = async (): Promise<AgentConfig[]> => {
  * 根据ID查询agent详情
  * @param agentId Agent ID
  */
-export const getAgentById = async (agentId: string): Promise<AgentConfig> => {
+export const getAgentById = async (agentId: string): Promise<ApiResponse<AgentConfig>> => {
   try {
-    return await get<AgentConfig>(`/api/control/agents/${agentId}`);
+    return await get<ApiResponse<AgentConfig>>(`/api/control/agents/${agentId}`);
   } catch (error) {
     console.error(`获取Agent详情失败 (ID: ${agentId}):`, error);
     throw error;

@@ -187,7 +187,7 @@ export function useASR(options: UseASROptions = {}): UseASRReturn {
               // 转换为 16bit PCM
               const pcmData = float32ToInt16(inputData);
               // 转换为 base64
-              const base64Data = arrayBufferToBase64(pcmData.buffer);
+              const base64Data = arrayBufferToBase64(pcmData.buffer as ArrayBuffer);
               debugger
               wsRef.current.send(JSON.stringify({ dataBase64: base64Data }));
             }

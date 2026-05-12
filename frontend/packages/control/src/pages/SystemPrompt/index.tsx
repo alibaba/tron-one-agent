@@ -16,9 +16,8 @@
 
 
 import React, { useState } from 'react';
-import { Card, Button, Space, Modal, Form, Input, Typography, Divider } from 'antd';
+import { Card, Button, Space, Modal, Form, Input, Typography } from 'antd';
 import { EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import systemPromptStyles from './index.module.less';
@@ -36,7 +35,6 @@ interface SystemPromptConfig {
 }
 
 const SystemPromptPage: React.FC = () => {
-  const navigate = useNavigate();
   const [prompts, setPrompts] = useState<SystemPromptConfig[]>([
     {
       id: '1',
@@ -231,9 +229,9 @@ const MyComponent: React.FC<Props> = ({ title, children }) => {
                   <Text type="secondary">{prompt.description}</Text>
                 )}
                 <div className={systemPromptStyles.promptPreview}>
-                  <Text ellipsis={{ rows: 3 }}>
+                  <Typography.Paragraph ellipsis={{ rows: 3 }}>
                     {prompt.content.replace(/[#*`]/g, '').substring(0, 200)}...
-                  </Text>
+                  </Typography.Paragraph>
                 </div>
                 <div className={systemPromptStyles.promptMeta}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>

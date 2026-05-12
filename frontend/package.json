@@ -10,6 +10,7 @@
     "format": "prettier --write 'packages/**/*.{ts,tsx,js,jsx,json,less,css}'"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.24",
     "prettier": "^3.8.3"
   }
 }

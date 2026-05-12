@@ -15,7 +15,7 @@
  */
 
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
 
 // 获取baseURL，优先使用环境变量，否则使用默认值
@@ -34,7 +34,7 @@ const request: AxiosInstance = axios.create({
 
 // 请求拦截器
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // 可以在这里添加token等认证信息
     // const token = localStorage.getItem('token');
     // if (token && config.headers) {

@@ -17,7 +17,7 @@
 
 import { UserSessionMessage, AgentSessionMessage } from "./base";
 import { EventItem } from "./event";
-import { EventSourceService } from "./EventSource";
+import { EventSourceService } from "../eventSource/EventSource";
 import { SessionMessageStatus } from "./enums";
 
 export interface PageResult<T> {

@@ -141,20 +141,6 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
   const lastScrollTopRef = useRef(0);
   const autoScrollTimerRef = useRef<number>();
 
-  const handleMessageSend = useCallback(async () => {
-    if (!inputValue.trim() || !handleSendMessage) return;
-
-    try {
-      setSending(true);
-      await handleSendMessage(inputValue);
-      setInputValue("");
-    } catch (error) {
-      console.error("发送消息失败:", error);
-    } finally {
-      setSending(false);
-    }
-  }, [inputValue, handleSendMessage]);
-
   const handleMessageSendWithAttachments = useCallback(
     async (text: string, attachments?: AttachmentItem[]) => {
       if ((!text.trim() && (!attachments || attachments.length === 0)) || !handleSendMessage) return;
@@ -204,7 +190,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
 
   const handleScroll = useCallback(
     throttle(
-      (e) => {
+      () => {
         checkScrollPosition();
       },
       100,

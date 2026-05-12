@@ -15,7 +15,6 @@
  */
 
 
-import React from 'react';
 import { AttachmentItem } from '../types';
 import styles from '../index.module.less';
 

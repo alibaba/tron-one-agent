@@ -17,18 +17,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip } from 'antd';
-import { EditOutlined, DeleteOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { DeleteOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { McpClientConfig } from '../../types/mcp.interface';
 import { AgentConfig } from '../../types/agent.interface';
 import McpManageButton from './components/McpManageButton';
-import { getAllMcps, createMcp, updateMcp, deleteMcp } from '../../services/mcp';
+import { getAllMcps, updateMcp, deleteMcp } from '../../services/mcp';
 import { getAllAgents } from '../../services/agent';
 import mcpStyles from './index.module.less';
 
 const MCPPage: React.FC = () => {
-  const navigate = useNavigate();
   const [mcpClients, setMcpClients] = useState<McpClientConfig[]>([]);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);

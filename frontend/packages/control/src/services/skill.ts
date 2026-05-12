@@ -15,7 +15,7 @@
  */
 
 
-import { get, post, patch, del } from './request';
+import { get, patch, del } from './request';
 import { SkillConfig } from '../types/skill.interface';
 import { ApiResponse } from '../types/common.interface';
 import request from './request';

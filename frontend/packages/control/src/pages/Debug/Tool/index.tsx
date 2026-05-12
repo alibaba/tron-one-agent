@@ -19,7 +19,6 @@ import React, { useState, useEffect } from "react";
 import {
   Card,
   Select,
-  Input,
   Button,
   Spin,
   message,
@@ -32,40 +31,13 @@ import { get, post } from "@/services/request";
 import styles from "./index.module.less";
 import validator from "@rjsf/validator-ajv8";
 import Form from "@rjsf/antd/dist";
-// import { ExclamationCircleOutlined } from '@ant-design/icons';
-import ExclamationCircleOutlined from "@ant-design/icons/ExclamationCircleOutlined";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
 
 interface Tool {
   name: string;
   description?: string;
-}
-
-interface SchemaParameter {
-  type: string;
-  description?: string;
-  default?: any;
-  enum?: any[];
-}
-
-interface SchemaParameters {
-  type: string;
-  properties: Record<string, SchemaParameter>;
-  required?: string[];
-}
-
-interface ToolFunction {
-  name: string;
-  description?: string;
-  parameters: SchemaParameters;
-}
-
-interface ToolSchema {
-  type: string;
-  function: ToolFunction;
 }
 
 const ToolDebugger: React.FC = () => {
@@ -108,7 +80,7 @@ const ToolDebugger: React.FC = () => {
     }
   };
 
-  const debugTool = async (shcemaData) => {
+  const debugTool = async (shcemaData: any) => {
     setDebugLoading(true);
     setDebugResult(null);
 
@@ -119,7 +91,7 @@ const ToolDebugger: React.FC = () => {
       setDebugResult(result);
     } catch (error) {
       message.error("调试工具失败");
-      setDebugResult({ error: error.message || "调试工具失败" });
+      setDebugResult({ error: (error as Error).message || "调试工具失败" });
     } finally {
       setDebugLoading(false);
     }

@@ -145,7 +145,7 @@ public abstract class BaseFuncTest {
         return callAgent(sessionId, List.of(TextContent.builder().text(input).build()));
     }
 
-    protected AgentResult callAgent(String sessionId, List<Content> input) {
+    protected AgentResult callAgent(String sessionId, List<Content<?>> input) {
         String agentId = agentId();
 
         Session session = sessionRepository.getSession(agentId, sessionId);

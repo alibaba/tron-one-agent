@@ -17,8 +17,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip } from 'antd';
-import { EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { DeleteOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../types/kb.interface';
 import { KnowledgeBaseType } from '../../types/common.interface';
@@ -29,7 +28,6 @@ import { getAllAgents } from '../../services/agent';
 import kbStyles from './index.module.less';
 
 const KBPage: React.FC = () => {
-  const navigate = useNavigate();
   const [knowledgeBases, setKnowledgeBases] = useState<AnyKnowledgeBaseConfig[]>([]);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);

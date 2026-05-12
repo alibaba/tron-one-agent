@@ -105,10 +105,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
             description: availableSkill?.description,
           };
         })
-        .filter((s) => {
-          // 保留所有已关联的（即使在可用列表中找不到也保留）
-          return true;
-        });
+        .filter(() => true);
 
       setPendingSkills(initialSkills);
     }

@@ -24,7 +24,7 @@ export class EventBuff {
   private readonly processor: EventProcessor<EventItem>;
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly flushTimeout: number;
-  private eventsIdSet: Set<string>;
+  private eventsIdSet: Set<number>;
 
   constructor(
     batchSize: number,
@@ -37,10 +37,10 @@ export class EventBuff {
     this.batchSize = batchSize;
     this.processor = processor;
     this.flushTimeout = flushTimeout;
-    this.eventsIdSet = new Set<string>();
+    this.eventsIdSet = new Set<number>();
   }
 
-  push(events: T[]): void {
+  push(events: EventItem[]): void {
     // console.log("push events before:", [...this.events]);
     events = events.filter((e) => this.eventsIdSet.has(e.id) === false);
     events.forEach((e) => {

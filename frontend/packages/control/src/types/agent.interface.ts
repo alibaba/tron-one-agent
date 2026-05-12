@@ -15,11 +15,9 @@
  */
 
 
-import { LocalAgentType, ApiResponse, SubAgentType } from "./common.interface";
+import { LocalAgentType, SubAgentType } from "./common.interface";
 import { ChatModelConfig } from "./chat-model.interface";
 import { AgentToolConfig } from "./tool.interface";
-import { McpClientConfig } from "./mcp.interface";
-import { KnowledgeBaseConfig } from "./kb.interface";
 import { ContentType } from "chatbox";
 
 export interface LocalSubAgentConfig {

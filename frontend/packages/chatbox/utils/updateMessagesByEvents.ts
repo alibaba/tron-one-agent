@@ -104,10 +104,10 @@ function findAndUpdateAction(
   }
 }
 
-const eventHandlers: Record<
+const eventHandlers: Partial<Record<
   SessionEventType,
   (state: ChatState, event: EventItem) => ChatState
-> = {
+>> = {
   [SessionEventType.SESSION_NAME_CHANGED]: (state, event) => {
     const e = event as SessionNameChangedEvent;
     return { ...state, sessionName: e.newName };

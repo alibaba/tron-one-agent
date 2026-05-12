@@ -27,7 +27,6 @@ import {
   SessionEventType,
   SessionMessageStatus,
   Default_Chat_State,
-  UserSessionMessage,
   SessionMessageType,
 } from "../types";
 import { updateMessageListByEvents } from "../utils/updateMessagesByEvents";
@@ -76,6 +75,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
       );
       if (userMessage) {
         userMessage.status = action.payload.status;
+        return { ...state, messages };
       } else {
         return state;
       }

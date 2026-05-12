@@ -15,7 +15,27 @@
  */
 
 
-import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
+package com.aliyun.tam.x.tron.api;
 
-ReactDOM.createRoot(document.getElementById("appRoot")!).render(<App />);
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.Matchers.containsString;
+
+/**
+ * API tests for Health endpoints.
+ */
+@DisplayName("Health API")
+class HealthApiTest extends BaseApiTest {
+
+    @Test
+    @DisplayName("GET /health/check should return ok")
+    void healthCheckShouldReturnOk() {
+        given()
+                .when()
+                .get("/health/check")
+                .then()
+                .statusCode(200)
+                .body(containsString("ok"));
+    }
+}

@@ -20,13 +20,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Descriptions,
-  Tabs,
   List,
   Typography,
   Button,
   Tag,
   Space,
-  Modal,
   message,
   Spin,
 } from "antd";
@@ -653,7 +651,7 @@ const AgentDetail: React.FC = () => {
                               }}
                             >
                               <strong>能力描述：</strong>
-                              {subAgent.capacities}
+                              {(subAgent as any).capacities}
                             </div>
                             {isRemoteAgent && (
                               <div

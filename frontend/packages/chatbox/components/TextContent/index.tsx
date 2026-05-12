@@ -45,7 +45,7 @@ const TextContentRender: React.FC<TextContentProps> = ({
     children,
   }: {
     href?: string;
-    children: React.ReactNode;
+    children?: React.ReactNode;
   }) => (
     <a href={href} target="_blank" rel="noopener noreferrer">
       {children}
@@ -137,7 +137,7 @@ const TextContentRender: React.FC<TextContentProps> = ({
           a: CustomLink,
           customtag: CustomTag,
           ...markdownComponents,
-        }}
+        } as any}
       >
         {text}
       </ReactMarkdown>

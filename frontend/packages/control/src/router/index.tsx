@@ -15,7 +15,6 @@
  */
 
 
-import React from 'react';
 import { createHashRouter, Navigate } from 'react-router-dom';
 import AppLayout from '../components/Layout';
 import AgentsPage from '../pages/Agents';

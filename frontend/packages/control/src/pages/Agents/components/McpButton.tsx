@@ -26,7 +26,6 @@ import {
   message,
   Select,
   Checkbox,
-  Divider,
   Input,
 } from "antd";
 import {
@@ -180,7 +179,7 @@ const McpButton: React.FC<McpButtonProps> = ({
               : (mcp as any).disableFuncs || [];
 
           return {
-            enabled: mcp.enabled,
+            enabled: mcp.enabled ?? true,
             clientId: mcp.id,
             enableFuncs: enableFuncs,
             disableFuncs: disableFuncs,
@@ -319,10 +318,10 @@ const McpButton: React.FC<McpButtonProps> = ({
                         {mcp.description}
                       </div>
                       <Space style={{ marginTop: "4px" }}>
-                        <Tag size="small" color="blue">
+                        <Tag color="blue">
                           {mcp.transport?.toUpperCase() || "UNKNOWN"}
                         </Tag>
-                        <Tag size="small" color={mcp.enabled ? "green" : "red"}>
+                        <Tag color={mcp.enabled ? "green" : "red"}>
                           {mcp.enabled ? "在线" : "离线"}
                         </Tag>
                       </Space>
@@ -403,11 +402,10 @@ const McpButton: React.FC<McpButtonProps> = ({
                           title={
                             <Space>
                               <span>{mcp.name}</span>
-                              <Tag size="small" color="blue">
+                              <Tag color="blue">
                                 {mcp.transport?.toUpperCase() || "UNKNOWN"}
                               </Tag>
                               <Tag
-                                size="small"
                                 color={mcpOnlineStatus ? "green" : "red"}
                               >
                                 {mcpOnlineStatus ? "在线" : "离线"}
@@ -495,7 +493,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                                       onChange={(e) =>
                                         handleUpdateMcpFuncs(
                                           mcp.id,
-                                          "disable_funcs",
+                                          "disableFuncs",
                                           e.target.value
                                         )
                                       }

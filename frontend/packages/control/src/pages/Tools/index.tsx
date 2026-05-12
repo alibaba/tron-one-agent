@@ -57,7 +57,7 @@ const ToolsPage: React.FC = () => {
       title: '工具描述',
 			dataIndex: 'description',
       key: 'description',
-      render: (description: string, record: AgentToolConfig) => {
+      render: (description: string) => {
         return <span style={{ color: '#666' }}>{description}</span>;
       },
     },

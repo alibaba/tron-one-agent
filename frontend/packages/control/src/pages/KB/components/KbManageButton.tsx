@@ -16,7 +16,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, Form, Input, Switch, Row, Col, Space, message, InputNumber, Divider } from 'antd';
+import { Button, Modal, Form, Input, Switch, Row, Col, message, InputNumber, Divider } from 'antd';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../../types/kb.interface';
 import { KnowledgeBaseType } from '../../../types/common.interface';

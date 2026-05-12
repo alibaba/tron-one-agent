@@ -15,8 +15,8 @@
  */
 
 
-import React, { useState, useEffect } from 'react';
-import { Button, Modal, List, Tag, Typography, message, Select, Space, Checkbox } from 'antd';
+import React, { useState } from 'react';
+import { Button, Modal, List, Typography, message, Select, Space, Checkbox } from 'antd';
 import { ToolOutlined, PlusOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';

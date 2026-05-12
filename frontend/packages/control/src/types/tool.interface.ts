@@ -18,4 +18,5 @@
 export interface AgentToolConfig {
   name: string;
   enabled?: boolean;
+  description?: string;
 }

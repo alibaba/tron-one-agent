@@ -46,7 +46,7 @@ module.exports = (env, argv) => {
               options: {
                 presets: [
                   "@babel/preset-env",
-                  "@babel/preset-react",
+                  ["@babel/preset-react", { runtime: "automatic" }],
                   "@babel/preset-typescript",
                 ],
               },
@@ -62,7 +62,7 @@ module.exports = (env, argv) => {
             {
               loader: "babel-loader",
               options: {
-                presets: ["@babel/preset-env", "@babel/preset-react"],
+                presets: ["@babel/preset-env", ["@babel/preset-react", { runtime: "automatic" }]],
               },
             },
           ],
