@@ -6,6 +6,10 @@
   ],
   "scripts": {
     "dev": "yarn workspace control dev ",
-    "build": "yarn workspace control build"
+    "build": "yarn workspace control build",
+    "format": "prettier --write 'packages/**/*.{ts,tsx,js,jsx,json,less,css}'"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   }
 }

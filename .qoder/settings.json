@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$QODER_FILE_PATH\"; if echo \"$file\" | grep -qE '\\.(java)$'; then cd /Users/xien/code/opensource/tron-one-agent/backend_java && mvn compile -q 2>&1 | tail -20; fi",
+            "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "file=\"$QODER_FILE_PATH\"; if echo \"$file\" | grep -qE '\\.(ts|tsx|js|jsx|json|less|css|md)$'; then cd /Users/xien/code/opensource/tron-one-agent/frontend && npx prettier --write \"$file\" 2>/dev/null; fi",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "file=\"$QODER_FILE_PATH\"; if echo \"$file\" | grep -qE '\\.(ts|tsx)$'; then cd /Users/xien/code/opensource/tron-one-agent/frontend && npx eslint --no-error-on-unmatched-pattern \"$file\"; fi",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
