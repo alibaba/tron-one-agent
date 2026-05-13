@@ -20,6 +20,10 @@ package com.aliyun.tam.x.tron.api;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -61,31 +65,41 @@ class SkillConfigApiTest extends BaseApiTest {
 
     // ── PATCH /control/skills/{skill_id} ──────────────────────────────
 
+    /**
+     * The repository checks existence and throws IllegalArgumentException for missing
+     * skills, which the ConfigController exception handler maps to code=400.
+     * (Semantically a 404 would be more correct, but this pins the current contract.)
+     */
     @Test
-    @DisplayName("PATCH /control/skills/{skill_id} with nonexistent skill should return 400")
-    void patchSkillWithNonexistentSkillShouldReturn200() {
+    @DisplayName("PATCH /control/skills/{skill_id} on nonexistent skill returns code=400 with 'not found' message")
+    void patchSkillWithNonexistentSkillReturns400() {
         givenJson()
                 .body("{\"enabled\": false}")
                 .when()
                 .patch("/control/skills/{skillId}", NONEXISTENT_SKILL)
                 .then()
                 .statusCode(200)
-                .body("code", anyOf(equalTo(200), equalTo(400)))
-                .body("success", anyOf(equalTo(true), equalTo(false)));
+                .body("code", equalTo(400))
+                .body("success", equalTo(false))
+                .body("message", containsString("not found"));
     }
 
     // ── DELETE /control/skills/{skill_id} ─────────────────────────────
 
+    /**
+     * Delete on a missing skill throws IllegalArgumentException → code=400.
+     */
     @Test
-    @DisplayName("DELETE /control/skills/{skill_id} with nonexistent skill should return 400")
-    void deleteSkillWithNonexistentSkillShouldReturn200() {
+    @DisplayName("DELETE /control/skills/{skill_id} on nonexistent skill returns code=400 with 'not found' message")
+    void deleteSkillWithNonexistentSkillReturns400() {
         given()
                 .when()
                 .delete("/control/skills/{skillId}", NONEXISTENT_SKILL)
                 .then()
                 .statusCode(200)
-                .body("code", anyOf(equalTo(200), equalTo(400)))
-                .body("success", anyOf(equalTo(true), equalTo(false)));
+                .body("code", equalTo(400))
+                .body("success", equalTo(false))
+                .body("message", containsString("not found"));
     }
 
     // ── GET /control/skills/{skill_id}/download ───────────────────────
@@ -98,5 +112,82 @@ class SkillConfigApiTest extends BaseApiTest {
                 .get("/control/skills/{skillId}/download", NONEXISTENT_SKILL)
                 .then()
                 .statusCode(404);
+    }
+
+    // ── POST /control/skills (multipart upload) ───────────────────────
+
+    /**
+     * Upload requires a file part. Missing the part should fail at Spring's
+     * multipart binding and not reach the controller.
+     */
+    @Test
+    @DisplayName("POST /control/skills without file part should fail")
+    void uploadSkillWithoutFileShouldFail() {
+        given()
+                .contentType("multipart/form-data")
+                .when()
+                .post("/control/skills")
+                .then()
+                .statusCode(anyOf(is(400), is(500)));
+    }
+
+    /**
+     * Upload with a malformed ZIP (no `skill.md` inside) is rejected by the parser
+     * with IllegalArgumentException → ControlResponse.error(400).
+     */
+    @Test
+    @DisplayName("POST /control/skills with ZIP missing skill.md should return code=400")
+    void uploadSkillWithoutSkillMdShouldReturn400() throws Exception {
+        byte[] zipBytes = buildZip(entry("readme.txt", "no skill metadata here"));
+        given()
+                .multiPart("file", "bad-skill.zip", zipBytes, "application/zip")
+                .when()
+                .post("/control/skills")
+                .then()
+                .statusCode(200)
+                .body("code", equalTo(400))
+                .body("success", equalTo(false))
+                .body("message", containsString("skill.md"));
+    }
+
+    /**
+     * Upload with a malformed skill.md (missing the `name` metadata) is rejected with 400.
+     */
+    @Test
+    @DisplayName("POST /control/skills with skill.md missing 'name' should return code=400")
+    void uploadSkillWithMissingNameShouldReturn400() throws Exception {
+        // Body must start with `---`, contain YAML metadata, then `---`, then content.
+        String skillMd = "---\ndescription: only description, no name\n---\nbody\n";
+        byte[] zipBytes = buildZip(entry("skill.md", skillMd));
+        given()
+                .multiPart("file", "noname-skill.zip", zipBytes, "application/zip")
+                .when()
+                .post("/control/skills")
+                .then()
+                .statusCode(200)
+                .body("code", equalTo(400))
+                .body("success", equalTo(false));
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────
+
+    private static Entry entry(String path, String content) {
+        return new Entry(path, content.getBytes());
+    }
+
+    private static byte[] buildZip(Entry... entries) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            for (Entry e : entries) {
+                ZipEntry ze = new ZipEntry(e.path);
+                zos.putNextEntry(ze);
+                zos.write(e.content);
+                zos.closeEntry();
+            }
+        }
+        return baos.toByteArray();
+    }
+
+    private record Entry(String path, byte[] content) {
     }
 }

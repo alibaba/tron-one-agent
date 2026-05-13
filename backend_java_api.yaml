@@ -1685,19 +1685,46 @@ components:
     SubAgentConfig:
       type: object
       description: |
-        Polymorphic by `type` field:
-        - `"1"` → LocalSubAgentConfig
-        - `"2"` → A2ASubAgentConfig
+        Abstract sub-agent configuration. Polymorphic by the string `type` discriminator field:
+        - `"1"` → `LocalSubAgentConfig`
+        - `"2"` → `A2ASubAgentConfig`
+      required: [type]
+      discriminator:
+        propertyName: type
+        mapping:
+          "1": "#/components/schemas/LocalSubAgentConfig"
+          "2": "#/components/schemas/A2ASubAgentConfig"
       properties:
         type:
           type: string
-          description: "1 = Local, 2 = A2A"
+          enum: ["1", "2"]
+          description: "1 = Local sub-agent, 2 = A2A sub-agent"
         enabled:
           type: boolean
           default: true
         agentId:
           type: string
           description: Sub-agent identifier
+
+    LocalSubAgentConfig:
+      description: Local sub-agent (resolved from the agent registry by `agentId`).
+      allOf:
+        - $ref: "#/components/schemas/SubAgentConfig"
+        - type: object
+          properties:
+            capacities:
+              type: string
+              description: Free-text description of the sub-agent's capabilities
+
+    A2ASubAgentConfig:
+      description: Remote A2A (Agent-to-Agent) sub-agent.
+      allOf:
+        - $ref: "#/components/schemas/SubAgentConfig"
+        - type: object
+          properties:
+            agentCard:
+              type: object
+              description: Cached A2A AgentCard (see Google A2A spec)
 
     AgentKnowledgeBaseConfig:
       type: object
@@ -1770,9 +1797,17 @@ components:
     KnowledgeBaseConfig:
       type: object
       description: |
-        Polymorphic by `type` field:
-        - `"1"` → BailianKnowledgeBaseConfig
-        - `"2"` → ElasticSearchKnowledgeBaseConfig
+        Abstract knowledge base configuration. Polymorphic by the string `type` discriminator field:
+        - `"1"` → `BailianKnowledgeBaseConfig`
+        - `"2"` → `ElasticSearchKnowledgeBaseConfig`
+
+        Concrete payloads MUST include the discriminator and the subtype-specific fields.
+      required: [type]
+      discriminator:
+        propertyName: type
+        mapping:
+          "1": "#/components/schemas/BailianKnowledgeBaseConfig"
+          "2": "#/components/schemas/ElasticSearchKnowledgeBaseConfig"
       properties:
         id:
           type: string
@@ -1786,27 +1821,102 @@ components:
           type: string
         type:
           type: string
+          enum: ["1", "2"]
           description: "Polymorphic discriminator: \"1\" = Bailian, \"2\" = ElasticSearch"
-        workspaceId:
+
+    BailianKnowledgeBaseConfig:
+      description: Alibaba Cloud Bailian (DashScope) managed knowledge base.
+      allOf:
+        - $ref: "#/components/schemas/KnowledgeBaseConfig"
+        - type: object
+          properties:
+            accessKeyId:
+              type: string
+              description: Alibaba Cloud Access Key ID
+            accessKeySecret:
+              type: string
+              description: Alibaba Cloud Access Key Secret (encrypted at rest)
+            workspaceId:
+              type: string
+              description: Bailian workspace ID
+            indexId:
+              type: string
+              description: Bailian index ID
+            enableRewrite:
+              type: boolean
+              default: true
+            rewriteModelName:
+              type: string
+            enableRerank:
+              type: boolean
+              default: true
+            rerankModelName:
+              type: string
+              default: "qwen3-rerank"
+            rerankMinScore:
+              type: number
+              format: float
+              default: 0.2
+            rerankTopK:
+              type: integer
+              default: 5
+            denseSimilarityTopK:
+              type: integer
+              default: 50
+            sparseSimilarityTopK:
+              type: integer
+              default: 50
+            saveRetrieverHistory:
+              type: boolean
+              default: true
+
+    ElasticSearchKnowledgeBaseConfig:
+      description: Self-hosted ElasticSearch knowledge base.
+      allOf:
+        - $ref: "#/components/schemas/KnowledgeBaseConfig"
+        - type: object
+          properties:
+            url:
+              type: string
+              description: ElasticSearch service URL
+            username:
+              type: string
+            password:
+              type: string
+              description: ElasticSearch password (encrypted at rest)
+            indexName:
+              type: string
+            dimensions:
+              type: integer
+              description: Vector dimensions
+            embeddingModelConfig:
+              $ref: "#/components/schemas/DashscopeEmbeddingModelConfig"
+
+    DashscopeEmbeddingModelConfig:
+      type: object
+      description: DashScope embedding model configuration.
+      properties:
+        apiKey:
           type: string
-          description: "Bailian workspace ID (only when type = \"1\")"
-        indexId:
+          description: API Key, supports `$os{ENV_VAR}` placeholder syntax (encrypted at rest)
+        baseUrl:
           type: string
-          description: "Bailian index ID (only when type = \"1\")"
-        enableRewrite:
-          type: boolean
-          default: true
-          description: "Enable rewrite (only when type = \"1\")"
-        enableRerank:
-          type: boolean
-          default: true
-          description: "Enable rerank (only when type = \"1\")"
+          format: uri
+        modelName:
+          type: string
+        dimensions:
+          type: integer
 
     LongTermMemoryConfig:
       type: object
       description: |
-        Polymorphic by `type` field:
-        - `"1"` → BailianLongTermMemoryConfig
+        Abstract long-term memory configuration. Polymorphic by the string `type` discriminator:
+        - `"1"` → `BailianLongTermMemoryConfig`
+      required: [type]
+      discriminator:
+        propertyName: type
+        mapping:
+          "1": "#/components/schemas/BailianLongTermMemoryConfig"
       properties:
         id:
           type: string
@@ -1820,19 +1930,27 @@ components:
           type: string
         type:
           type: string
+          enum: ["1"]
           description: "Polymorphic discriminator: \"1\" = Bailian"
-        apiKey:
-          type: string
-          description: Bailian API key (encrypted)
-        memoryLibraryId:
-          type: string
-          description: Bailian memory library ID
-        projectId:
-          type: string
-          description: Bailian project ID
-        profileSchema:
-          type: string
-          description: Profile schema definition
+
+    BailianLongTermMemoryConfig:
+      description: Alibaba Cloud Bailian long-term memory backend.
+      allOf:
+        - $ref: "#/components/schemas/LongTermMemoryConfig"
+        - type: object
+          properties:
+            apiKey:
+              type: string
+              description: Bailian API key (encrypted at rest)
+            memoryLibraryId:
+              type: string
+              description: Bailian memory library ID
+            projectId:
+              type: string
+              description: Bailian project ID
+            profileSchema:
+              type: string
+              description: Profile schema definition
 
     SkillConfig:
       type: object
@@ -1876,9 +1994,11 @@ components:
         enabled:
           type: boolean
         type:
-          type: string
-          description: "Agent type (e.g. REACT, CHAT). NOTE: This field is accepted but currently ignored by the server."
-          example: "REACT"
+          allOf:
+            - $ref: "#/components/schemas/LocalAgentType"
+          description: |
+            LocalAgentType (1 = REACT, 2 = ONE).
+            NOTE: Accepted by the request body but the server's patch handler currently ignores it — agent type cannot be changed via PATCH.
         chatModel:
           $ref: "#/components/schemas/ChatModelConfig"
         systemPrompt:
@@ -1907,6 +2027,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AgentSkillConfig"
+        enableLongTermMemory:
+          type: boolean
+          description: |
+            NOTE: Accepted by the request body but the server's patch handler currently ignores it.
+            Use `longTermMemoryMode` and `longTermMemoryId` instead.
         longTermMemoryMode:
           type: string
           description: "RECALL, WRITE, or BOTH"

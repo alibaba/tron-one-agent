@@ -77,7 +77,7 @@ export const createSession = async (
   requestData: CreateSessionRequest
 ): Promise<string> => {
   try {
-    return await post<string>(`/agents/${agentId}/sessions`, requestData, {
+    return await post<string>(`/api/agents/${agentId}/sessions`, requestData, {
       headers: {
         "X-User-Id": encodeURIComponent(getUserId()),
         "X-User-Name": encodeURIComponent(getUserName()),
@@ -102,7 +102,7 @@ export const createChat = async (
 ): Promise<string> => {
   try {
     return await post<string>(
-      `/agents/${agentId}/sessions/${sessionId}/chat`,
+      `/api/agents/${agentId}/sessions/${sessionId}/chat`,
       {
         input: [
           {
@@ -131,7 +131,7 @@ export const getSessionEvents = async (
   lastEventId: number
 ): Promise<EventItem[]> => {
   try {
-    return await get<EventItem[]>(`/agents/${agentId}/sessions/${sessionId}/events`, {
+    return await get<EventItem[]>(`/api/agents/${agentId}/sessions/${sessionId}/events`, {
       params: {
         offset: lastEventId,
         size: 10,

@@ -223,7 +223,7 @@ public class SessionController {
     }
 
     @DeleteMapping("/sessions/{session_id}")
-    @Transactional(readOnly = true)
+    @Transactional
     public ResponseEntity<String> deleteSession(
             @PathVariable("agent_id") String agentId,
             @PathVariable("session_id") String sessionId,

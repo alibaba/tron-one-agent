@@ -24,6 +24,11 @@ import static org.hamcrest.Matchers.*;
 
 /**
  * API tests for Debug endpoints.
+ *
+ * Debug endpoints are scoped to live tools, MCP clients, and knowledge bases. The test
+ * profile registers the {@code calculator} tool as a Spring bean, so happy-path coverage
+ * is provided for that tool. MCP clients and knowledge bases require runtime
+ * configuration and are exercised by negative-path tests only.
  */
 @DisplayName("Debug API")
 class DebugApiTest extends BaseApiTest {
@@ -31,8 +36,23 @@ class DebugApiTest extends BaseApiTest {
     private static final String NONEXISTENT_TOOL = "nonexistent_tool";
     private static final String NONEXISTENT_MCP = "nonexistent_mcp_client";
     private static final String NONEXISTENT_KB = "nonexistent_knowledge_base";
+    private static final String EXISTING_TOOL = "calculator";
 
     // ── GET /debug/tools/{tool_name}/schema ────────────────────────────
+
+    @Test
+    @DisplayName("GET /debug/tools/{tool_name}/schema for existing tool returns OpenAI-style schema")
+    void getToolSchemaForExistingToolShouldReturn200() {
+        given()
+                .when()
+                .get("/debug/tools/{toolName}/schema", EXISTING_TOOL)
+                .then()
+                .statusCode(200)
+                .body("type", equalTo("function"))
+                .body("function", notNullValue())
+                .body("function.name", equalTo(EXISTING_TOOL))
+                .body("function.parameters", notNullValue());
+    }
 
     @Test
     @DisplayName("GET /debug/tools/{tool_name}/schema with nonexistent tool should return 404")
@@ -45,6 +65,18 @@ class DebugApiTest extends BaseApiTest {
     }
 
     // ── POST /debug/tools/{tool_name} ─────────────────────────────────
+
+    @Test
+    @DisplayName("POST /debug/tools/{tool_name} invokes the tool and returns the computed result")
+    void debugToolForExistingToolShouldReturn200() {
+        givenJson()
+                .body("{\"expression\": \"2+3\"}")
+                .when()
+                .post("/debug/tools/{toolName}", EXISTING_TOOL)
+                .then()
+                .statusCode(200)
+                .body(containsString("5"));
+    }
 
     @Test
     @DisplayName("POST /debug/tools/{tool_name} with nonexistent tool should return 404")
@@ -95,9 +127,14 @@ class DebugApiTest extends BaseApiTest {
                 .statusCode(404);
     }
 
+    /**
+     * Without `query`, the controller still resolves the KB first; for a nonexistent KB
+     * that produces 404 (the same behavior as the previous test). A real empty-query
+     * test would require an existing KB which is not configured in the test environment.
+     */
     @Test
-    @DisplayName("POST /debug/knowledge_base/{kb_id} without query field should return 404")
-    void debugKnowledgeBaseWithEmptyQueryShouldReturn404() {
+    @DisplayName("POST /debug/knowledge_base/{kb_id} with empty body still 404s for missing KB")
+    void debugKnowledgeBaseWithEmptyBodyShouldReturn404() {
         givenJson()
                 .body("{}")
                 .when()

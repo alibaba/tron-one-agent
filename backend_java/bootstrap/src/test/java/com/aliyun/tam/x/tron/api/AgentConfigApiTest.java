@@ -260,4 +260,62 @@ class AgentConfigApiTest extends BaseApiTest {
                 .body("code", equalTo(404))
                 .body("success", equalTo(false));
     }
+
+    /**
+     * Verifies the patch is persisted: a follow-up GET must return the patched fields.
+     */
+    @Test
+    @DisplayName("PATCH /control/agents/{agent_id} persists name across requests")
+    void patchAgentConfigPersistsName() {
+        String newName = "Persisted Name " + System.currentTimeMillis();
+        givenJson()
+                .body("{\"name\": \"" + newName + "\"}")
+                .when()
+                .patch("/control/agents/{agentId}", AGENT_ID)
+                .then()
+                .statusCode(200)
+                .body("data.name", equalTo(newName));
+
+        // Read back via GET — name must match
+        given()
+                .when()
+                .get("/control/agents/{agentId}", AGENT_ID)
+                .then()
+                .statusCode(200)
+                .body("data.name", equalTo(newName));
+    }
+
+    /**
+     * PATCH must be partial: patching one field must not reset other fields.
+     */
+    @Test
+    @DisplayName("PATCH /control/agents/{agent_id} is partial — does not clobber unmentioned fields")
+    void patchAgentConfigIsPartial() {
+        // Step 1: set systemPrompt and maxIters explicitly.
+        givenJson()
+                .body("""
+                        {
+                            "systemPrompt": "Initial prompt",
+                            "maxIters": 7
+                        }
+                        """)
+                .when()
+                .patch("/control/agents/{agentId}", AGENT_ID)
+                .then()
+                .statusCode(200)
+                .body("data.maxIters", equalTo(7));
+
+        // Step 2: patch only the name.
+        String newName = "Partial Patch " + System.currentTimeMillis();
+        givenJson()
+                .body("{\"name\": \"" + newName + "\"}")
+                .when()
+                .patch("/control/agents/{agentId}", AGENT_ID)
+                .then()
+                .statusCode(200)
+                .body("data.name", equalTo(newName))
+                // Unmentioned fields must be preserved.
+                .body("data.systemPrompt", equalTo("Initial prompt"))
+                .body("data.maxIters", equalTo(7));
+    }
 }

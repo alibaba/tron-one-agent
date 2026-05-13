@@ -11,3 +11,4 @@ logs/
 
 # Local overrides
 *.local.*
+**/.env

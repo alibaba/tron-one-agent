@@ -107,14 +107,18 @@ class A2AApiTest extends BaseApiTest {
     }
 
     @Test
-    @DisplayName("POST A2A JSON-RPC with invalid JSON should return 200 with error")
-    void a2aJsonRpcWithInvalidJsonShouldReturn500() {
+    @DisplayName("POST A2A JSON-RPC with invalid JSON should return 200 with JSON-RPC error body")
+    void a2aJsonRpcWithInvalidJsonShouldReturn200WithError() {
         givenJson()
                 .body("not valid json at all {{{")
                 .when()
                 .post("/a2a/{agentId}/", AGENT_ID)
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .body("jsonrpc", equalTo("2.0"))
+                .body("error", notNullValue())
+                .body("error.code", notNullValue())
+                .body("error.message", notNullValue());
     }
 
     @Test
@@ -145,9 +149,8 @@ class A2AApiTest extends BaseApiTest {
     }
 
     @Test
-    @DisplayName("POST A2A JSON-RPC tasks/get with valid task ID")
-    void a2aJsonRpcTasksGetShouldReturn200() {
-        // First create a task
+    @DisplayName("POST A2A JSON-RPC tasks/get returns JSON-RPC envelope")
+    void a2aJsonRpcTasksGetShouldReturnEnvelope() {
         String body = """
                 {
                     "jsonrpc": "2.0",
@@ -164,12 +167,14 @@ class A2AApiTest extends BaseApiTest {
                 .when()
                 .post("/a2a/{agentId}/", AGENT_ID)
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .body("jsonrpc", equalTo("2.0"))
+                .body("id", anyOf(equalTo("3"), equalTo(3)));
     }
 
     @Test
-    @DisplayName("POST A2A JSON-RPC tasks/cancel with task ID")
-    void a2aJsonRpcTasksCancelShouldReturn200() {
+    @DisplayName("POST A2A JSON-RPC tasks/cancel returns JSON-RPC envelope")
+    void a2aJsonRpcTasksCancelShouldReturnEnvelope() {
         String body = """
                 {
                     "jsonrpc": "2.0",
@@ -186,6 +191,21 @@ class A2AApiTest extends BaseApiTest {
                 .when()
                 .post("/a2a/{agentId}/", AGENT_ID)
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .body("jsonrpc", equalTo("2.0"))
+                .body("id", anyOf(equalTo("4"), equalTo(4)));
+    }
+
+    @Test
+    @DisplayName("Agent card body contains canonical A2A fields")
+    void agentCardBodyShouldContainCanonicalFields() {
+        given()
+                .when()
+                .get("/a2a/{agentId}/.well-known/agent-card.json", AGENT_ID)
+                .then()
+                .statusCode(200)
+                .body("name", notNullValue())
+                .body("url", notNullValue())
+                .body("description", notNullValue());
     }
 }
