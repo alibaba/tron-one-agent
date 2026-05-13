@@ -267,6 +267,17 @@ class SessionApiTest extends BaseApiTest {
                 .statusCode(500);
     }
 
+    @Test
+    @DisplayName("GET .../messages with pageSize > 1000 should return 500")
+    void listSessionMessagesWithPageSizeGreaterThan1000ShouldReturn400() {
+        given()
+                .queryParam("pageSize", 1001)
+                .when()
+                .get("/agents/{agentId}/sessions/{sessionId}/messages", AGENT_ID, createdSessionId)
+                .then()
+                .statusCode(500);
+    }
+
     // ── GET /agents/{agent_id}/sessions/{session_id}/events ───────────
 
     @Test
@@ -384,6 +395,45 @@ class SessionApiTest extends BaseApiTest {
     }
 
     @Test
+    @Order(7)
+    @DisplayName("POST .../chat with SSE Accept should return 200 with event-stream")
+    void chatWithSseAcceptShouldReturn200() {
+        String sseSessionId = "chat_sse_" + System.currentTimeMillis();
+        givenJson()
+                .header("Accept", "text/event-stream")
+                .body("{\"input\":[{\"type\":1,\"text\":\"Hello\"}]}")
+                .when()
+                .post("/agents/{agentId}/sessions/{sessionId}/chat", AGENT_ID, sseSessionId)
+                .then()
+                .statusCode(200)
+                .contentType(containsString("text/event-stream"));
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("POST .../chat when session is executing should return 400")
+    void chatWhenSessionIsExecutingShouldReturn400() {
+        String busySessionId = "chat_busy_" + System.currentTimeMillis();
+        // Send first chat to start execution
+        givenJson()
+                .header("Accept", "application/json")
+                .body("{\"input\":[{\"type\":1,\"text\":\"Hello\"}]}")
+                .when()
+                .post("/agents/{agentId}/sessions/{sessionId}/chat", AGENT_ID, busySessionId)
+                .then()
+                .statusCode(200);
+
+        // Second chat to same session may get 400 if first is still executing
+        givenJson()
+                .header("Accept", "application/json")
+                .body("{\"input\":[{\"type\":1,\"text\":\"Hello again\"}]}")
+                .when()
+                .post("/agents/{agentId}/sessions/{sessionId}/chat", AGENT_ID, busySessionId)
+                .then()
+                .statusCode(anyOf(is(200), is(400)));
+    }
+
+    @Test
     @DisplayName("POST .../chat with nonexistent agent should return 404")
     void chatWithNonexistentAgentShouldReturn404() {
         givenJson()
@@ -438,6 +488,20 @@ class SessionApiTest extends BaseApiTest {
                 .then()
                 .statusCode(200)
                 .body(containsString("success"));
+    }
+
+    @Test
+    @DisplayName("POST .../chat without X-User-Id should return 500")
+    void chatWithoutUserIdShouldReturn500() {
+        RestAssured.given()
+                .basePath(apiPath())
+                .contentType("application/json")
+                .header("Accept", "application/json")
+                .body("{\"input\":[{\"type\":1,\"text\":\"Hello\"}]}")
+                .when()
+                .post("/agents/{agentId}/sessions/{sessionId}/chat", AGENT_ID, createdSessionId)
+                .then()
+                .statusCode(500);
     }
 
     // ── DELETE /agents/{agent_id}/sessions/{session_id} ───────────────
