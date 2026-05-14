@@ -16,6 +16,7 @@
 
 package com.aliyun.tam.x.tron.ws.jsonrpc;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
@@ -29,11 +30,16 @@ public class JsonRpcResponse implements JsonRpc {
         return JsonRpcResponse.builder().id(id).result(result).build();
     }
 
-    public static JsonRpcResponse error(@NonNull Object id, JsonRpcError error) {
+    /**
+     * Per JSON-RPC 2.0 spec: when the request id cannot be detected (Parse Error /
+     * Invalid Request), the response id MUST be JSON null. Hence id is nullable here
+     * and is always serialized so the wire frame is `{"jsonrpc":"2.0","id":null,...}`.
+     */
+    public static JsonRpcResponse error(Object id, JsonRpcError error) {
         return JsonRpcResponse.builder().id(id).error(error).build();
     }
 
-    @NonNull
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private Object id;
 
     private Object result;

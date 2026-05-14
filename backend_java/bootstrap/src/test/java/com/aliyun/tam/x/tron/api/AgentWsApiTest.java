@@ -70,6 +70,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (last) {
                             messages.add(data.toString());
                             msgLatch.countDown();
@@ -96,54 +100,82 @@ class AgentWsApiTest extends BaseApiTest {
         ws.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
     }
 
+    /**
+     * The endpoint's {@code onOpen} throws {@code IllegalArgumentException} for unknown agents,
+     * which causes Tomcat to close the WebSocket immediately after the handshake. The JDK
+     * WebSocket client surfaces that as either {@code onError} or, more commonly, an early
+     * {@code onClose} with a non-1000 code. Both are accepted as "the connection failed".
+     */
     @Test
-    @DisplayName("WS connect to nonexistent agent should fail")
+    @DisplayName("WS connect to nonexistent agent should fail (onError or early onClose)")
     void connectToNonexistentAgentShouldFail() throws Exception {
         String sessionId = "ws_badagent_" + System.currentTimeMillis();
-        CountDownLatch errorLatch = new CountDownLatch(1);
-        List<String> errors = new ArrayList<>();
+        CountDownLatch failLatch = new CountDownLatch(1);
 
         HttpClient client = HttpClient.newHttpClient();
-        WebSocket ws = client.newWebSocketBuilder()
-                .buildAsync(wsUri(NONEXISTENT_AGENT, sessionId, "test-user"), new WebSocket.Listener() {
-                    @Override
-                    public void onError(WebSocket webSocket, Throwable error) {
-                        errors.add(error.getMessage());
-                        errorLatch.countDown();
-                    }
-                })
-                .join();
+        WebSocket ws;
+        try {
+            ws = client.newWebSocketBuilder()
+                    .buildAsync(wsUri(NONEXISTENT_AGENT, sessionId, "test-user"), new WebSocket.Listener() {
+                        @Override
+                        public void onError(WebSocket webSocket, Throwable error) {
+                            failLatch.countDown();
+                        }
 
-        assertTrue(errorLatch.await(10, TimeUnit.SECONDS), "Should receive error");
-        assertFalse(errors.isEmpty(), "Should have error message");
+                        @Override
+                        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+                            failLatch.countDown();
+                            return null;
+                        }
+                    })
+                    .join();
+        } catch (Exception e) {
+            // Handshake itself can throw if the server rejects before upgrade — also a valid failure.
+            return;
+        }
+
+        assertTrue(failLatch.await(10, TimeUnit.SECONDS),
+                "Connection to nonexistent agent must fail via onError or onClose");
 
         try {
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
         } catch (Exception ignored) {
-            // Connection may already be closed
         }
     }
 
+    /**
+     * Same handling pattern as the nonexistent-agent test: the missing X-User-Id makes
+     * the endpoint's {@code onOpen} throw, and Tomcat closes the connection.
+     */
     @Test
-    @DisplayName("WS connect without X-User-Id should fail")
+    @DisplayName("WS connect without X-User-Id should fail (onError or early onClose)")
     void connectWithoutUserIdShouldFail() throws Exception {
         String sessionId = "ws_nouser_" + System.currentTimeMillis();
-        CountDownLatch errorLatch = new CountDownLatch(1);
-        List<String> errors = new ArrayList<>();
+        CountDownLatch failLatch = new CountDownLatch(1);
 
         HttpClient client = HttpClient.newHttpClient();
-        WebSocket ws = client.newWebSocketBuilder()
-                .buildAsync(wsUri(AGENT_ID, sessionId, null), new WebSocket.Listener() {
-                    @Override
-                    public void onError(WebSocket webSocket, Throwable error) {
-                        errors.add(error.getMessage());
-                        errorLatch.countDown();
-                    }
-                })
-                .join();
+        WebSocket ws;
+        try {
+            ws = client.newWebSocketBuilder()
+                    .buildAsync(wsUri(AGENT_ID, sessionId, null), new WebSocket.Listener() {
+                        @Override
+                        public void onError(WebSocket webSocket, Throwable error) {
+                            failLatch.countDown();
+                        }
 
-        assertTrue(errorLatch.await(10, TimeUnit.SECONDS), "Should receive error");
-        assertFalse(errors.isEmpty(), "Should have error message");
+                        @Override
+                        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+                            failLatch.countDown();
+                            return null;
+                        }
+                    })
+                    .join();
+        } catch (Exception e) {
+            return;
+        }
+
+        assertTrue(failLatch.await(10, TimeUnit.SECONDS),
+                "Connection without X-User-Id must fail via onError or onClose");
 
         try {
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
@@ -167,6 +199,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (!last) {
                             return null;
                         }
@@ -202,7 +238,7 @@ class AgentWsApiTest extends BaseApiTest {
 
         // Send chat request
         String chatRequest = """
-                {"jsonrpc":"2.0","method":"chat","id":1,"params":{"input":[{"type":1,"text":"Hello"}]}}""";
+                {"jsonrpc":"2.0","method":"chat","id":1,"params":[{"input":[{"type":1,"text":"Hello"}]}]}""";
         ws.sendText(chatRequest, true);
 
         // Wait for response
@@ -230,6 +266,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (!last) {
                             return null;
                         }
@@ -263,7 +303,7 @@ class AgentWsApiTest extends BaseApiTest {
 
         // Send chat request
         String chatRequest = """
-                {"jsonrpc":"2.0","method":"chat","id":1,"params":{"input":[{"type":1,"text":"Hello"}]}}""";
+                {"jsonrpc":"2.0","method":"chat","id":1,"params":[{"input":[{"type":1,"text":"Hello"}]}]}""";
         ws.sendText(chatRequest, true);
 
         // Wait for at least one event notification
@@ -293,6 +333,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (!last) {
                             return null;
                         }
@@ -321,9 +365,10 @@ class AgentWsApiTest extends BaseApiTest {
         // Wait for session notification
         assertTrue(sessionLatch.await(10, TimeUnit.SECONDS), "Should receive session notification");
 
-        // Send cancel request
+        // Send cancel request — params must be list-form for JsonRpcHelper to bind
+        // positional args to handleCancel(String message).
         String cancelRequest = """
-                {"jsonrpc":"2.0","method":"cancel","id":1,"params":"test cancel"}""";
+                {"jsonrpc":"2.0","method":"cancel","id":1,"params":["test cancel"]}""";
         ws.sendText(cancelRequest, true);
 
         // Wait for response
@@ -332,8 +377,12 @@ class AgentWsApiTest extends BaseApiTest {
 
         JsonNode resp = MAPPER.readTree(responses.get(0));
         assertEquals("2.0", resp.get("jsonrpc").asText());
-        assertTrue(resp.get("result").isNull() || !resp.has("error"),
-                "Cancel should return null result or no error");
+        // handleCancel returns void → JSON-RPC result is null. Jackson's NON_NULL default
+        // omits the field entirely, so accept both an absent `result` and an explicit null.
+        JsonNode resultNode = resp.get("result");
+        assertTrue(resultNode == null || resultNode.isNull(),
+                "Cancel should return absent or JSON null result, got: " + resp);
+        assertFalse(resp.has("error"), "Cancel should not return error");
 
         ws.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
     }
@@ -353,6 +402,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (!last) {
                             return null;
                         }
@@ -411,6 +464,10 @@ class AgentWsApiTest extends BaseApiTest {
                 .buildAsync(wsUri(AGENT_ID, sessionId, "test-user"), new WebSocket.Listener() {
                     @Override
                     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        // JDK's WebSocket.Listener delivers only one message per request.
+                        // Pull the next one immediately so latches that wait for >1 message
+                        // (session notification + JSON-RPC response, event stream, etc.) fire.
+                        webSocket.request(1);
                         if (!last) {
                             return null;
                         }

@@ -56,6 +56,22 @@ public abstract class BaseFuncTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
+        // Mirror production Bootstrap.main: load .env into system properties so that
+        // ${DASHSCOPE_API_KEY:} etc. in application.yaml resolve during tests.
+        // Surefire runs with cwd = bootstrap/, but the .env lives at backend_java/.env,
+        // so try the parent directory first and fall back to cwd for other layouts.
+        io.github.cdimascio.dotenv.Dotenv.configure()
+                .directory("..")
+                .ignoreIfMissing()
+                .ignoreIfMalformed()
+                .systemProperties()
+                .load();
+        io.github.cdimascio.dotenv.Dotenv.configure()
+                .ignoreIfMissing()
+                .ignoreIfMalformed()
+                .systemProperties()
+                .load();
+
         DBConfigurationBuilder configBuilder = DBConfigurationBuilder.newBuilder();
         configBuilder.setPort(0);
         DB db = DB.newEmbeddedDB(configBuilder.build());
