@@ -13,7 +13,18 @@
 - [JsonRpcHelper.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcHelper.java)
 - [AgentEndpointConfigurator.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentEndpointConfigurator.java)
 - [WebSocketConfig.java](file://backend_java/bootstrap/src/main/java/com/aliyun/tam/x/tron/config/WebSocketConfig.java)
+- [AgentWsApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java)
+- [AsrWsApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java)
+- [TtsWsApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java)
+- [BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced WebSocket API testing infrastructure documentation with improved error handling patterns
+- Added comprehensive coverage of dual failure mode support (onError/onClose) for invalid endpoints
+- Documented better parameter binding consistency for JSON-RPC method invocation
+- Updated troubleshooting section with specific error handling scenarios
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -23,9 +34,10 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Dependency Analysis](#dependency-analysis)
 7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+8. [Testing Infrastructure and Error Handling](#testing-infrastructure-and-error-handling)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
 This document specifies the WebSocket APIs exposed by Tron OneAgent for real-time communication. It covers:
@@ -34,8 +46,10 @@ This document specifies the WebSocket APIs exposed by Tron OneAgent for real-tim
 - TTS WebSocket for text-to-speech streaming
 It also documents the JSON-RPC protocol used by the Agent WebSocket, including request/response formats, method definitions, error handling, and the handshake/authentication mechanism via HTTP headers. Connection lifecycle, message framing, and streaming patterns are explained, along with reconnection and error recovery strategies.
 
+**Updated** Enhanced with comprehensive testing infrastructure documentation and improved error handling patterns for invalid endpoints and dual failure modes.
+
 ## Project Structure
-The WebSocket endpoints are implemented in Java using Jakarta WebSocket (JSR 356) with Spring-managed beans. The Agent WebSocket integrates JSON-RPC and event streaming, while ASR and TTS expose simple request/response JSON frames.
+The WebSocket endpoints are implemented in Java using Jakarta WebSocket (JSR 356) with Spring-managed beans. The Agent WebSocket integrates JSON-RPC and event streaming, while ASR and TTS expose simple request/response JSON frames. The testing infrastructure provides robust validation of error handling scenarios.
 
 ```mermaid
 graph TB
@@ -55,6 +69,12 @@ subgraph "Spring WebSocket Config"
 WSC["WebSocketConfig"]
 AEC["AgentEndpointConfigurator"]
 end
+subgraph "Testing Infrastructure"
+AWT["AgentWsApiTest"]
+AST["AsrWsApiTest"]
+TST["TtsWsApiTest"]
+BAT["BaseApiTest"]
+end
 AWE --> JRI
 AWE --> JRO
 AWE --> JRN
@@ -64,6 +84,12 @@ WSC --> AWE
 WSC --> ASR
 WSC --> TTS
 AEC --> AWE
+AWT --> AWE
+AST --> ASR
+TST --> TTS
+BAT --> AWT
+BAT --> AST
+BAT --> TST
 ```
 
 **Diagram sources**
@@ -77,6 +103,10 @@ AEC --> AWE
 - [JsonRpcHelper.java:38](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcHelper.java#L38)
 - [WebSocketConfig.java:26](file://backend_java/bootstrap/src/main/java/com/aliyun/tam/x/tron/config/WebSocketConfig.java#L26)
 - [AgentEndpointConfigurator.java:31](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentEndpointConfigurator.java#L31)
+- [AgentWsApiTest.java:42](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L42)
+- [AsrWsApiTest.java:45](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java#L45)
+- [TtsWsApiTest.java:44](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java#L44)
+- [BaseApiTest.java:31](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31)
 
 **Section sources**
 - [AgentWsEndpoint.java:62](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62)
@@ -84,6 +114,10 @@ AEC --> AWE
 - [TtsWsEndpoint.java:36](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L36)
 - [WebSocketConfig.java:26](file://backend_java/bootstrap/src/main/java/com/aliyun/tam/x/tron/config/WebSocketConfig.java#L26)
 - [AgentEndpointConfigurator.java:31](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentEndpointConfigurator.java#L31)
+- [AgentWsApiTest.java:42](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L42)
+- [AsrWsApiTest.java:45](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java#L45)
+- [TtsWsApiTest.java:44](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java#L44)
+- [BaseApiTest.java:31](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31)
 
 ## Core Components
 - Agent WebSocket endpoint: Bidirectional agent communication with JSON-RPC requests and event notifications. Authentication via HTTP headers during handshake. Streams session snapshots and live events.
@@ -94,13 +128,15 @@ Key protocol and framing:
 - Agent WebSocket uses JSON-RPC 2.0 for requests/responses and custom notifications for events.
 - ASR and TTS use simple JSON frames for request/response.
 
+**Updated** Enhanced error handling capabilities with comprehensive testing infrastructure validating dual failure modes and parameter binding consistency.
+
 **Section sources**
 - [AgentWsEndpoint.java:116](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L116)
 - [AsrWsEndpoint.java:122](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AsrWsEndpoint.java#L122)
 - [TtsWsEndpoint.java:108](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L108)
 
 ## Architecture Overview
-The WebSocket endpoints are registered by Spring’s ServerEndpointExporter. The Agent endpoint supports dynamic path parameters and extracts authentication from the handshake. JSON-RPC is handled centrally by JsonRpcHelper.
+The WebSocket endpoints are registered by Spring's ServerEndpointExporter. The Agent endpoint supports dynamic path parameters and extracts authentication from the handshake. JSON-RPC is handled centrally by JsonRpcHelper. The testing infrastructure validates error handling scenarios across all endpoints.
 
 ```mermaid
 sequenceDiagram
@@ -109,18 +145,22 @@ participant SBE as "ServerEndpointExporter"
 participant CFG as "WebSocketConfig"
 participant AE as "AgentEndpointConfigurator"
 participant EP as "AgentWsEndpoint"
+participant TEST as "AgentWsApiTest"
 C->>SBE : "HTTP Upgrade to WebSocket"
 SBE->>CFG : "Lookup bean"
 CFG-->>SBE : "ServerEndpointExporter"
 SBE->>AE : "Create endpoint instance"
 AE-->>EP : "Configure path params + headers"
 EP-->>C : "Connection established"
+TEST->>EP : "Validate error handling"
+EP-->>TEST : "Dual failure mode response"
 ```
 
 **Diagram sources**
 - [WebSocketConfig.java:33](file://backend_java/bootstrap/src/main/java/com/aliyun/tam/x/tron/config/WebSocketConfig.java#L33)
 - [AgentEndpointConfigurator.java:48](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentEndpointConfigurator.java#L48)
 - [AgentWsEndpoint.java:62](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62)
+- [AgentWsApiTest.java:109](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L109)
 
 ## Detailed Component Analysis
 
@@ -318,18 +358,67 @@ TTSEP --> OM
 - Connection reuse:
   - Prefer long-lived connections for streaming scenarios; avoid frequent reconnects.
 
-[No sources needed since this section provides general guidance]
+## Testing Infrastructure and Error Handling
+
+### Enhanced WebSocket API Testing Infrastructure
+The testing infrastructure provides comprehensive validation of WebSocket API behavior, including error handling scenarios and dual failure mode support.
+
+#### Dual Failure Mode Support
+The testing framework validates that WebSocket connections handle failures through both `onError` and `onClose` callbacks, ensuring robust error handling across different failure scenarios.
+
+```mermaid
+sequenceDiagram
+participant Client as "Client"
+participant Endpoint as "WebSocket Endpoint"
+participant Test as "AgentWsApiTest"
+Client->>Endpoint : "Connect to nonexistent agent"
+Endpoint->>Endpoint : "throw IllegalArgumentException"
+Endpoint-->>Client : "Tomcat closes connection"
+alt "Early onClose scenario"
+Client->>Test : "onClose(statusCode, reason)"
+Test-->>Test : "Accept as failure"
+else "onError scenario"
+Client->>Test : "onError(error)"
+Test-->>Test : "Accept as failure"
+end
+```
+
+**Diagram sources**
+- [AgentWsApiTest.java:109](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L109)
+- [AgentWsApiTest.java:118](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L118)
+
+#### Invalid Endpoint Error Handling
+Tests validate that connections to invalid endpoints (nonexistent agents, missing authentication) fail appropriately through either error callbacks or immediate connection closure.
+
+#### Parameter Binding Consistency
+The testing infrastructure demonstrates proper parameter binding for JSON-RPC method invocation, particularly for the `cancel` method which requires list-form parameters for proper positional argument binding.
+
+**Section sources**
+- [AgentWsApiTest.java:109](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L109)
+- [AgentWsApiTest.java:146](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L146)
+- [AgentWsApiTest.java:368](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L368)
+- [AsrWsApiTest.java:54](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java#L54)
+- [TtsWsApiTest.java:53](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java#L53)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
 - Missing authentication headers on Agent WebSocket:
   - Ensure X-User-Id is present during handshake; X-User-Name is optional.
+  - The testing infrastructure validates that missing headers cause connection failure through onError or onClose callbacks.
 - JSON-RPC errors:
   - Parse errors, invalid request, method not found, internal errors are returned with standardized error codes.
+  - The JsonRpcHelper provides comprehensive error handling with proper error code mapping.
 - ASR/TTS unavailability:
   - Endpoints respond with success=false and an error message when services are not initialized.
+  - The testing infrastructure validates graceful degradation when upstream services are unavailable.
 - Connection closure:
   - Endpoints close the socket upon completion or unrecoverable errors; clients should implement reconnection.
+  - Both onError and onClose failure modes are handled consistently in the testing framework.
+- Invalid endpoint handling:
+  - Connections to nonexistent agents fail immediately with appropriate error signaling.
+  - The testing infrastructure validates dual failure mode support for robust client-side error handling.
+
+**Updated** Enhanced troubleshooting guidance with specific error handling scenarios validated by the testing infrastructure.
 
 **Section sources**
 - [AgentWsEndpoint.java:458](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L458)
@@ -339,15 +428,18 @@ Common issues and resolutions:
 - [AgentWsEndpoint.java:271](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L271)
 - [AsrWsEndpoint.java:152](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AsrWsEndpoint.java#L152)
 - [TtsWsEndpoint.java:138](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L138)
+- [AgentWsApiTest.java:109](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L109)
+- [AsrWsApiTest.java:54](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java#L54)
+- [TtsWsApiTest.java:53](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java#L53)
 
 ## Conclusion
 The Tron OneAgent exposes three WebSocket APIs:
 - Agent WebSocket for bidirectional agent interaction with JSON-RPC and event streaming
 - ASR WebSocket for real-time speech recognition
 - TTS WebSocket for real-time text-to-speech
-They share a consistent pattern of handshake-based authentication, JSON framing, and lifecycle management. Clients should implement robust reconnection and backpressure handling for reliable real-time experiences.
+They share a consistent pattern of handshake-based authentication, JSON framing, and lifecycle management. The enhanced testing infrastructure validates robust error handling across all endpoints, including dual failure mode support and parameter binding consistency. Clients should implement robust reconnection and backpressure handling for reliable real-time experiences.
 
-[No sources needed since this section summarizes without analyzing specific files]
+**Updated** Enhanced conclusion reflecting the improved testing infrastructure and error handling capabilities.
 
 ## Appendices
 
@@ -412,6 +504,28 @@ They share a consistent pattern of handshake-based authentication, JSON framing,
 - [AgentWsEndpoint.java:138](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L138)
 - [AgentWsEndpoint.java:524](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L524)
 
+### Enhanced Testing Infrastructure
+The testing infrastructure provides comprehensive validation of WebSocket API behavior:
+
+#### Test Categories
+- Connection validation: Ensures proper session establishment and teardown
+- Authentication validation: Verifies header-based authentication requirements
+- JSON-RPC protocol validation: Tests request/response handling and error scenarios
+- Error handling validation: Validates dual failure mode support (onError/onClose)
+- Parameter binding validation: Tests proper method parameter resolution
+
+#### Key Testing Patterns
+- **Dual Failure Mode Handling**: Tests validate that invalid connections fail through either onError or onClose callbacks
+- **Parameter Binding Consistency**: Demonstrates proper JSON-RPC parameter binding for method invocation
+- **Graceful Degradation**: Validates proper error responses when upstream services are unavailable
+- **State Persistence**: Tests ensure session state is properly maintained across connections
+
+**Section sources**
+- [AgentWsApiTest.java:42](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentWsApiTest.java#L42)
+- [AsrWsApiTest.java:45](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AsrWsApiTest.java#L45)
+- [TtsWsApiTest.java:44](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/TtsWsApiTest.java#L44)
+- [BaseApiTest.java:31](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31)
+
 ### Client Implementation Guidance
 - General patterns:
   - Establish WebSocket connection with required headers for Agent WebSocket
@@ -422,5 +536,9 @@ They share a consistent pattern of handshake-based authentication, JSON framing,
   - Use standard WebSocket libraries for your language/runtime
   - Ensure proper JSON serialization/deserialization
   - Implement retry/backoff and idempotent message handling
+- Error handling:
+  - Implement dual failure mode support (handle both onError and onClose)
+  - Validate error responses and implement appropriate retry logic
+  - Handle parameter binding requirements for JSON-RPC methods
 
-[No sources needed since this section provides general guidance]
+**Updated** Enhanced client implementation guidance with specific error handling patterns validated by the testing infrastructure.

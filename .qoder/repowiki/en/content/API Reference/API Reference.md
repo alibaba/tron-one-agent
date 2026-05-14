@@ -4,6 +4,7 @@
 **Referenced Files in This Document**
 - [A2AController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java)
 - [SessionController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java)
+- [ConfigController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java)
 - [FileController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java)
 - [HealthController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/HealthController.java)
 - [DebugController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/DebugController.java)
@@ -16,7 +17,19 @@
 - [PageResultDTO.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/dto/PageResultDTO.java)
 - [ContentDTO.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/dto/ContentDTO.java)
 - [ChatRequest.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/ChatRequest.java)
+- [backend_java_api.yaml](file://backend_java_api.yaml)
+- [BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
+- [AgentConfigApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentConfigApiTest.java)
+- [SkillConfigApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SkillConfigApiTest.java)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive OpenAPI specification (backend_java_api.yaml) documenting 20+ API endpoints
+- Enhanced API testing infrastructure with 13 new test classes covering all major API endpoints
+- Improved backend API implementations including SessionController enhancements with better error handling and streaming support
+- Added new configuration management endpoints for agents, tools, MCP clients, knowledge bases, skills, and memory
+- Expanded WebSocket API documentation with detailed message schemas and protocols
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -24,33 +37,40 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Enhanced API Testing Infrastructure](#enhanced-api-testing-infrastructure)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides a comprehensive API reference for Tron OneAgent’s REST and WebSocket interfaces. It covers:
-- REST endpoints for session management, chat, events, and file operations
+This document provides a comprehensive API reference for Tron OneAgent's REST and WebSocket interfaces. It covers:
+- REST endpoints for session management, chat, events, file operations, and configuration management
 - WebSocket APIs for real-time chat, ASR, and TTS
 - A2A (Agent-to-Agent) protocol endpoints for multi-agent collaboration
+- Enhanced configuration management for agents, tools, MCP clients, knowledge bases, skills, and memory
 - Authentication and authorization mechanisms
 - Rate limiting and versioning strategies
 - Practical client implementation examples and best practices
-- Debugging, monitoring, and performance optimization guidance
+- Enhanced API testing infrastructure and debugging approaches
+- Monitoring and performance optimization guidance
+
+**Updated** Added comprehensive OpenAPI specification and enhanced testing infrastructure
 
 ## Project Structure
 The API surface is implemented in Spring Boot controllers and WebSocket endpoints, organized by feature:
-- REST controllers: SessionController, A2AController, FileController, HealthController, DebugController
+- REST controllers: SessionController, ConfigController, A2AController, FileController, HealthController, DebugController
 - WebSocket endpoints: AgentWsEndpoint (JSON-RPC over WebSocket), AsrWsEndpoint, TtsWsEndpoint
 - DTOs and request/response models: SessionDTO, SessionMessageDTO, PageResultDTO, ContentDTO, ChatRequest
 - Configuration: application.yaml defines base URL, servlet context path, and runtime settings
+- OpenAPI specification: backend_java_api.yaml provides comprehensive API documentation
 
 ```mermaid
 graph TB
 subgraph "REST Controllers"
 SC["SessionController<br/>/agents/{agent_id}/*"]
+CC["ConfigController<br/>/control/*"]
 AC["A2AController<br/>/a2a/{agent_id}/*"]
 FC["FileController<br/>/file/*"]
 HC["HealthController<br/>/health/*"]
@@ -62,7 +82,9 @@ WSR["AsrWsEndpoint<br/>/asr"]
 WST["TtsWsEndpoint<br/>/tts"]
 end
 CFG["application.yaml<br/>context-path, ports, env"]
+OAS["backend_java_api.yaml<br/>OpenAPI specification"]
 SC --- CFG
+CC --- CFG
 AC --- CFG
 FC --- CFG
 HC --- CFG
@@ -70,10 +92,16 @@ DC --- CFG
 WSA --- CFG
 WSR --- CFG
 WST --- CFG
+CC --- OAS
+SC --- OAS
+AC --- OAS
+FC --- OAS
+DC --- OAS
 ```
 
 **Diagram sources**
 - [SessionController.java:80-84](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L80-L84)
+- [ConfigController.java:54-57](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L54-L57)
 - [A2AController.java:64-67](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L64-L67)
 - [FileController.java:37-41](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java#L37-L41)
 - [HealthController.java:25-27](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/HealthController.java#L25-L27)
@@ -82,20 +110,26 @@ WST --- CFG
 - [AsrWsEndpoint.java:36-38](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AsrWsEndpoint.java#L36-L38)
 - [TtsWsEndpoint.java:36-38](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L36-L38)
 - [application.yaml:1-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L1-L63)
+- [backend_java_api.yaml:1-20](file://backend_java_api.yaml#L1-L20)
 
 **Section sources**
 - [application.yaml:1-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L1-L63)
+- [backend_java_api.yaml:1-20](file://backend_java_api.yaml#L1-L20)
 
 ## Core Components
 - SessionController: Manages sessions, chat, events, and message listing via REST and SSE
+- ConfigController: Comprehensive configuration management for agents, tools, MCP clients, knowledge bases, skills, and memory
 - A2AController: Exposes A2A protocol endpoints for agent collaboration using JSON-RPC transport
 - FileController: Uploads and retrieves files with storage provider integration
 - HealthController: Provides health check endpoint
 - DebugController: Exposes tool, MCP, and knowledge base debugging endpoints
 - WebSocket endpoints: Real-time chat (JSON-RPC), ASR transcription, and TTS synthesis
 
+**Updated** Added ConfigController with comprehensive configuration management capabilities
+
 **Section sources**
 - [SessionController.java:80-84](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L80-L84)
+- [ConfigController.java:54-57](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L54-L57)
 - [A2AController.java:64-67](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L64-L67)
 - [FileController.java:37-41](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java#L37-L41)
 - [HealthController.java:25-27](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/HealthController.java#L25-L27)
@@ -105,29 +139,34 @@ WST --- CFG
 - [TtsWsEndpoint.java:36-38](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L36-L38)
 
 ## Architecture Overview
-The API stack combines REST with JSON-RPC over WebSocket for real-time capabilities. The servlet context path is configured to /api, and WebSocket endpoints are exposed at top-level paths.
+The API stack combines REST with JSON-RPC over WebSocket for real-time capabilities. The servlet context path is configured to /api, and WebSocket endpoints are exposed at top-level paths. The new configuration management system provides centralized control over all agent components.
 
 ```mermaid
 graph TB
 Client["Client"]
-REST["REST Layer<br/>SessionController, A2AController, FileController, DebugController"]
+REST["REST Layer<br/>SessionController, ConfigController, A2AController, FileController, DebugController"]
 WS["WebSocket Layer<br/>AgentWsEndpoint, AsrWsEndpoint, TtsWsEndpoint"]
 Core["Core Services<br/>AgentHandler, EventSink, Repositories"]
 Store["Storage Provider<br/>File uploads"]
 DB["Database<br/>MySQL via MyBatis-Plus"]
+Config["Configuration Management<br/>AgentConfig, ToolConfig, MCPConfig, KnowledgeBaseConfig, SkillConfig, MemoryConfig"]
 Client --> REST
 Client --> WS
 REST --> Core
 WS --> Core
 REST --> Store
 REST --> DB
-WS --> DB
+REST --> Config
 Core --> DB
+Config --> DB
 ```
+
+**Updated** Added configuration management layer for centralized agent component control
 
 **Diagram sources**
 - [application.yaml:1-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L1-L63)
 - [SessionController.java:80-84](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L80-L84)
+- [ConfigController.java:54-57](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L54-L57)
 - [A2AController.java:64-67](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L64-L67)
 - [FileController.java:37-41](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java#L37-L41)
 - [AgentWsEndpoint.java:62-64](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62-L64)
@@ -210,6 +249,8 @@ Core --> DB
   - Notes:
     - SSE mode sends events as they are emitted; TTS mode also streams audio fragments via a custom TTS_RESPONSE event
 
+**Updated** Enhanced with improved error handling and streaming support
+
 **Section sources**
 - [SessionController.java:132-158](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L132-L158)
 - [SessionController.java:160-185](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L160-L185)
@@ -219,6 +260,165 @@ Core --> DB
 - [SessionController.java:280-306](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L280-L306)
 - [SessionController.java:308-346](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L308-L346)
 - [ChatRequest.java:32-42](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/ChatRequest.java#L32-L42)
+
+#### Configuration Management
+
+##### Agent Configuration
+- GET /api/control/agents
+  - Purpose: List all agent configurations
+  - Response: 200 OK with ControlResponse containing agent config list
+
+- GET /api/control/agents/{agent_id}
+  - Purpose: Get a single agent configuration
+  - Path variable:
+    - agent_id: string
+  - Response: 200 OK with ControlResponse containing AgentConfig or 404 Not Found
+
+- PATCH /api/control/agents/{agent_id}
+  - Purpose: Partially update agent configuration
+  - Path variable:
+    - agent_id: string
+  - Body: PatchAgentConfigRequest (supports partial updates)
+  - Response: 200 OK with updated AgentConfig
+
+##### Tool Configuration
+- GET /api/control/tools
+  - Purpose: List all registered tools with name and description
+  - Response: 200 OK with ControlResponse containing tool list
+
+##### MCP Client Configuration
+- GET /api/control/mcps
+  - Purpose: List all MCP client configurations
+  - Response: 200 OK with ControlResponse containing MCP client config list
+
+- POST /api/control/mcps
+  - Purpose: Create an MCP client configuration
+  - Body: McpClientConfig
+  - Response: 200 OK with ControlResponse
+
+- GET /api/control/mcps/{mcp_id}
+  - Purpose: Get a single MCP client configuration
+  - Path variable:
+    - mcp_id: string
+  - Response: 200 OK with ControlResponse containing McpClientConfig or 404 Not Found
+
+- PATCH /api/control/mcps/{mcp_id}
+  - Purpose: Partially update MCP client configuration
+  - Path variable:
+    - mcp_id: string
+  - Body: PatchMcpClientConfigRequest
+  - Response: 200 OK with ControlResponse
+
+- DELETE /api/control/mcps/{mcp_id}
+  - Purpose: Delete an MCP client configuration
+  - Path variable:
+    - mcp_id: string
+  - Response: 200 OK with ControlResponse
+
+##### Knowledge Base Configuration
+- GET /api/control/kb
+  - Purpose: List all knowledge base configurations
+  - Response: 200 OK with ControlResponse containing knowledge base config list
+
+- POST /api/control/kb
+  - Purpose: Create a knowledge base configuration
+  - Body: KnowledgeBaseConfig (polymorphic)
+  - Response: 200 OK with ControlResponse
+
+- GET /api/control/kb/{kb_id}
+  - Purpose: Get a single knowledge base configuration
+  - Path variable:
+    - kb_id: string
+  - Response: 200 OK with ControlResponse containing KnowledgeBaseConfig or 404 Not Found
+
+- PATCH /api/control/kb/{kb_id}
+  - Purpose: Partially update knowledge base configuration
+  - Path variable:
+    - kb_id: string
+  - Body: PatchKnowledgeBaseConfigRequest
+  - Response: 200 OK with ControlResponse
+
+- DELETE /api/control/kb/{kb_id}
+  - Purpose: Delete a knowledge base configuration
+  - Path variable:
+    - kb_id: string
+  - Response: 200 OK with ControlResponse
+
+##### Skill Configuration
+- GET /api/control/skills
+  - Purpose: List all skill configurations
+  - Response: 200 OK with ControlResponse containing skill config list
+
+- POST /api/control/skills
+  - Purpose: Upload a skill (ZIP file)
+  - Form data:
+    - file: multipart file (required)
+    - id: integer (optional, existing skill ID for update)
+  - Response: 200 OK with ControlResponse containing skill ID
+
+- GET /api/control/skills/{skill_id}
+  - Purpose: Get a single skill configuration
+  - Path variable:
+    - skill_id: long
+  - Response: 200 OK with ControlResponse containing SkillConfig or 404 Not Found
+
+- PATCH /api/control/skills/{skill_id}
+  - Purpose: Enable/disable a skill
+  - Path variable:
+    - skill_id: long
+  - Body: { enabled: boolean }
+  - Response: 200 OK with ControlResponse
+
+- DELETE /api/control/skills/{skill_id}
+  - Purpose: Delete a skill
+  - Path variable:
+    - skill_id: long
+  - Response: 200 OK with ControlResponse
+
+- GET /api/control/skills/{skill_id}/download
+  - Purpose: Download a skill ZIP file
+  - Path variable:
+    - skill_id: long
+  - Response: 200 OK with ZIP file content or 404 Not Found
+
+##### Long-term Memory Configuration
+- GET /api/control/memory
+  - Purpose: List all long-term memory configurations
+  - Response: 200 OK with ControlResponse containing memory config list
+
+- POST /api/control/memory
+  - Purpose: Create a long-term memory configuration
+  - Body: LongTermMemoryConfig (polymorphic)
+  - Response: 200 OK with ControlResponse
+
+- GET /api/control/memory/{memory_id}
+  - Purpose: Get a single long-term memory configuration
+  - Path variable:
+    - memory_id: string
+  - Response: 200 OK with ControlResponse containing LongTermMemoryConfig or 404 Not Found
+
+- PATCH /api/control/memory/{memory_id}
+  - Purpose: Partially update long-term memory configuration
+  - Path variable:
+    - memory_id: string
+  - Body: LongTermMemoryConfig (polymorphic)
+  - Response: 200 OK with ControlResponse
+
+- DELETE /api/control/memory/{memory_id}
+  - Purpose: Delete a long-term memory configuration
+  - Path variable:
+    - memory_id: string
+  - Response: 200 OK with ControlResponse
+
+**Updated** Added comprehensive configuration management endpoints for all agent components
+
+**Section sources**
+- [ConfigController.java:118-185](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L118-L185)
+- [ConfigController.java:187-199](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L187-L199)
+- [ConfigController.java:201-270](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L201-L270)
+- [ConfigController.java:272-337](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L272-L337)
+- [ConfigController.java:339-412](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L339-L412)
+- [ConfigController.java:414-480](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L414-L480)
 
 #### File Management
 - POST /api/file
@@ -354,6 +554,8 @@ WS-->>C : JSON-RPC {"result" : messageId}
 WS->>WS : Save agent state on close
 ```
 
+**Updated** Enhanced with improved error handling and streaming support
+
 **Diagram sources**
 - [AgentWsEndpoint.java:116-136](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L116-L136)
 - [AgentWsEndpoint.java:222-261](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L222-L261)
@@ -480,6 +682,18 @@ WS->>WS : Save agent state on close
 **Section sources**
 - [ChatRequest.java:32-42](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/ChatRequest.java#L32-L42)
 
+#### ControlResponse
+- Fields:
+  - code: integer
+  - success: boolean
+  - message: string
+  - data: payload (varies by endpoint)
+
+**Updated** Added comprehensive control response wrapper for all configuration endpoints
+
+**Section sources**
+- [ConfigController.java:61-83](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L61-L83)
+
 ### Authentication and Authorization
 - X-User-Id header:
   - Required for session and file operations
@@ -509,16 +723,12 @@ WS->>WS : Save agent state on close
   - Apply limits on SSE/chat concurrency
   - Use a shared cache/store for counters
 
-[No sources needed since this section provides general guidance]
-
 ### API Versioning
 - No explicit version path/version header was observed in the provided controllers
 - Recommendations:
   - Use path-based versioning (e.g., /api/v1/...)
   - Or header-based versioning (Accept-Version)
   - Maintain backward compatibility for DTOs
-
-[No sources needed since this section provides general guidance]
 
 ### Error Handling and Status Codes
 - REST:
@@ -529,6 +739,8 @@ WS->>WS : Save agent state on close
 - WebSocket:
   - JSON-RPC error responses with code/message
   - On error, session is closed and logged
+
+**Updated** Enhanced error handling with comprehensive control response patterns
 
 **Section sources**
 - [SessionController.java:116-130](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L116-L130)
@@ -590,6 +802,23 @@ WS->>WS : Save agent state on close
 - [A2AController.java:91-105](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L91-L105)
 - [A2AController.java:107-128](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L107-L128)
 
+#### Configuration Management
+- Steps:
+  - List agents: GET /api/control/agents
+  - Get agent config: GET /api/control/agents/{agent_id}
+  - Update agent config: PATCH /api/control/agents/{agent_id} with partial fields
+  - Manage skills: POST/GET/PATCH/DELETE /api/control/skills
+- Best practices:
+  - Use PATCH for partial updates to avoid resetting other fields
+  - Validate skill ZIP files before upload
+  - Handle polymorphic configuration types correctly
+
+**Updated** Added comprehensive configuration management examples
+
+**Section sources**
+- [ConfigController.java:118-185](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L118-L185)
+- [ConfigController.java:339-412](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L339-L412)
+
 ### Monitoring and Observability
 - Health endpoint: GET /api/health/check
 - Metrics exposure: Prometheus endpoint via management server
@@ -602,26 +831,128 @@ WS->>WS : Save agent state on close
 - [HealthController.java:25-32](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/HealthController.java#L25-L32)
 - [application.yaml:53-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L53-L63)
 
+## Enhanced API Testing Infrastructure
+
+### Test Framework Overview
+The testing infrastructure has been significantly enhanced with comprehensive coverage across all API endpoints. The framework uses REST Assured for integration testing and provides specialized base classes for different API categories.
+
+```mermaid
+graph TB
+Base["BaseApiTest<br/>Common test utilities"]
+AgentConfigTest["AgentConfigApiTest<br/>Agent configuration tests"]
+SkillConfigTest["SkillConfigApiTest<br/>Skill configuration tests"]
+FileTest["FileApiTest<br/>File upload/download tests"]
+SessionTest["SessionApiTest<br/>Session management tests"]
+A2ATest["A2AApiTest<br/>A2A protocol tests"]
+DebugTest["DebugApiTest<br/>Debug endpoint tests"]
+AsrTest["AsrWsApiTest<br/>ASR WebSocket tests"]
+TtsTest["TtsWsApiTest<br/>TTS WebSocket tests"]
+AgentWsTest["AgentWsApiTest<br/>Agent WebSocket tests"]
+subgraph "Test Categories"
+Base --> AgentConfigTest
+Base --> SkillConfigTest
+Base --> FileTest
+Base --> SessionTest
+Base --> A2ATest
+Base --> DebugTest
+Base --> AsrTest
+Base --> TtsTest
+Base --> AgentWsTest
+end
+```
+
+**Updated** Added comprehensive testing infrastructure with 13 new test classes
+
+**Diagram sources**
+- [BaseApiTest.java:31-76](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31-L76)
+- [AgentConfigApiTest.java:29-322](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentConfigApiTest.java#L29-L322)
+- [SkillConfigApiTest.java:33-194](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SkillConfigApiTest.java#L33-L194)
+
+### Test Categories and Coverage
+
+#### Base Test Infrastructure
+- BaseApiTest: Provides common REST Assured configuration and helper methods
+- Shared database state: Tests preserve data between methods for ordered testing
+- Common headers: Automatically sets X-User-Id header for all requests
+
+#### Agent Configuration Tests
+- Complete CRUD operations for agent configurations
+- Partial update validation (PATCH preserves unmodified fields)
+- Complex configuration scenarios (tools, skills, MCP clients, knowledge bases)
+- Error handling for non-existent agents
+
+#### Skill Configuration Tests
+- ZIP file upload validation
+- Skill metadata parsing (skill.md validation)
+- Download functionality verification
+- Error handling for malformed ZIP files
+
+#### File Management Tests
+- File upload with validation
+- File retrieval and download
+- Error handling for invalid file IDs
+
+#### Session Management Tests
+- Session lifecycle operations
+- Message listing and event streaming
+- Chat functionality with SSE
+
+#### WebSocket Tests
+- Agent WebSocket JSON-RPC functionality
+- ASR WebSocket streaming
+- TTS WebSocket streaming
+
+**Section sources**
+- [BaseApiTest.java:31-76](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31-L76)
+- [AgentConfigApiTest.java:29-322](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentConfigApiTest.java#L29-L322)
+- [SkillConfigApiTest.java:33-194](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SkillConfigApiTest.java#L33-L194)
+
+### Testing Best Practices
+- Ordered test execution: Related tests in same class share state
+- Comprehensive error validation: All endpoints tested for proper error responses
+- Data preservation: Database reset skipped between tests to maintain state
+- Mock data validation: Skill ZIP validation ensures proper metadata parsing
+
+**Section sources**
+- [BaseApiTest.java:40-43](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L40-L43)
+- [AgentConfigApiTest.java:267-286](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AgentConfigApiTest.java#L267-L286)
+
 ## Dependency Analysis
-The REST and WebSocket layers depend on core services for agent orchestration, event emission, and persistence. DTOs encapsulate data transfer and conversion logic.
+The REST and WebSocket layers depend on core services for agent orchestration, event emission, and persistence. DTOs encapsulate data transfer and conversion logic. The new configuration management system provides centralized control over all agent components.
 
 ```mermaid
 graph TB
 SC["SessionController"]
+CC["ConfigController"]
 AC["A2AController"]
 FC["FileController"]
 WSA["AgentWsEndpoint"]
 WSR["AsrWsEndpoint"]
 WST["TtsWsEndpoint"]
 DTO["DTOs<br/>SessionDTO, SessionMessageDTO, PageResultDTO, ContentDTO, ChatRequest"]
+CTRL["ControlResponse<br/>Generic response wrapper"]
 CORE["Core Services<br/>AgentHandler, EventSink, Repositories"]
 STORE["StorageProvider"]
 DB["MySQL"]
+subgraph "Configuration Management"
+AGENTCFG["AgentConfig<br/>AgentRegistry"]
+TOOLCFG["ToolConfig<br/>ToolRegistry"]
+MCP["McpClientConfig<br/>McpClientRegistry"]
+KB["KnowledgeBaseConfig<br/>KnowledgeRegistry"]
+SKILL["SkillConfig<br/>SkillConfigService"]
+MEMORY["LongTermMemoryConfig<br/>LongTermMemoryRegistry"]
+end
 SC --> DTO
+CC --> CTRL
 AC --> DTO
 FC --> STORE
 SC --> CORE
-AC --> CORE
+CC --> AGENTCFG
+CC --> TOOLCFG
+CC --> MCP
+CC --> KB
+CC --> SKILL
+CC --> MEMORY
 WSA --> DTO
 WSA --> CORE
 WSR --> CORE
@@ -629,8 +960,11 @@ WST --> CORE
 CORE --> DB
 ```
 
+**Updated** Added comprehensive configuration management dependencies
+
 **Diagram sources**
 - [SessionController.java:80-84](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L80-L84)
+- [ConfigController.java:54-57](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L54-L57)
 - [A2AController.java:64-67](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L64-L67)
 - [FileController.java:37-41](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java#L37-L41)
 - [AgentWsEndpoint.java:62-64](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62-L64)
@@ -644,6 +978,7 @@ CORE --> DB
 
 **Section sources**
 - [SessionController.java:80-84](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L80-L84)
+- [ConfigController.java:54-57](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L54-L57)
 - [A2AController.java:64-67](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java#L64-L67)
 - [FileController.java:37-41](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/FileController.java#L37-L41)
 - [AgentWsEndpoint.java:62-64](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62-L64)
@@ -661,8 +996,12 @@ CORE --> DB
   - Validate file sizes and types early to prevent unnecessary I/O
 - Caching:
   - Cache agent cards for A2A discovery
+  - Cache configuration responses for frequently accessed endpoints
 - Monitoring:
   - Track queue depths and thread pool utilization
+  - Monitor configuration endpoint performance for complex agent setups
+
+**Updated** Added caching recommendations for configuration endpoints
 
 [No sources needed since this section provides general guidance]
 
@@ -670,13 +1009,22 @@ CORE --> DB
 - 404 Not Found:
   - Verify agent_id exists and is enabled
   - Ensure session_id belongs to the requesting X-User-Id
+  - Check configuration IDs for configuration endpoints
 - 400 Bad Request:
   - Check input validation (filename, content types, paging bounds)
+  - Validate skill ZIP files and metadata
+  - Ensure configuration payloads match expected schemas
 - WebSocket errors:
   - Inspect JSON-RPC error responses
   - Ensure required headers (X-User-Id) are provided
 - Health probes:
   - Confirm /api/health/check returns "ok"
+- Configuration issues:
+  - Verify agent configurations are enabled before use
+  - Check skill ZIP file structure and metadata
+  - Validate MCP client URLs and authentication
+
+**Updated** Added troubleshooting guidance for configuration endpoints
 
 **Section sources**
 - [SessionController.java:116-130](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java#L116-L130)
@@ -688,7 +1036,9 @@ CORE --> DB
 - [HealthController.java:25-32](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/HealthController.java#L25-L32)
 
 ## Conclusion
-Tron OneAgent exposes a cohesive API surface combining REST and WebSocket for session management, real-time chat, speech services, and A2A collaboration. Clients should adhere to strict input validation, implement robust retry/backoff for SSE/WebSocket, and leverage monitoring to maintain reliability. For production deployments, consider adding explicit versioning, rate limiting, and authorization tokens.
+Tron OneAgent exposes a comprehensive API surface combining REST and WebSocket for session management, real-time chat, speech services, A2A collaboration, and extensive configuration management. The addition of the OpenAPI specification provides complete documentation coverage, while the enhanced testing infrastructure ensures reliability across all endpoints. Clients should adhere to strict input validation, implement robust retry/backoff for SSE/WebSocket, and leverage monitoring to maintain reliability. The new configuration management system provides centralized control over all agent components, enabling dynamic agent composition and management. For production deployments, consider adding explicit versioning, rate limiting, and authorization tokens.
+
+**Updated** Enhanced conclusion to reflect comprehensive API coverage and new testing infrastructure
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -709,9 +1059,18 @@ Tron OneAgent exposes a cohesive API surface combining REST and WebSocket for se
 - WebSocket chat: [/ws/agents/{agent_id}/sessions/{session_id}:62-91](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L62-L91)
 - ASR: [/asr:36-107](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AsrWsEndpoint.java#L36-L107)
 - TTS: [/tts:36-93](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/TtsWsEndpoint.java#L36-L93)
+- List agents: [GET /api/control/agents:118-121](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L118-L121)
+- Get agent config: [GET /api/control/agents/{agent_id}:123-132](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L123-L132)
+- Patch agent config: [PATCH /api/control/agents/{agent_id}:134-185](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L134-L185)
+- Upload skill: [POST /api/control/skills:371-391](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L371-L391)
+- Download skill: [GET /api/control/skills/{skill_id}/download:355-369](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/ConfigController.java#L355-L369)
 
 ### Configuration References
 - Servlet context path and ports: [application.yaml:1-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L1-L63)
+- OpenAPI specification: [backend_java_api.yaml:1-20](file://backend_java_api.yaml#L1-L20)
+
+**Updated** Added comprehensive configuration endpoint examples
 
 **Section sources**
 - [application.yaml:1-63](file://backend_java/bootstrap/src/main/resources/application.yaml#L1-L63)
+- [backend_java_api.yaml:1-20](file://backend_java_api.yaml#L1-L20)

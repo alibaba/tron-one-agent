@@ -10,6 +10,15 @@
 - [packages/chatbox/index.ts](file://frontend/packages/chatbox/index.ts)
 - [packages/chatbox/hooks/useChatModel.ts](file://frontend/packages/chatbox/hooks/useChatModel.ts)
 - [packages/chatbox/eventSource/EventSource.ts](file://frontend/packages/chatbox/eventSource/EventSource.ts)
+- [packages/chatbox/eventSource/SseEventSource.ts](file://frontend/packages/chatbox/eventSource/SseEventSource.ts)
+- [packages/chatbox/eventSource/WebSocketEventSource.ts](file://frontend/packages/chatbox/eventSource/WebSocketEventSource.ts)
+- [packages/chatbox/eventSource/PollingEventSource.ts](file://frontend/packages/chatbox/eventSource/PollingEventSource.ts)
+- [packages/chatbox/eventBuffer/eventbuffer.ts](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts)
+- [packages/chatbox/types/index.ts](file://frontend/packages/chatbox/types/index.ts)
+- [packages/chatbox/types/enums.ts](file://frontend/packages/chatbox/types/enums.ts)
+- [packages/chatbox/types/base.ts](file://frontend/packages/chatbox/types/base.ts)
+- [packages/chatbox/types/chat.ts](file://frontend/packages/chatbox/types/chat.ts)
+- [packages/chatbox/types/event.ts](file://frontend/packages/chatbox/types/event.ts)
 - [packages/chatbox/extends/ChatBox/index.tsx](file://frontend/packages/chatbox/extends/ChatBox/index.tsx)
 - [packages/chatbox/components/MessageItem/index.module.less](file://frontend/packages/chatbox/components/MessageItem/index.module.less)
 - [packages/chatbox/extends/ChatBox/MessageInput/index.module.less](file://frontend/packages/chatbox/extends/ChatBox/MessageInput/index.module.less)
@@ -21,10 +30,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive design system documentation with centralized token implementation
-- Updated component styling to use token-based values instead of hardcoded CSS
-- Enhanced UI refactoring documentation with design system adoption
-- Added detailed token system architecture and implementation patterns
+- Enhanced agent service standardization with improved event source abstraction and unified error handling
+- Updated component structure with refined real-time communication patterns using standardized event types
+- Added comprehensive documentation for standardized ApiResponse objects and improved error handling across frontend services
+- Refined streaming conversation architecture with enhanced event buffering and processing capabilities
+- Strengthened real-time communication patterns with standardized event item structures
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -32,25 +42,27 @@
 3. [Design System and Token Architecture](#design-system-and-token-architecture)
 4. [Core Components](#core-components)
 5. [Architecture Overview](#architecture-overview)
-6. [Detailed Component Analysis](#detailed-component-analysis)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
-11. [Appendices](#appendices)
+6. [Enhanced Event System and Communication Patterns](#enhanced-event-system-and-communication-patterns)
+7. [Standardized Error Handling and API Responses](#standardized-error-handling-and-api-responses)
+8. [Detailed Component Analysis](#detailed-component-analysis)
+9. [Dependency Analysis](#dependency-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
+13. [Appendices](#appendices)
 
 ## Introduction
 This document describes the Tron OneAgent frontend architecture. It is a React-based, TypeScript-powered workspace composed of three packages:
-- chatbox: A reusable chat component library with event-driven streaming capabilities and centralized design tokens
+- chatbox: A reusable chat component library with event-driven streaming capabilities, standardized event types, and centralized design tokens
 - control: A console application for agent configuration, debugging, and management with Ant Design integration
 - client: Placeholder for future client-side integrations (not present in current structure)
 
-The frontend integrates with backend APIs and WebSocket/SSE endpoints to power real-time, streaming conversations. It uses Yarn workspaces for monorepo management, Webpack for builds, Docker for containerization, and Nginx for production deployment. The architecture now features a comprehensive design system with centralized token management, enabling consistent theming across all components.
+The frontend integrates with backend APIs and WebSocket/SSE endpoints to power real-time, streaming conversations. It uses Yarn workspaces for monorepo management, Webpack for builds, Docker for containerization, and Nginx for production deployment. The architecture now features a comprehensive design system with centralized token management, enhanced event standardization, and improved error handling patterns across all frontend services.
 
 ## Project Structure
 The frontend workspace is organized as a Yarn monorepo with three packages and a centralized design system:
 - Root: workspace configuration and shared scripts
-- packages/chatbox: chat UI components, event sources, hooks, and utilities with token-based styling
+- packages/chatbox: chat UI components, event sources, hooks, utilities, and standardized type definitions with token-based styling
 - packages/control: React application for agent management and debugging with Ant Design integration
 - packages/client: empty placeholder for future client-side features
 
@@ -64,7 +76,7 @@ R_nginx["frontend/nginx.conf"]
 R_design["DESIGN.md<br/>Centralized Design Tokens"]
 end
 subgraph "Packages"
-P_chatbox["packages/chatbox<br/>components, hooks, eventSource, utils<br/>Token-based styling"]
+P_chatbox["packages/chatbox<br/>components, hooks, eventSource, eventBuffer, types<br/>Standardized Event Types + Token-based styling"]
 P_control["packages/control<br/>src: App, router, services, pages<br/>Ant Design + Design Tokens"]
 P_client["packages/client<br/>(placeholder)"]
 end
@@ -84,7 +96,7 @@ P_control --> DS_tokens
 ```
 
 **Diagram sources**
-- [package.json:1-16](file://frontend/package.json#L1-L16)
+- [package.json:1-17](file://frontend/package.json#L1-L17)
 - [README.md:1-279](file://frontend/README.md#L1-L279)
 - [build.sh:1-80](file://frontend/build.sh#L1-L80)
 - [nginx.conf:1-78](file://frontend/nginx.conf#L1-L78)
@@ -94,7 +106,7 @@ P_control --> DS_tokens
 - [packages/control/src/App.tsx:25-38](file://frontend/packages/control/src/App.tsx#L25-L38)
 
 **Section sources**
-- [package.json:1-16](file://frontend/package.json#L1-L16)
+- [package.json:1-17](file://frontend/package.json#L1-L17)
 - [README.md:1-279](file://frontend/README.md#L1-L279)
 - [DESIGN.md:1-646](file://frontend/DESIGN.md#L1-L646)
 
@@ -163,6 +175,8 @@ The control application integrates Ant Design components with the centralized de
   - UI components: MessageItem, MessageList, TextContent, ActionContent, TaskContent, HitlContent
   - Hooks: useChatModel, useEventSource, useTTS
   - Event infrastructure: EventSource base class and implementations (Polling, SSE, WebSocket)
+  - Event buffering: EventBuff with batch processing and deduplication
+  - Type system: Standardized enums, base types, chat state, and event definitions
   - Utilities: event buffering and message update helpers
   - Extension surface: ChatBox component and service configuration
   - **Updated**: All components now use centralized design tokens for consistent theming
@@ -181,7 +195,7 @@ The control application integrates Ant Design components with the centralized de
 - [packages/control/package.json:1-60](file://frontend/packages/control/package.json#L1-L60)
 
 ## Architecture Overview
-The frontend architecture centers on a streaming-first chat experience powered by event sources and a reactive model with centralized design tokens. The control application composes chatbox components with Ant Design integration and design system consistency. Real-time updates are delivered via SSE/WebSocket, buffered and batched for performance, and rendered incrementally with token-based styling.
+The frontend architecture centers on a streaming-first chat experience powered by standardized event sources and a reactive model with centralized design tokens. The control application composes chatbox components with Ant Design integration and design system consistency. Real-time updates are delivered via SSE/WebSocket with enhanced error handling, buffered and batched for performance, and rendered incrementally with token-based styling.
 
 ```mermaid
 graph TB
@@ -194,6 +208,8 @@ subgraph "Chatbox Library"
 CB_Index["index.ts exports"]
 CB_Hooks["useChatModel.ts"]
 CB_ES["EventSource.ts<br/>SSE/WebSocket/Polling"]
+CB_Buffer["EventBuffer.ts<br/>Batch Processing + Deduplication"]
+CB_Types["Standardized Types<br/>Enums, Base Types, Events"]
 CB_Components["MessageList, MessageItem,<br/>TextContent, ActionContent, TaskContent, HitlContent<br/>Token-based styling"]
 CB_Ext["ChatBox/index.tsx<br/>Header, Inputs, TTS"]
 end
@@ -206,6 +222,8 @@ subgraph "Runtime"
 WS["Backend SSE/WS endpoints"]
 BUF["EventBuffer"]
 STATE["useChatModel reducer state"]
+ERROR["Standardized Error Handling"]
+API["ApiResponse Objects"]
 end
 C_App --> C_Router
 C_Router --> C_Services
@@ -220,6 +238,8 @@ CB_Components --> DS_Tokens
 DS_Tokens --> DS_Global
 DS_Global --> DS_AppTheme
 CB_ES <- --> WS
+CB_Types --> ERROR
+CB_Types --> API
 ```
 
 **Diagram sources**
@@ -227,30 +247,129 @@ CB_ES <- --> WS
 - [packages/chatbox/index.ts:1-36](file://frontend/packages/chatbox/index.ts#L1-L36)
 - [packages/chatbox/hooks/useChatModel.ts:1-231](file://frontend/packages/chatbox/hooks/useChatModel.ts#L1-L231)
 - [packages/chatbox/eventSource/EventSource.ts:1-90](file://frontend/packages/chatbox/eventSource/EventSource.ts#L1-L90)
+- [packages/chatbox/eventBuffer/eventbuffer.ts:1-122](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts#L1-L122)
+- [packages/chatbox/types/index.ts:1-21](file://frontend/packages/chatbox/types/index.ts#L1-L21)
 - [packages/chatbox/extends/ChatBox/index.tsx:1-347](file://frontend/packages/chatbox/extends/ChatBox/index.tsx#L1-L347)
 - [packages/control/src/styles/tokens.less:1-106](file://frontend/packages/control/src/styles/tokens.less#L1-L106)
 - [packages/control/src/styles/global.less:1-128](file://frontend/packages/control/src/styles/global.less#L1-L128)
 
+## Enhanced Event System and Communication Patterns
+
+### Standardized Event Types and Structures
+The chat system now features a comprehensive event type hierarchy with standardized structures:
+
+**Event Type Hierarchy**
+- SessionEventType: Defines all possible event categories (session name changes, user input, agent messages, tasks, actions, suggestions)
+- SessionMessageStatus: Unified status tracking for all message types
+- ContentType: Standardized content types (TEXT, THINKING, IMAGE, VIDEO, AUDIO, HITL, TASK, ACTION)
+- TaskStatus and ActionStatus: Consistent status management across all components
+
+**Event Item Standardization**
+- All events extend SessionEvent with consistent structure: id, agentId, userId, sessionId, type, gmtCreated
+- Event-specific payloads are strongly typed with proper interfaces
+- Status change events include completion timestamps and optional error information
+
+**Section sources**
+- [packages/chatbox/types/enums.ts:1-70](file://frontend/packages/chatbox/types/enums.ts#L1-L70)
+- [packages/chatbox/types/event.ts:1-116](file://frontend/packages/chatbox/types/event.ts#L1-L116)
+- [packages/chatbox/types/base.ts:1-125](file://frontend/packages/chatbox/types/base.ts#L1-L125)
+
+### Enhanced Event Source Abstraction
+The EventSourceService provides a unified interface for different streaming protocols:
+
+**EventSourceService Interface**
+- Abstract base class defining common contract for all event sources
+- Session ID and last event ID management for stream resumption
+- Standardized listener registration for messages, errors, and connection changes
+- Destroyed state management for resource cleanup
+
+**Concrete Implementations**
+- SseEventSource: Server-Sent Events with automatic retry and error handling
+- WebSocketEventSource: Real-time WebSocket connections with automatic reconnection
+- PollingEventSource: Fallback polling mechanism with configurable intervals
+
+**Section sources**
+- [packages/chatbox/eventSource/EventSource.ts:1-90](file://frontend/packages/chatbox/eventSource/EventSource.ts#L1-L90)
+- [packages/chatbox/eventSource/SseEventSource.ts:1-118](file://frontend/packages/chatbox/eventSource/SseEventSource.ts#L1-L118)
+- [packages/chatbox/eventSource/WebSocketEventSource.ts:1-135](file://frontend/packages/chatbox/eventSource/WebSocketEventSource.ts#L1-L135)
+- [packages/chatbox/eventSource/PollingEventSource.ts:1-83](file://frontend/packages/chatbox/eventSource/PollingEventSource.ts#L1-L83)
+
+### Advanced Event Buffering and Processing
+The EventBuff class provides sophisticated event processing with batching and deduplication:
+
+**Event Buffer Features**
+- Batch size configuration for optimal processing performance
+- Flush timeout mechanism to prevent event starvation
+- Duplicate detection using event ID sets
+- Asynchronous processing with error recovery
+- Resource cleanup and memory management
+
+**Processing Pipeline**
+- Events are filtered for duplicates before processing
+- Batching occurs based on configured batch size or flush timeout
+- Sequential processing ensures event ordering consistency
+- Error handling preserves events for retry attempts
+
+**Section sources**
+- [packages/chatbox/eventBuffer/eventbuffer.ts:1-122](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts#L1-L122)
+
+## Standardized Error Handling and API Responses
+
+### Unified Error Handling Patterns
+The enhanced architecture implements standardized error handling across all frontend services:
+
+**Error Propagation**
+- EventSource implementations emit standardized error events
+- Connection state changes are communicated through dedicated listeners
+- Error messages include context-specific information for debugging
+- Resource cleanup is handled automatically on error conditions
+
+**API Response Standardization**
+- All backend communications follow consistent response patterns
+- Error responses include structured error codes and messages
+- Success responses provide typed data with proper validation
+- Loading states are managed through standardized patterns
+
+**Section sources**
+- [packages/chatbox/eventSource/SseEventSource.ts:84-100](file://frontend/packages/chatbox/eventSource/SseEventSource.ts#L84-L100)
+- [packages/chatbox/eventSource/WebSocketEventSource.ts:102-110](file://frontend/packages/chatbox/eventSource/WebSocketEventSource.ts#L102-L110)
+- [packages/chatbox/eventSource/PollingEventSource.ts:61-63](file://frontend/packages/chatbox/eventSource/PollingEventSource.ts#L61-L63)
+
+### Enhanced State Management with Error Recovery
+The useChatModel hook now includes improved error handling and recovery mechanisms:
+
+**State Management Enhancements**
+- Error state tracking integrated with message status
+- Automatic recovery from transient connection failures
+- Graceful degradation when streaming protocols fail
+- User feedback mechanisms for error conditions
+
+**Section sources**
+- [packages/chatbox/hooks/useChatModel.ts:140-149](file://frontend/packages/chatbox/hooks/useChatModel.ts#L140-L149)
+- [packages/chatbox/hooks/useChatModel.ts:196-202](file://frontend/packages/chatbox/hooks/useChatModel.ts#L196-L202)
+
 ## Detailed Component Analysis
 
 ### State Management with useChatModel
-The chat state is managed via a reducer pattern with explicit actions. It supports:
-- Initializing from initialData
-- Streaming event ingestion via an injected EventSource
-- Event buffering to batch updates
+The chat state is managed via a reducer pattern with enhanced error handling and standardized event processing. It supports:
+- Initializing from initialData with proper type validation
+- Streaming event ingestion via standardized EventSource implementations
+- Advanced event buffering with deduplication and batch processing
 - Running/stopped lifecycle tied to agent execution status
 - Shadow user message insertion and status updates
+- **Updated**: Enhanced error handling and recovery mechanisms
 
 Key behaviors:
 - Reducer handles patching state, updating message lists from events, adding shadow user messages, and updating their status.
-- Event buffer aggregates events and applies them to state periodically.
+- Event buffer aggregates events with duplicate detection and applies them to state periodically.
 - Running flag controls whether the EventSource is started or stopped.
 - Session ID and last event ID are synchronized with the EventSource to resume streams.
+- **Updated**: Error events trigger graceful degradation and user notification.
 
 ```mermaid
 flowchart TD
-Start(["useChatModel(config)"]) --> Init["Initialize state and refs"]
-Init --> SetupBuffer["Setup EventBuffer with push handler"]
+Start(["useChatModel(config)"]) --> Init["Initialize state and refs<br/>Validate initialData types"]
+Init --> SetupBuffer["Setup EventBuffer with<br/>push handler + deduplication"]
 SetupBuffer --> Subscribe["Subscribe to EventSource:<br/>onMessage/onError/onConnectionChange"]
 Subscribe --> Ready{"Has messages and EventSource?"}
 Ready --> |Yes| SyncIds["Set sessionId and lastEventId"]
@@ -261,7 +380,7 @@ DecideRun --> |No| Idle["Idle"]
 SetRun --> ToggleES["Start/Stop EventSource based on running"]
 Idle --> ToggleES
 ToggleES --> OnMessage["onMessage(event)"]
-OnMessage --> BufferPush["Buffer.push([event])"]
+OnMessage --> BufferPush["Buffer.push([event])<br/>Duplicate detection"]
 BufferPush --> ApplyBatch["Dispatch UPDATE_CHAT_MESAGE_LIST_BY_EVENTS"]
 ApplyBatch --> StopCheck{"AGENT_MESSAGE_STATUS_CHANGED<br/>newStatus != EXECUTING?"}
 StopCheck --> |Yes| Stop["running = false"]
@@ -275,42 +394,6 @@ Continue --> End(["Render with updated state"])
 **Section sources**
 - [packages/chatbox/hooks/useChatModel.ts:1-231](file://frontend/packages/chatbox/hooks/useChatModel.ts#L1-L231)
 
-### Event Source Abstraction and Streaming
-The EventSourceService defines a common interface for streaming:
-- Listeners for messages, errors, and connection state changes
-- Session ID and last event ID for resuming streams
-- Abstract start/stop methods for concrete implementations
-
-Concrete implementations (as exported by the library) include SSE, WebSocket, and polling variants. The control app injects an EventSource into useChatModel to receive real-time updates.
-
-```mermaid
-classDiagram
-class EventSourceService {
--messageListeners : Array
--errorListeners : Array
--connectionChangeListeners : Array
--_sessionId : string
--_lastEventId : number
--destroyed : boolean
-+sessionId : string
-+lastEventId : number
-+start() void
-+stop() void
-+onMessage(cb) () => void
-+onError(cb) () => void
-+onConnectionChange(cb) () => void
-#emitMessage(event) void
-#emitError(error) void
-#emitConnectionChange(connected) void
-}
-```
-
-**Diagram sources**
-- [packages/chatbox/eventSource/EventSource.ts:1-90](file://frontend/packages/chatbox/eventSource/EventSource.ts#L1-L90)
-
-**Section sources**
-- [packages/chatbox/eventSource/EventSource.ts:1-90](file://frontend/packages/chatbox/eventSource/EventSource.ts#L1-L90)
-
 ### ChatBox Component and Real-Time UI Updates
 The ChatBox component orchestrates:
 - Dynamic input mode selection based on supported content types
@@ -318,6 +401,7 @@ The ChatBox component orchestrates:
 - Integration with message list rendering and optional TTS playback
 - Suggestions and HITL (Human-in-the-loop) handling
 - Controlled sending flow with disabled states during running or pending HITL
+- **Updated**: Enhanced error handling and user feedback mechanisms
 
 It renders the header, message list, suggestions, and input area, and coordinates with the parent app's message handlers. All components now utilize centralized design tokens for consistent theming.
 
@@ -335,7 +419,7 @@ CB->>CB : Validate and prepare payload
 CB->>CM : handleSendMessage(text, attachments?)
 CM-->>CB : Sent, awaiting stream
 ES-->>BUF : onMessage(EventItem)
-BUF-->>CM : flush(events)
+BUF-->>CM : flush(events)<br/>with deduplication
 CM-->>CB : state.update(messages, running)
 CB->>ML : re-render with new messages
 ML->>MI : render items with token-based styling
@@ -385,7 +469,8 @@ A_Router --> P_Tools["Tools page"]
 - chatbox package exports:
   - Types, hooks, event sources, and components
   - Utility for updating messages by events
-  - **Updated**: Token-based styling system with centralized design tokens
+  - **Updated**: Comprehensive type system with standardized event definitions
+  - **Updated**: Enhanced event buffering and processing capabilities
 - control package depends on:
   - Ant Design ecosystem with design token integration
   - chatbox as a local dependency
@@ -408,23 +493,27 @@ Chatbox --> React["react + react-dom"]
 Chatbox --> Less["less + loaders<br/>Token-based CSS"]
 Chatbox --> Markdown["react-markdown + rehype/katex"]
 Chatbox --> Tokens["Design Tokens<br/>Centralized theming"]
+Chatbox --> Types["Standardized Types<br/>Event System + Error Handling"]
+Chatbox --> Buffer["Advanced Event Buffering<br/>Batch Processing + Deduplication"]
 ```
 
 **Diagram sources**
-- [package.json:1-16](file://frontend/package.json#L1-L16)
+- [package.json:1-17](file://frontend/package.json#L1-L17)
 - [packages/control/package.json:1-60](file://frontend/packages/control/package.json#L1-L60)
 
 **Section sources**
-- [package.json:1-16](file://frontend/package.json#L1-L16)
+- [package.json:1-17](file://frontend/package.json#L1-L17)
 - [packages/control/package.json:1-60](file://frontend/packages/control/package.json#L1-L60)
 
 ## Performance Considerations
-- Event buffering: Events are aggregated and applied in batches to reduce render churn and improve throughput.
+- Event buffering: Events are aggregated with duplicate detection and applied in batches to reduce render churn and improve throughput.
 - Auto-scroll throttling: Scroll position checks are throttled to avoid excessive layout recalculations.
 - Conditional rendering: Multi-mode input toggles based on supported content types to minimize unnecessary DOM nodes.
 - Lazy initialization: EventBuffer and other resources are lazily created to defer cost until needed.
 - **Updated**: Token-based styling performance: CSS variables and LESS compilation optimize rendering performance.
 - **Updated**: Design system consistency reduces bundle size through shared token references.
+- **Updated**: Event deduplication prevents redundant processing and improves memory efficiency.
+- **Updated**: Standardized error handling reduces error propagation overhead and improves resilience.
 - Build optimization: Webpack-based control app builds for production; consider code splitting and asset optimization for larger apps.
 
 ## Troubleshooting Guide
@@ -434,6 +523,8 @@ Chatbox --> Tokens["Design Tokens<br/>Centralized theming"]
 - Locale and i18n: Set locale via chatbox utilities to match UI text expectations.
 - **Updated**: Design token conflicts: Ensure LESS variable precedence and proper token import order.
 - **Updated**: Ant Design theme integration: Verify theme configuration matches design system tokens.
+- **Updated**: Event type mismatches: Ensure all events conform to standardized type definitions.
+- **Updated**: Error handling: Monitor standardized error events and implement appropriate user feedback.
 - Docker/Nginx deployment: Use the provided build script to install dependencies, build the control app, and produce a Docker image; run with END_POINT pointing to the backend.
 
 **Section sources**
@@ -442,7 +533,7 @@ Chatbox --> Tokens["Design Tokens<br/>Centralized theming"]
 - [build.sh:52-80](file://frontend/build.sh#L52-L80)
 
 ## Conclusion
-The Tron OneAgent frontend is a modular, streaming-first React application built with Yarn workspaces and a comprehensive design system. The chatbox library encapsulates real-time event handling, buffering, and rendering with centralized token-based styling, while the control application composes these building blocks into a comprehensive management UI with Ant Design integration. The architecture leverages modern tooling (Webpack, TypeScript, Ant Design), robust real-time transports (SSE/WebSocket), centralized design tokens for consistency, and containerized deployment (Docker + Nginx) to deliver a responsive, extensible, and maintainable experience.
+The Tron OneAgent frontend is a modular, streaming-first React application built with Yarn workspaces and a comprehensive design system. The chatbox library encapsulates real-time event handling, advanced buffering with deduplication, and standardized event processing with centralized token-based styling, while the control application composes these building blocks into a comprehensive management UI with Ant Design integration. The architecture leverages modern tooling (Webpack, TypeScript, Ant Design), robust real-time transports (SSE/WebSocket), centralized design tokens for consistency, enhanced error handling patterns, and containerized deployment (Docker + Nginx) to deliver a responsive, extensible, and maintainable experience.
 
 ## Appendices
 
@@ -479,6 +570,7 @@ DockerBuild --> RunContainer["docker run -p 80:80 -e END_POINT=<host:port>"]
 - Add new content types: adjust supportInputTypes to toggle multi-mode input and render appropriate attachments
 - **Updated**: Design system extensions: add new tokens to tokens.less and apply via LESS variable substitution
 - **Updated**: Component theming: use existing design tokens for consistent styling across custom components
+- **Updated**: Event system extensions: implement new event types following standardized patterns
 
 **Section sources**
 - [README.md:103-123](file://frontend/README.md#L103-L123)
@@ -504,3 +596,23 @@ DockerBuild --> RunContainer["docker run -p 80:80 -e END_POINT=<host:port>"]
 - [DESIGN.md:1-646](file://frontend/DESIGN.md#L1-L646)
 - [packages/control/src/styles/tokens.less:1-106](file://frontend/packages/control/src/styles/tokens.less#L1-L106)
 - [packages/chatbox/components/MessageItem/index.module.less:18-298](file://frontend/packages/chatbox/components/MessageItem/index.module.less#L18-L298)
+
+### Enhanced Type System Usage Guide
+**Implementing New Event Types**
+1. Define new event constants in SessionEventType enum
+2. Create corresponding event interface extending SessionEvent
+3. Add event type to EventItem union type
+4. Update event handlers in useChatModel to process new events
+5. Implement UI components for displaying new content types
+
+**Standardizing Error Handling**
+1. Use standardized error interfaces across all services
+2. Implement consistent error propagation patterns
+3. Provide user-friendly error messages
+4. Log structured error information for debugging
+5. Handle network failures gracefully with retry logic
+
+**Section sources**
+- [packages/chatbox/types/enums.ts:36-53](file://frontend/packages/chatbox/types/enums.ts#L36-L53)
+- [packages/chatbox/types/event.ts:106-116](file://frontend/packages/chatbox/types/event.ts#L106-L116)
+- [packages/chatbox/hooks/useChatModel.ts:140-149](file://frontend/packages/chatbox/hooks/useChatModel.ts#L140-L149)

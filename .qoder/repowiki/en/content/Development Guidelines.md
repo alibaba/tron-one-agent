@@ -8,28 +8,38 @@
 - [backend_java/bootstrap/src/main/resources/logback.xml](file://backend_java/bootstrap/src/main/resources/logback.xml)
 - [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java)
 - [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/A2AApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/A2AApiTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/HealthApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/HealthApiTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/FileApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/FileApiTest.java)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/DebugApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/DebugApiTest.java)
 - [backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json](file://backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json)
 - [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java)
+- [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/SessionController.java)
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java)
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java)
 - [backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java)
 - [backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/JsonUtils.java](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/JsonUtils.java)
 - [backend_java/checkstyle.xml](file://backend_java/checkstyle.xml)
+- [backend_java_api.yaml](file://backend_java_api.yaml)
 - [frontend/package.json](file://frontend/package.json)
 - [frontend/packages/control/package.json](file://frontend/packages/control/package.json)
+- [frontend/packages/control/src/services/request.ts](file://frontend/packages/control/src/services/request.ts)
 - [frontend/.prettierrc](file://frontend/.prettierrc)
 - [frontend/DESIGN.md](file://frontend/DESIGN.md)
+- [frontend/webpack.config.js](file://frontend/webpack.config.js)
 - [LICENSE.txt](file://LICENSE.txt)
 - [AGENTS.md](file://AGENTS.md)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive backend coding standards with Google Java Style checkstyle configuration
-- Integrated Prettier code formatting standards for frontend development
-- Established unified design system guidelines from DESIGN.md
-- Added licensing requirements and Apache 2.0 compliance
-- Enhanced development workflow with automated code quality tools
+- Added comprehensive API testing framework guidelines with REST Assured integration
+- Enhanced testing infrastructure documentation with BaseApiTest and BaseFuncTest classes
+- Updated frontend development practices with standardized ApiResponse objects and improved error handling patterns
+- Expanded API documentation coverage with OpenAPI 3.0 specification
+- Added WebSocket and SSE endpoint documentation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,16 +48,19 @@
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Development Standards and Code Quality](#development-standards-and-code-quality)
-7. [Dependency Analysis](#dependency-analysis)
-8. [Performance Considerations](#performance-considerations)
-9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Contribution Workflow and Community Guidelines](#contribution-workflow-and-community-guidelines)
-11. [Appendices](#appendices)
+7. [Testing Framework and Infrastructure](#testing-framework-and-infrastructure)
+8. [API Documentation and Specifications](#api-documentation-and-specifications)
+9. [Frontend Development Practices](#frontend-development-practices)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Contribution Workflow and Community Guidelines](#contribution-workflow-and-community-guidelines)
+14. [Appendices](#appendices)
 
 ## Introduction
 This document provides comprehensive development guidelines for contributing to Tron OneAgent. It covers code standards and conventions for Java backend, TypeScript/React frontend, and Python skill implementation; testing strategies (unit, integration, and functional testing); debugging techniques and local development workflows; encryption utilities and security best practices; performance optimization and profiling; and the contribution workflow and community guidelines. The goal is to help contributors implement new features, extend existing functionality, and maintain high-quality code consistently.
 
-**Updated** Added comprehensive development standards including Google Java Style checkstyle configuration, Prettier code formatting, and unified design system guidelines.
+**Updated** Added comprehensive API testing framework guidelines, enhanced testing infrastructure documentation, and improved frontend development practices with standardized ApiResponse objects and error handling patterns.
 
 ## Project Structure
 Tron OneAgent follows a multi-module Maven layout for the Java backend and a monorepo-style Yarn workspaces layout for the frontend. The backend is organized into modules for API, core business logic, infrastructure, utilities, and bootstrapping. The frontend uses a workspace with multiple packages (e.g., control, chatbox, client).
@@ -62,6 +75,9 @@ INFRA["infra module"]
 UTILS["utils module"]
 BOOT["bootstrap module"]
 CHECKSTYLE["checkstyle.xml<br/>Google Java Style"]
+API_TESTS["API Tests<br/>REST Assured Framework"]
+FUNC_TESTS["Functional Tests<br/>BaseFuncTest"]
+ENDPOINTS["OpenAPI 3.0<br/>API Specification"]
 end
 subgraph "Frontend (TypeScript/React)"
 FE_PKG["frontend/package.json"]
@@ -70,6 +86,8 @@ CHATBOX["packages/chatbox"]
 CLIENT["packages/client"]
 PRETTIER[".prettierrc<br/>Prettier Formatting"]
 DESIGN["DESIGN.md<br/>Unified Design System"]
+REQUEST["request.ts<br/>Standardized API Client"]
+WEBPACK["webpack.config.js<br/>Development Server"]
 end
 POM --> API
 POM --> CORE
@@ -77,11 +95,16 @@ POM --> INFRA
 POM --> UTILS
 POM --> BOOT
 POM --> CHECKSTYLE
+BOOT --> API_TESTS
+BOOT --> FUNC_TESTS
+BOOT --> ENDPOINTS
 FE_PKG --> CONTROL
 FE_PKG --> CHATBOX
 FE_PKG --> CLIENT
 FE_PKG --> PRETTIER
 FE_PKG --> DESIGN
+CONTROL --> REQUEST
+CONTROL --> WEBPACK
 ```
 
 **Diagram sources**
@@ -90,6 +113,7 @@ FE_PKG --> DESIGN
 - [backend_java/checkstyle.xml:6](file://backend_java/checkstyle.xml#L6)
 - [frontend/.prettierrc:1-8](file://frontend/.prettierrc#L1-L8)
 - [frontend/DESIGN.md:1-314](file://frontend/DESIGN.md#L1-L314)
+- [backend_java_api.yaml:1-800](file://backend_java_api.yaml#L1-L800)
 
 **Section sources**
 - [README.md:109-156](file://README.md#L109-L156)
@@ -102,10 +126,10 @@ FE_PKG --> DESIGN
   - Core: Agent orchestration, configuration, repositories, services, and utilities.
   - Infra: DAL, mappers, storage providers, tracing utilities.
   - Utils: Shared utilities (JSON, encryption).
-  - Bootstrap: Spring Boot application entrypoint and configuration.
+  - Bootstrap: Spring Boot application entrypoint and comprehensive testing framework.
 - Frontend packages:
-  - Control: Main control panel and UI shell.
-  - Chatbox: Chat UI components.
+  - Control: Main control panel and UI shell with standardized API client.
+  - Chatbox: Chat UI components with HITL (Human-in-the-loop) support.
   - Client: Frontend client libraries and integrations.
 
 Key runtime configuration and logging are centralized in the bootstrap module's YAML and Logback files.
@@ -130,6 +154,10 @@ LTM["Long Term Memory"]
 ModelAPI["Model API"]
 MCP["MCP Server"]
 RemoteSubAgent["Remote Sub-Agent"]
+API_TESTS["API Testing Framework"]
+FUNC_TESTS["Functional Testing"]
+OPENAPI["OpenAPI 3.0 Spec"]
+RESPONSE["Standardized API Responses"]
 Dev --> Control
 Control --> Backend
 Backend --> MySQL
@@ -139,6 +167,10 @@ Backend --> RAG
 Backend --> LTM
 Backend --> MCP
 Backend --> RemoteSubAgent
+Backend --> API_TESTS
+Backend --> FUNC_TESTS
+Backend --> OPENAPI
+Backend --> RESPONSE
 ```
 
 **Diagram sources**
@@ -275,6 +307,29 @@ The frontend uses Yarn workspaces to manage multiple packages. The control packa
 - [frontend/package.json:4-11](file://frontend/package.json#L4-L11)
 - [frontend/packages/control/package.json:5-58](file://frontend/packages/control/package.json#L5-L58)
 
+### Frontend: Standardized API Client
+The request.ts service provides a standardized Axios-based HTTP client with comprehensive error handling, response interception, and consistent API patterns across the frontend application.
+
+```mermaid
+flowchart TD
+Start(["API Request"]) --> Interceptor["Request Interceptor"]
+Interceptor --> Axios["Axios Instance"]
+Axios --> Response["Response Interceptor"]
+Response --> Success{"Success?"}
+Success --> |Yes| Return["Return Data"]
+Success --> |No| Error["Handle HTTP Errors"]
+Error --> Message["Show Ant Design Message"]
+Message --> Reject["Reject Promise"]
+Return --> End(["End"])
+Reject --> End
+```
+
+**Diagram sources**
+- [frontend/packages/control/src/services/request.ts:35-101](file://frontend/packages/control/src/services/request.ts#L35-L101)
+
+**Section sources**
+- [frontend/packages/control/src/services/request.ts:1-143](file://frontend/packages/control/src/services/request.ts#L1-L143)
+
 ### Python Skills
 Skills are implemented as Python scripts under the skills directory. A minimal skill example is provided for weather-related functionality.
 
@@ -390,6 +445,213 @@ A PostToolUse hook validates license headers on every write operation, ensuring 
 - [LICENSE.txt:1-14](file://LICENSE.txt#L1-L14)
 - [AGENTS.md:80-83](file://AGENTS.md#L80-L83)
 
+## Testing Framework and Infrastructure
+
+### Comprehensive API Testing Framework
+
+The project implements a comprehensive REST API testing framework using REST Assured with a robust base class hierarchy for consistent testing practices.
+
+#### BaseApiTest Framework
+The BaseApiTest class serves as the foundation for all API integration tests, providing:
+
+- **REST Assured Integration**: Automatic port detection and configuration
+- **Common Helper Methods**: Standardized request builders with X-User-Id headers
+- **Database State Management**: Preserves test data between method executions
+- **Flexible Request Building**: Methods for both JSON and non-JSON requests
+
+#### Test Class Organization
+The testing framework includes specialized test classes for different API domains:
+
+- **A2AApiTest**: Tests Agent-to-Agent communication endpoints
+- **SessionApiTest**: Comprehensive session management testing with ordered execution
+- **HealthApiTest**: Basic health check verification
+- **FileApiTest**: File upload/download functionality testing
+- **DebugApiTest**: Tool, MCP client, and knowledge base debugging endpoints
+
+#### Ordered Execution Patterns
+The SessionApiTest demonstrates sophisticated ordered testing patterns:
+
+```mermaid
+sequenceDiagram
+participant Test1 as "Create Session"
+participant Test2 as "List Sessions"
+participant Test3 as "Get Session"
+participant Test4 as "Chat Messages"
+Test1->>Test2 : Ordered Test Method 1
+Test2->>Test3 : Ordered Test Method 2
+Test3->>Test4 : Ordered Test Method 3
+Note over Test1,Test4 : @TestMethodOrder(OrderAnnotation.class)
+```
+
+**Diagram sources**
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java:35](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java#L35)
+
+#### Advanced Testing Features
+- **Cross-user Authorization Testing**: Validates session isolation between users
+- **Pagination Testing**: Comprehensive pagination boundary condition testing
+- **Error Condition Testing**: Explicit testing of 404, 400, and 500 error responses
+- **Race Condition Testing**: Validates busy session handling behavior
+
+**Section sources**
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java:1-75](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L1-L75)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/A2AApiTest.java:1-212](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/A2AApiTest.java#L1-L212)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java:1-669](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java#L1-L669)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/HealthApiTest.java:1-42](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/HealthApiTest.java#L1-L42)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/FileApiTest.java:1-91](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/FileApiTest.java#L1-L91)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/DebugApiTest.java:1-146](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/DebugApiTest.java#L1-L146)
+
+### Functional Testing Infrastructure
+
+The BaseFuncTest class provides the foundation for functional testing with embedded database support and comprehensive agent interaction capabilities.
+
+#### Embedded Database Setup
+- **MariaDB4J Integration**: Embedded database for isolated test environments
+- **Schema Initialization**: Automatic SQL schema loading from init.sql
+- **Environment Configuration**: Dotenv support for external configuration loading
+
+#### Agent Testing Capabilities
+- **Session Management**: Full CRUD operations for test sessions
+- **Event Repository Integration**: Realistic event streaming simulation
+- **Agent Registry Access**: Direct access to agent instances for testing
+- **Sequence Generation**: Proper ID generation for test data consistency
+
+**Section sources**
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java:1-221](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L1-L221)
+
+### Testing Strategy Documentation
+
+#### Unit Testing
+- **Utility Classes**: JSON and encryption helper testing
+- **Business Logic**: Core agent processing and repository operations
+- **Validation**: Input validation and error handling
+
+#### Integration Testing
+- **API Endpoints**: REST Assured-based endpoint testing
+- **Database Operations**: Repository layer testing with real connections
+- **External Services**: Integration with Model API and storage providers
+
+#### Functional Testing
+- **End-to-End Flows**: Complete user journey testing
+- **Agent Execution**: Full ReAct agent processing chains
+- **Error Scenarios**: Comprehensive error condition coverage
+
+**Section sources**
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java:160-221](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L160-L221)
+- [backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json:1-13](file://backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json#L1-L13)
+
+## API Documentation and Specifications
+
+### OpenAPI 3.0 Specification
+
+The project maintains comprehensive API documentation using OpenAPI 3.0 specification, covering all REST endpoints and WebSocket interfaces.
+
+#### API Coverage Areas
+- **Health Checks**: Basic service availability verification
+- **Session Management**: Complete session lifecycle operations
+- **Agent Communication**: A2A protocol and chat endpoints
+- **Configuration Management**: Dynamic configuration CRUD operations
+- **Debug Endpoints**: Development and troubleshooting interfaces
+- **File Operations**: Upload and download capabilities
+
+#### Endpoint Categories
+- **Health**: `/health/check` - Service status verification
+- **Sessions**: `/agents/{agent_id}/sessions` - Session management
+- **A2A Protocol**: `/a2a/{agent_id}/` - Agent-to-Agent communication
+- **Configuration**: `/control/` - Dynamic configuration endpoints
+- **Debug**: `/debug/` - Development and troubleshooting
+
+#### WebSocket Endpoints
+The API specification includes comprehensive WebSocket endpoint documentation:
+
+| Path | Protocol | Description |
+|------|----------|-------------|
+| `/ws/agents/{agent_id}/sessions/{session_id}` | JSON-RPC 2.0 | Agent chat & event streaming |
+| `/asr` | Custom JSON | Automatic Speech Recognition (streaming) |
+| `/tts` | Custom JSON | Text-to-Speech (streaming) |
+
+#### Response Patterns
+- **Standard Responses**: Consistent HTTP status codes and error handling
+- **Streaming Support**: SSE and WebSocket event streaming
+- **JSON-RPC**: A2A protocol compliance with standardized envelopes
+
+**Section sources**
+- [backend_java_api.yaml:1-800](file://backend_java_api.yaml#L1-L800)
+
+### API Testing Documentation
+
+#### REST Assured Integration
+The testing framework leverages REST Assured for comprehensive API validation:
+
+- **Request Building**: Fluent API for constructing HTTP requests
+- **Response Validation**: Hamcrest matchers for response assertions
+- **Authentication**: X-User-Id header management
+- **Content Types**: JSON and multipart/form-data support
+
+#### Test Coverage Matrix
+- **Positive Scenarios**: Successful request/response validation
+- **Negative Scenarios**: Error condition testing (404, 400, 500)
+- **Boundary Conditions**: Edge case and limit testing
+- **Authorization**: Cross-user access validation
+
+**Section sources**
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java:50-75](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L50-L75)
+
+## Frontend Development Practices
+
+### Standardized API Client Architecture
+
+The frontend implements a standardized API client with comprehensive error handling and response interception patterns.
+
+#### Request Interceptor Pattern
+The Axios instance includes request interceptors for:
+- **Authentication**: Token injection and header management
+- **Logging**: Request tracking and debugging support
+- **Transformation**: Request preprocessing and validation
+
+#### Response Interceptor Pattern
+Comprehensive response handling includes:
+- **Business Logic Validation**: Custom response code checking
+- **Error State Management**: HTTP status-specific error handling
+- **User Feedback**: Ant Design message integration
+- **Promise Chain**: Consistent error propagation
+
+#### Error Handling Patterns
+- **HTTP Status Codes**: 400, 401, 403, 404, 500 specific handling
+- **Network Errors**: Connectivity and timeout management
+- **Client Configuration**: Request setup and validation errors
+- **Business Errors**: Application-specific error responses
+
+#### Development Server Configuration
+The webpack configuration provides:
+- **Hot Module Replacement**: Fast development iteration
+- **Proxy Configuration**: Backend API routing and CORS handling
+- **Asset Management**: Static file serving and optimization
+- **Development Tools**: Debugging and monitoring support
+
+**Section sources**
+- [frontend/packages/control/src/services/request.ts:1-143](file://frontend/packages/control/src/services/request.ts#L1-L143)
+- [frontend/webpack.config.js:136-168](file://frontend/webpack.config.js#L136-L168)
+
+### Frontend Component Architecture
+
+#### HITL (Human-in-the-Loop) Integration
+The frontend supports advanced user interaction patterns:
+- **Questionnaire Rendering**: Dynamic form generation based on content
+- **Multi-tab Interface**: Tabbed questionnaire navigation
+- **Real-time Validation**: Live form validation and feedback
+- **Submission Handling**: Structured result serialization
+
+#### Text Content Processing
+Advanced text rendering capabilities:
+- **Custom Tag Support**: Extensible content type system
+- **JSON Parsing**: Safe content parsing with error handling
+- **Loading States**: Graceful handling of async content
+- **External Links**: Secure link handling with target attributes
+
+**Section sources**
+- [frontend/packages/chatbox/components/TextContent/index.tsx:43-100](file://frontend/packages/chatbox/components/TextContent/index.tsx#L43-L100)
+- [frontend/packages/chatbox/components/HitlContent/index.tsx:120-220](file://frontend/packages/chatbox/components/HitlContent/index.tsx#L120-L220)
+
 ## Dependency Analysis
 The backend uses Maven with dependency management for Spring Boot, MyBatis-Plus, Jackson BOM, OpenTelemetry, AgentScope, DashScope, and A2A SDKs. The frontend uses Yarn workspaces and Webpack for building.
 
@@ -403,9 +665,12 @@ POM --> AgentScope["AgentScope"]
 POM --> DashScope["DashScope SDK"]
 POM --> A2A["A2A SDK"]
 POM --> Checkstyle["Checkstyle Plugin"]
+POM --> RestAssured["REST Assured Testing"]
 FE_Pkg["frontend/package.json"] --> WS["Yarn Workspaces"]
 FE_Pkg --> CtrlPkg["packages/control/package.json"]
 FE_Pkg --> Prettier["Prettier Plugin"]
+FE_Pkg --> Axios["Axios HTTP Client"]
+FE_Pkg --> Webpack["Webpack Dev Server"]
 ```
 
 **Diagram sources**
@@ -423,11 +688,13 @@ FE_Pkg --> Prettier["Prettier Plugin"]
 - Persistence: Transactional session operations ensure data consistency and reduce contention.
 - Logging: Structured logging with rolling file appender and trace span ID conversion aids performance diagnostics.
 - Observability: Management endpoints expose health, metrics, and Prometheus for monitoring.
+- API Testing: Comprehensive test suite ensures performance regression detection.
 
 Practical tips:
 - Monitor first-token delay and total cost to identify slow model calls or tool invocations.
 - Tune thread pool sizes and queue depths for A2A workloads.
 - Use pagination and efficient queries in repositories to avoid heavy scans.
+- Leverage REST Assured testing for performance regression validation.
 
 **Section sources**
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java:78-128](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L78-L128)
@@ -441,11 +708,15 @@ Common areas to check:
 - Encryption key configuration: Verify TRON_ENCRYPT_KEY is set or defaults are acceptable.
 - Logging configuration: Confirm logback pattern and rolling policy are active.
 - Functional tests: Use embedded MariaDB via BaseFuncTest to validate end-to-end flows.
+- API testing: REST Assured framework provides comprehensive endpoint validation.
+- Frontend API client: Standardized error handling and response interception.
 
 Debugging steps:
 - Enable INFO logs for the com.aliyun.tam.x.tron package.
 - Inspect management endpoints for health and metrics.
 - Validate A2A JSON-RPC payloads and agent card discovery.
+- Use REST Assured debugging for API endpoint issues.
+- Check Axios interceptor logs for frontend API problems.
 
 **Section sources**
 - [backend_java/bootstrap/src/main/resources/application.yaml:9-13](file://backend_java/bootstrap/src/main/resources/application.yaml#L9-L13)
@@ -460,10 +731,13 @@ Debugging steps:
 - Code review: Submit pull requests and address reviewer feedback promptly.
 - Documentation: Update README or dedicated docs when changing APIs or behavior.
 - Issues: Use templates to report bugs and request features with reproducible steps.
+- API Testing: Include comprehensive API test coverage for new endpoints.
+- Frontend Standards: Follow DESIGN.md guidelines and standardized API client patterns.
 
 Local development quickstart:
 - Backend: Initialize MySQL, apply schema, set environment variables, build and run the Spring Boot jar.
 - Frontend: Install dependencies with Yarn and run dev scripts.
+- Testing: Execute REST Assured tests for API validation.
 
 **Section sources**
 - [README.md:109-156](file://README.md#L109-L156)
@@ -485,6 +759,8 @@ Local development quickstart:
 - Unit tests: Validate utilities (e.g., JSON and encryption helpers).
 - Integration tests: Use BaseFuncTest to spin up an embedded database and execute agent flows.
 - Functional tests: Use dataset JSON to drive example-based scenarios.
+- API tests: Comprehensive REST Assured testing for all endpoints.
+- Frontend tests: Standardized API client testing with error handling validation.
 
 **Section sources**
 - [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java:53-204](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L53-L204)
@@ -495,6 +771,7 @@ Local development quickstart:
 - Secrets: Avoid committing credentials; rely on environment injection.
 - Transport: Prefer HTTPS in production; validate TLS certificates.
 - Access control: Enforce authentication and authorization at API gateways and controllers.
+- API Security: REST Assured tests validate unauthorized access prevention.
 
 **Section sources**
 - [backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java:42-51](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java#L42-L51)
@@ -507,26 +784,25 @@ Local development quickstart:
   - Document capabilities in skills/<skill>/SKILL.md.
   - Reference the weather skill as a template.
 
-  **Section sources**
 - Extending the OneAgentHandler:
   - Register new tools via the toolkit and integrate with the event sink to stream content and actions.
   - Track usage and timing metrics for observability.
 
-  **Section sources**
-  - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java:82-271](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L82-L271)
-
-- Adding a new repository method:
-  - Follow the existing pattern in MysqlSessionRepository for transactions, pagination, and error handling.
-
-  **Section sources**
-  - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java:59-102](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java#L59-L102)
+- Adding a new API endpoint:
+  - Create test class inheriting from BaseApiTest.
+  - Implement comprehensive test coverage for positive, negative, and boundary conditions.
+  - Document endpoint in OpenAPI specification.
 
 - Frontend development:
   - Use the control package scripts to run dev and build; configure ESLint and TypeScript as needed.
+  - Implement standardized API client patterns with error handling.
+  - Follow DESIGN.md guidelines for consistent UI development.
 
-  **Section sources**
-  - [frontend/package.json:7-10](file://frontend/package.json#L7-L10)
-  - [frontend/packages/control/package.json:5-58](file://frontend/packages/control/package.json#L5-L58)
+**Section sources**
+- [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java:82-271](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L82-L271)
+- [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java:59-102](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java#L59-L102)
+- [frontend/package.json:7-10](file://frontend/package.json#L7-L10)
+- [frontend/packages/control/package.json:5-58](file://frontend/packages/control/package.json#L5-L58)
 
 ### Development Standards Compliance
 
@@ -536,17 +812,26 @@ Local development quickstart:
 - [ ] Include Apache 2.0 license header in all new files
 - [ ] Run `mvn checkstyle:check -q` before committing
 - [ ] Maintain consistent import ordering and naming conventions
+- [ ] Write comprehensive API tests using REST Assured framework
 
 #### Frontend Development Checklist
 - [ ] Follow DESIGN.md design system guidelines
 - [ ] Use Prettier for consistent formatting
-- [ ] Implement CSS Modules with Less variables
-- [ ] Reference DESIGN.md tokens instead of inline hex values
+- [ ] Implement standardized API client with error handling
 - [ ] Use TypeScript strict mode with unused locals disabled
+- [ ] Follow component architecture patterns
+
+#### Testing Standards Checklist
+- [ ] Include BaseApiTest inheritance for API endpoints
+- [ ] Implement ordered test execution where data persistence is needed
+- [ ] Cover positive, negative, and boundary conditions
+- [ ] Validate cross-user authorization scenarios
+- [ ] Test pagination and error handling comprehensively
 
 #### Code Quality Tools
 - **Backend**: Checkstyle plugin integrated into Maven build
 - **Frontend**: Prettier configuration with automatic formatting
+- **Testing**: REST Assured framework for API validation
 - **Shared**: License header validation through PostToolUse hook
 
 **Section sources**
@@ -554,3 +839,4 @@ Local development quickstart:
 - [frontend/.prettierrc:1-8](file://frontend/.prettierrc#L1-L8)
 - [frontend/DESIGN.md:1-314](file://frontend/DESIGN.md#L1-L314)
 - [LICENSE.txt:1-14](file://LICENSE.txt#L1-L14)
+- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java:26-31](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L26-L31)
