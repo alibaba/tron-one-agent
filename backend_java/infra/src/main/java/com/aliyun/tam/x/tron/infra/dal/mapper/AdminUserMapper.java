@@ -15,30 +15,12 @@
  */
 
 
-import { getUsername } from './auth';
+package com.aliyun.tam.x.tron.infra.dal.mapper;
 
-const CONTROL_PREFIX = 'control';
+import com.aliyun.tam.x.tron.infra.dal.dataobject.AdminUserDO;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
-
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
-
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+@Mapper
+public interface AdminUserMapper extends BaseMapper<AdminUserDO> {
 }

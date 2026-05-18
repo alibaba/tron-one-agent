@@ -14,31 +14,27 @@
  * limitations under the License.
  */
 
-
-import { getUsername } from './auth';
-
-const CONTROL_PREFIX = 'control';
-
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
+export interface AdminDTO {
+  username: string;
+  gmtCreated: string;
+  gmtModified: string;
 }
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
+export interface LoginRequest {
+  username: string;
+  password: string;
 }
 
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+export interface LoginResponse {
+  token: string;
+  username: string;
+}
+
+export interface CreateAdminRequest {
+  username: string;
+  password: string;
+}
+
+export interface UpdateAdminRequest {
+  password: string;
 }

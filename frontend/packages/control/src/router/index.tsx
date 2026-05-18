@@ -15,7 +15,8 @@
  */
 
 
-import { createHashRouter, Navigate } from 'react-router-dom';
+import React from 'react';
+import { createHashRouter, Navigate, Outlet } from 'react-router-dom';
 import AppLayout from '../components/Layout';
 import AgentsPage from '../pages/Agents';
 import AgentDetail from '../pages/Agents/Detail';
@@ -30,72 +31,85 @@ import ToolDebugPage from '../pages/Debug/Tool';
 import McpDebugPage from '../pages/Debug/Mcp';
 import KbDebugPage from '../pages/Debug/Kb';
 import MemoryPage from '../pages/Memory';
-import SettingsPage from '../pages/Settings';
+import LoginPage from '../pages/Login';
+import { isAuthenticated } from '@/utils/auth';
+
+const AuthGuard: React.FC = () => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+};
 
 export const router = createHashRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/',
-    element: <AppLayout />,
+    element: <AuthGuard />,
     children: [
       {
-        index: true,
-        element: <Navigate to="/agents" replace />,
-      },
-      {
-        path: '/agents',
-        element: <AgentsPage />,
-      },
-      {
-        path: '/agents/:id',
-        element: <AgentDetail />,
-      },
-      {
-        path: '/mcp',
-        element: <MCPPage />,
-      },
-      {
-        path: '/mcp/:id',
-        element: <MCPDetail />,
-      },
-      {
-        path: '/tools',
-        element: <ToolsPage />,
-      },
-      {
-        path: '/kb',
-        element: <KBPage />,
-      },
-      {
-        path: '/kb/:id',
-        element: <KBDetail />,
-      },
-      {
-        path: '/skills',
-        element: <SkillsPage />,
-      },
-      {
-        path: '/debug/agent',
-        element: <AgentDebugPage />,
-      },
-      {
-        path: '/debug/tool',
-        element: <ToolDebugPage />,
-      },
-      {
-        path: '/debug/mcp',
-        element: <McpDebugPage />,
-      },
-      {
-        path: '/debug/kb',
-        element: <KbDebugPage />,
-      },
-      {
-        path: '/memory',
-        element: <MemoryPage />,
-      },
-      {
-        path: '/settings',
-        element: <SettingsPage />,
+        element: <AppLayout />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/agents" replace />,
+          },
+          {
+            path: '/agents',
+            element: <AgentsPage />,
+          },
+          {
+            path: '/agents/:id',
+            element: <AgentDetail />,
+          },
+          {
+            path: '/mcp',
+            element: <MCPPage />,
+          },
+          {
+            path: '/mcp/:id',
+            element: <MCPDetail />,
+          },
+          {
+            path: '/tools',
+            element: <ToolsPage />,
+          },
+          {
+            path: '/kb',
+            element: <KBPage />,
+          },
+          {
+            path: '/kb/:id',
+            element: <KBDetail />,
+          },
+          {
+            path: '/skills',
+            element: <SkillsPage />,
+          },
+          {
+            path: '/debug/agent',
+            element: <AgentDebugPage />,
+          },
+          {
+            path: '/debug/tool',
+            element: <ToolDebugPage />,
+          },
+          {
+            path: '/debug/mcp',
+            element: <McpDebugPage />,
+          },
+          {
+            path: '/debug/kb',
+            element: <KbDebugPage />,
+          },
+          {
+            path: '/memory',
+            element: <MemoryPage />,
+          },
+        ],
       },
     ],
   },

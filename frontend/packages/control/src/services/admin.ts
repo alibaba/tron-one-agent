@@ -14,31 +14,14 @@
  * limitations under the License.
  */
 
+import { get, post, put, del } from './request';
+import { CreateAdminRequest, UpdateAdminRequest, AdminDTO } from '@/types/admin.interface';
 
-import { getUsername } from './auth';
+export const listAdmins = () => get<{ data: AdminDTO[] }>('/api/control/admins');
 
-const CONTROL_PREFIX = 'control';
+export const createAdmin = (data: CreateAdminRequest) => post('/api/control/admins', data);
 
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
+export const updateAdminPassword = (username: string, data: UpdateAdminRequest) =>
+  put(`/api/control/admins/${username}`, data);
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
-
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
-}
+export const deleteAdmin = (username: string) => del(`/api/control/admins/${username}`);

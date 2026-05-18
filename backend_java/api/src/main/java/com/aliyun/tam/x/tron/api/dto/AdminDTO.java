@@ -15,10 +15,24 @@
  */
 
 
-.container {
-  .ant-card {
-    .ant-card-head {
-      border-bottom: 1px solid @color-divider-soft;
-    }
-  }
+package com.aliyun.tam.x.tron.api.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdminDTO {
+
+    private String username;
+
+    private LocalDateTime gmtCreated;
+
+    private LocalDateTime gmtModified;
 }

@@ -15,30 +15,23 @@
  */
 
 
-import { getUsername } from './auth';
+package com.aliyun.tam.x.tron.core.domain.repository;
 
-const CONTROL_PREFIX = 'control';
+import com.aliyun.tam.x.tron.infra.dal.dataobject.AdminUserDO;
 
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
+import java.util.List;
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
+public interface AdminRepository {
 
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+    AdminUserDO findByUsername(String username);
+
+    List<AdminUserDO> listAll();
+
+    void save(AdminUserDO adminUser);
+
+    void updatePassword(String username, String encryptedPassword);
+
+    void deleteByUsername(String username);
+
+    long count();
 }

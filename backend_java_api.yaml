@@ -22,6 +22,8 @@ servers:
     description: Local development server
 
 tags:
+  - name: Auth
+    description: Authentication (login, current user)
   - name: Health
     description: Health check
   - name: Sessions
@@ -30,6 +32,8 @@ tags:
     description: Agent-to-Agent protocol (Google A2A / JSON-RPC)
   - name: Config - Agents
     description: Agent configuration CRUD
+  - name: Config - Admins
+    description: Admin user management CRUD
   - name: Config - Tools
     description: Tool listing
   - name: Config - MCP
@@ -46,6 +50,49 @@ tags:
     description: File upload and download
 
 paths:
+
+  # ── Auth ───────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Admin login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful, returns JWT token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_LoginResponse"
+        "400":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated admin info
+      operationId: getCurrentAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current admin info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_AdminDTO"
+        "401":
+          description: Unauthorized
 
   # ── Health ──────────────────────────────────────────────────────────────
   /health/check:
@@ -360,6 +407,113 @@ paths:
                 $ref: "#/components/schemas/ControlResponse_AgentConfig"
         "404":
           description: Agent not found
+
+  # ── Config – Admins ────────────────────────────────────────────────────
+  /control/admins:
+    get:
+      tags: [Config - Admins]
+      summary: List all admin users
+      operationId: listAdmins
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse_AdminList"
+        "401":
+          description: Unauthorized
+
+    post:
+      tags: [Config - Admins]
+      summary: Create a new admin user
+      operationId: createAdmin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdminRequest"
+      responses:
+        "200":
+          description: Admin created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+        "400":
+          description: Username already exists or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+        "401":
+          description: Unauthorized
+
+  /control/admins/{username}:
+    put:
+      tags: [Config - Admins]
+      summary: Update admin password
+      operationId: updateAdminPassword
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAdminRequest"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Admin not found
+
+    delete:
+      tags: [Config - Admins]
+      summary: Delete an admin user (cannot delete "admin")
+      operationId: deleteAdmin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Admin deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+        "400":
+          description: Cannot delete the default admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ControlResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Admin not found
 
   # ── Config – Tools ──────────────────────────────────────────────────────
   /control/tools:
@@ -1083,6 +1237,12 @@ paths:
 # ── Components ────────────────────────────────────────────────────────────
 components:
 
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     AgentId:
       name: agent_id
@@ -1270,7 +1430,60 @@ components:
               type: integer
               format: int64
 
+    ControlResponse_LoginResponse:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/LoginResponse"
+
+    ControlResponse_AdminDTO:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/AdminDTO"
+
+    ControlResponse_AdminList:
+      allOf:
+        - $ref: "#/components/schemas/ControlResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminDTO"
+
     # ── Request DTOs ──────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          maxLength: 64
+        password:
+          type: string
+
+    CreateAdminRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          maxLength: 64
+        password:
+          type: string
+
+    UpdateAdminRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
     CreateSessionRequest:
       type: object
       properties:
@@ -1293,6 +1506,27 @@ components:
           description: Enable server-side TTS streaming via SSE
 
     # ── Response DTOs ─────────────────────────────────────────────────────
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+        username:
+          type: string
+
+    AdminDTO:
+      type: object
+      properties:
+        username:
+          type: string
+        gmtCreated:
+          type: string
+          format: date-time
+        gmtModified:
+          type: string
+          format: date-time
+
     SessionDTO:
       type: object
       properties:

@@ -15,30 +15,14 @@
  */
 
 
-import { getUsername } from './auth';
+package com.aliyun.tam.x.tron.api.request;
 
-const CONTROL_PREFIX = 'control';
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
+@Data
+public class UpdateAdminRequest {
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
-
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+    @NotBlank
+    private String password;
 }

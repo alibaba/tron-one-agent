@@ -17,6 +17,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
+import { getToken, clearAuth } from '@/utils/auth';
 
 // 获取baseURL，优先使用环境变量，否则使用默认值
 const getBaseURL = () => {
@@ -35,11 +36,10 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 可以在这里添加token等认证信息
-    // const token = localStorage.getItem('token');
-    // if (token && config.headers) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = getToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -76,7 +76,8 @@ request.interceptors.response.use(
           break;
         case 401:
           message.error("未授权，请重新登录");
-          // 可以在这里处理登录跳转
+          clearAuth();
+          window.location.hash = '#/login';
           break;
         case 403:
           message.error("拒绝访问");

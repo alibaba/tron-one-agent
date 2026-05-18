@@ -16,7 +16,7 @@
 
 
 import React, { useState } from "react";
-import { Layout, Menu, Button, Typography, Space } from "antd";
+import { Layout, Menu, Button, Typography } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -27,9 +27,11 @@ import {
   ThunderboltOutlined,
   BugOutlined,
   BulbOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { getThemeConfig } from "../../config/theme";
+import { getUsername, clearAuth } from '@/utils/auth';
 import layoutStyles from "./index.module.less";
 
 const { Header, Sider, Content } = Layout;
@@ -110,14 +112,11 @@ const AppLayout: React.FC = () => {
         className={layoutStyles.sider}
       >
         <div className={layoutStyles.logo}>
-          <Space>
-            <RobotOutlined style={{ fontSize: "24px", color: "#1677ff" }} />
-            {!collapsed && (
-              <Title level={4} style={{ margin: 0, color: "#1a1a1a" }}>
-                {themeConfig.title}
-              </Title>
-            )}
-          </Space>
+          {!collapsed && (
+            <Title level={4} style={{ margin: 0, color: "#1a1a1a" }}>
+              {themeConfig.title}
+            </Title>
+          )}
         </div>
         <Menu
           theme="light"
@@ -135,6 +134,21 @@ const AppLayout: React.FC = () => {
             onClick={() => setCollapsed(!collapsed)}
             className={layoutStyles.trigger}
           />
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ color: 'rgba(0, 0, 0, 0.65)', fontSize: '14px' }}>
+              {getUsername() || 'Admin'}
+            </span>
+            <Button
+              type="text"
+              icon={<LogoutOutlined />}
+              onClick={() => {
+                clearAuth();
+                navigate('/login');
+              }}
+            >
+              退出
+            </Button>
+          </div>
         </Header>
         <Content className={layoutStyles.content}>
           <Outlet />

@@ -14,31 +14,9 @@
  * limitations under the License.
  */
 
+import { post, get } from './request';
+import { LoginRequest, LoginResponse, AdminDTO } from '@/types/admin.interface';
 
-import { getUsername } from './auth';
+export const login = (data: LoginRequest) => post<{ data: LoginResponse }>('/api/auth/login', data);
 
-const CONTROL_PREFIX = 'control';
-
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
-
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
-
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
-}
+export const getMe = () => get<{ data: AdminDTO }>('/api/auth/me');

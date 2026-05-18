@@ -15,30 +15,29 @@
  */
 
 
-import { getUsername } from './auth';
+package com.aliyun.tam.x.tron.infra.dal.dataobject;
 
-const CONTROL_PREFIX = 'control';
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
 
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
-}
+import java.time.LocalDateTime;
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
-}
+@Data
+@TableName("admin_users")
+public class AdminUserDO {
 
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    @TableField("username")
+    private String username;
+
+    @TableField("password")
+    private String password;
+
+    @TableField(value = "gmt_modified", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime gmtModified;
+
+    @TableField(value = "gmt_created", fill = FieldFill.INSERT)
+    private LocalDateTime gmtCreated;
 }

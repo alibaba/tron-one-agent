@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-
-import { getUsername } from './auth';
-
-const CONTROL_PREFIX = 'control';
-
-function getControlUserId(): string {
-  const username = getUsername();
-  if (username) {
-    return `${CONTROL_PREFIX}:${username}`;
-  }
-  return CONTROL_PREFIX;
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f2f5 0%, #e6e9ed 100%);
 }
 
-/**
- * Get user ID derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserId(): string {
-  return getControlUserId();
+.card {
+  width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/**
- * Get user name derived from the logged-in admin username with "control:" prefix.
- * e.g. "control:admin"
- */
-export function getUserName(): string {
-  return getControlUserId();
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  margin-top: 16px !important;
+  margin-bottom: 4px !important;
+}
+
+.subtitle {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
 }

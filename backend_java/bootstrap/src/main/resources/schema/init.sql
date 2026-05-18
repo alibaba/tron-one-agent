@@ -204,3 +204,15 @@ CREATE TABLE `oss_files`
 ) AUTO_INCREMENT = 1
   CHARSET = utf8mb4;
 
+DROP TABLE IF EXISTS `admin_users`;
+CREATE TABLE `admin_users`
+(
+    `id`           BIGINT UNSIGNED AUTO_INCREMENT,
+    `username`     VARCHAR(64) CHARSET utf8mb4  NOT NULL,
+    `password`     VARCHAR(512) CHARSET utf8mb4 NOT NULL,
+    `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP,
+    `gmt_created`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_username` (`username`)
+) AUTO_INCREMENT = 1
+  CHARSET = utf8mb4;
