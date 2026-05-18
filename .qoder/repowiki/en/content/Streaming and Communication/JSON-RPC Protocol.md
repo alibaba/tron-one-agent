@@ -15,12 +15,6 @@
 - [A2AController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java)
 </cite>
 
-## Update Summary
-**Changes Made**
-- Updated JsonRpcResponse section to document the new `@JsonInclude(ALWAYS)` annotation for proper null ID serialization
-- Enhanced error handling documentation to reflect JSON-RPC 2.0 specification compliance for null IDs
-- Added clarification about serialization behavior differences between global ObjectMapper configuration and JsonRpcResponse-specific configuration
-
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -41,7 +35,7 @@ The JSON-RPC implementation resides primarily under the WebSocket module and int
 - JSON-RPC data transfer objects and exceptions under ws/jsonrpc
 - WebSocket endpoint that parses requests, routes to handlers, and sends notifications and responses
 - WebSocket configuration and endpoint configurator for handshake and injection
-- A2A HTTP controller that wraps the A2A framework's JSON-RPC transport
+- A2A HTTP controller that wraps the A2A framework’s JSON-RPC transport
 
 ```mermaid
 graph TB
@@ -202,23 +196,6 @@ JsonRpcException --> JsonRpcResponse : "convertible"
 - [JsonRpcError.java:25-44](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcError.java#L25-L44)
 - [JsonRpcException.java:22-61](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcException.java#L22-L61)
 
-### JsonRpcResponse: Enhanced Null ID Support
-**Updated** The JsonRpcResponse class now properly supports null IDs per JSON-RPC 2.0 specification through the `@JsonInclude(JsonInclude.Include.ALWAYS)` annotation on the `id` field.
-
-Key features:
-- **JSON-RPC 2.0 Compliance**: When the request ID cannot be detected (Parse Error / Invalid Request), the response ID MUST be JSON null, as mandated by the specification.
-- **Consistent Serialization**: The `@JsonInclude(ALWAYS)` annotation ensures that even when `id` is null, it gets serialized as `"id": null` rather than being omitted entirely.
-- **Backward Compatibility**: This change maintains full backward compatibility while fixing edge cases where null IDs were previously omitted.
-
-The JsonRpcResponse provides two factory methods:
-- `success(@NonNull Object id, Object result)`: Creates a successful response with the specified ID and result.
-- `error(Object id, JsonRpcError error)`: Creates an error response with the specified ID and error object.
-
-**Section sources**
-- [JsonRpcResponse.java:25-42](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcResponse.java#L25-L42)
-- [JsonRpcResponse.java:33-40](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcResponse.java#L33-L40)
-- [JsonRpcResponse.java:42-43](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcResponse.java#L42-L43)
-
 ### JsonRpcHelper Utility Functions
 Responsibilities:
 - Parse incoming JSON text into JsonRpcRequest with strict validation.
@@ -284,7 +261,7 @@ Concurrency:
 
 ### A2A HTTP Transport
 - A2AController exposes a JSON-RPC endpoint for agent-to-agent calls over HTTP.
-- Wraps the A2A framework's JSON-RPC transport with a JsonRpcTransportWrapper.
+- Wraps the A2A framework’s JSON-RPC transport with a JsonRpcTransportWrapper.
 - Builds an AgentExecutor that creates user and agent messages, streams events, and enqueues final agent response parts.
 
 **Section sources**
@@ -317,7 +294,7 @@ Concurrency:
 
 ## Dependency Analysis
 - AgentWsEndpoint depends on JsonRpcHelper for parsing and serialization, and on domain repositories for session/message/event persistence.
-- JsonRpcHelper depends on Jackson ObjectMapper for JSON conversion and Spring's RequestParam annotations for parameter binding.
+- JsonRpcHelper depends on Jackson ObjectMapper for JSON conversion and Spring’s RequestParam annotations for parameter binding.
 - WebSocketConfig and AgentEndpointConfigurator integrate the endpoint into the Spring container and expose it via ServerEndpointExporter.
 
 ```mermaid
@@ -354,6 +331,8 @@ AgentEndpointConfigurator --> AgentWsEndpoint
 - Backpressure: The thread pool queue is bounded; consider tuning capacity and rejection policy for bursty workloads.
 - Payload size: Limit notification payload sizes; consider compressing or paginating large event sequences.
 
+[No sources needed since this section provides general guidance]
+
 ## Troubleshooting Guide
 Common issues and diagnostics:
 - Parse errors: Occur when id is missing/invalid, jsonrpc version mismatch, or method/params malformed. These raise JsonRpcException with PARSE_ERROR.
@@ -374,7 +353,9 @@ Debugging tips:
 - [AgentWsEndpoint.java:271-275](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/AgentWsEndpoint.java#L271-L275)
 
 ## Conclusion
-The JSON-RPC implementation in Tron OneAgent provides a robust, spec-compliant foundation for agent-to-agent communication over both WebSocket and HTTP transports. JsonRpcHelper centralizes validation, serialization, and method dispatch, while AgentWsEndpoint orchestrates session lifecycle, notifications, and responses. The recent enhancement to JsonRpcResponse ensures proper JSON-RPC 2.0 compliance for null IDs, improving interoperability with external clients that expect explicit null ID fields in error responses.
+The JSON-RPC implementation in Tron OneAgent provides a robust, spec-compliant foundation for agent-to-agent communication over both WebSocket and HTTP transports. JsonRpcHelper centralizes validation, serialization, and method dispatch, while AgentWsEndpoint orchestrates session lifecycle, notifications, and responses. The design emphasizes protocol correctness, error transparency, and extensibility for future enhancements.
+
+[No sources needed since this section summarizes without analyzing specific files]
 
 ## Appendices
 
@@ -397,14 +378,4 @@ The JSON-RPC implementation in Tron OneAgent provides a robust, spec-compliant f
 - Transport security: Use TLS for WebSocket and HTTP endpoints.
 - Rate limiting: Consider applying rate limits at the endpoint level to mitigate abuse.
 
-### Serialization Behavior and Configuration
-**Updated** The JsonRpcResponse class uses `@JsonInclude(JsonInclude.Include.ALWAYS)` to ensure consistent serialization behavior, which differs from the global ObjectMapper configuration in WebMvcConfig that uses `JsonInclude.Include.NON_NULL`.
-
-This distinction is important because:
-- Global ObjectMapper settings affect general HTTP REST endpoints and may omit null fields
-- JsonRpcResponse has explicit serialization rules to ensure JSON-RPC 2.0 compliance for null IDs
-- The local annotation takes precedence for JsonRpcResponse objects, guaranteeing that null IDs are serialized as `"id": null`
-
-**Section sources**
-- [JsonRpcResponse.java:42-43](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/ws/jsonrpc/JsonRpcResponse.java#L42-L43)
-- [WebMvcConfig.java:64](file://backend_java/bootstrap/src/main/java/com/aliyun/tam/x/tron/config/WebMvcConfig.java#L64)
+[No sources needed since this section provides general guidance]
