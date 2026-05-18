@@ -109,6 +109,10 @@ export const router = createHashRouter([
             path: '/memory',
             element: <MemoryPage />,
           },
+          {
+            path: '*',
+            element: <Navigate to="/agents" replace />,
+          },
         ],
       },
     ],
