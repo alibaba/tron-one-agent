@@ -17,34 +17,30 @@
 
 package com.aliyun.tam.x.tron.api;
 
+import com.aliyun.tam.x.tron.core.domain.service.AdminService;
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/**
- * API tests for Admin Auth and Management endpoints.
- * Tests cover login, JWT-based access control, admin CRUD, and endpoint protection.
- * The default admin (admin/admin@123) is seeded via @PostConstruct in AdminService on startup.
- */
 @DisplayName("Admin Auth & Management API")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AdminAuthApiTest extends BaseApiTest {
 
+    @Autowired
+    private AdminService adminService;
+
     private static String authToken;
 
-    /**
-     * Helper to create authenticated request with JWT token.
-     */
-    private RequestSpecification givenAuth() {
-        return givenJson()
-                .header("Authorization", "Bearer " + authToken);
+    @Override
+    public void prepareDbTables() throws Exception {
+        adminService.init();
     }
 
     // ── POST /auth/login ──────────────────────────────────────────────
@@ -98,7 +94,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(4)
     @DisplayName("GET /control/admins without token should return 401")
     void listAdminsWithoutTokenReturns401() {
-        givenJson()
+        givenJsonNoAuth()
                 .when()
                 .get("/control/admins")
                 .then()
@@ -109,7 +105,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(5)
     @DisplayName("GET /control/admins with valid token should return admin list")
     void listAdminsWithToken() {
-        givenAuth()
+        givenJson()
                 .when()
                 .get("/control/admins")
                 .then()
@@ -125,7 +121,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(6)
     @DisplayName("POST /control/admins should create a new admin")
     void createAdmin() {
-        givenAuth()
+        givenJson()
                 .body("{\"username\": \"testadmin\", \"password\": \"test@123\"}")
                 .when()
                 .post("/control/admins")
@@ -138,7 +134,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(7)
     @DisplayName("POST /control/admins with duplicate username should fail")
     void createDuplicateAdmin() {
-        givenAuth()
+        givenJson()
                 .body("{\"username\": \"testadmin\", \"password\": \"test@456\"}")
                 .when()
                 .post("/control/admins")
@@ -152,7 +148,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(8)
     @DisplayName("PUT /control/admins/{username} should update password")
     void updateAdminPassword() {
-        givenAuth()
+        givenJson()
                 .body("{\"password\": \"newpass@123\"}")
                 .when()
                 .put("/control/admins/testadmin")
@@ -181,7 +177,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(10)
     @DisplayName("DELETE /control/admins/admin should be rejected")
     void deleteDefaultAdminShouldFail() {
-        givenAuth()
+        givenJson()
                 .when()
                 .delete("/control/admins/admin")
                 .then()
@@ -192,7 +188,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(11)
     @DisplayName("DELETE /control/admins/{username} should delete non-default admin")
     void deleteNonDefaultAdmin() {
-        givenAuth()
+        givenJson()
                 .when()
                 .delete("/control/admins/testadmin")
                 .then()
@@ -206,7 +202,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(12)
     @DisplayName("GET /auth/me should return current admin info")
     void getMeWithToken() {
-        givenAuth()
+        givenJson()
                 .when()
                 .get("/auth/me")
                 .then()
@@ -221,7 +217,7 @@ class AdminAuthApiTest extends BaseApiTest {
     @Order(13)
     @DisplayName("GET /control/agents without token should return 401")
     void existingEndpointRequiresAuth() {
-        givenJson()
+        givenJsonNoAuth()
                 .when()
                 .get("/control/agents")
                 .then()

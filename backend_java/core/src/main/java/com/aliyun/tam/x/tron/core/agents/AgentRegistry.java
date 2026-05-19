@@ -18,45 +18,21 @@
 package com.aliyun.tam.x.tron.core.agents;
 
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import io.opentelemetry.api.trace.Tracer;
-import jakarta.annotation.PostConstruct;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 @Component
 @RequiredArgsConstructor
 public final class AgentRegistry {
 
-    @Data
-    @RequiredArgsConstructor
-    private static class CacheKey {
-        private final AgentConfig agentConfig;
-        private final String userId;
-        private final String sessionId;
-    }
-
     private final List<AgentBuilder> agentBuilders;
 
     private final Tracer tracer;
-
-    private final LoadingCache<CacheKey, Optional<AgentHandler>> agentCache = CacheBuilder.newBuilder()
-            .build(new CacheLoader<>() {
-                @Override
-                public Optional<AgentHandler> load(CacheKey key) throws Exception {
-                    return Optional.ofNullable(buildAgent(key.agentConfig, key.userId, key.sessionId));
-                }
-            });
 
     public List<AgentBuilder> getAgentBuilders() {
         return Lists.newArrayList(agentBuilders);
@@ -78,8 +54,7 @@ public final class AgentRegistry {
         if (agentConfig == null) {
             return null;
         }
-
-        return agentCache.getUnchecked(new CacheKey(agentConfig, userId, sessionId)).orElse(null);
+        return buildAgent(agentConfig, userId, sessionId);
     }
 
     private AgentHandler buildAgent(AgentConfig agentConfig, String userId, String sessionId) {

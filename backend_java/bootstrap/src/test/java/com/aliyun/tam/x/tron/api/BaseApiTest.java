@@ -18,9 +18,11 @@
 package com.aliyun.tam.x.tron.api;
 
 import com.aliyun.tam.x.tron.BaseFuncTest;
+import com.aliyun.tam.x.tron.api.auth.JwtUtils;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 /**
@@ -33,10 +35,9 @@ public abstract class BaseApiTest extends BaseFuncTest {
     @LocalServerPort
     private int port;
 
-    /**
-     * Override to skip DB reset between tests so that
-     * ordered tests in the same class can share session/config state.
-     */
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @Override
     public void prepareDbTables() throws Exception {
         // Skip per-test DB reset for API tests
@@ -47,29 +48,31 @@ public abstract class BaseApiTest extends BaseFuncTest {
         RestAssured.port = port;
     }
 
-    /**
-     * Returns the base URI path prefix for API calls.
-     * In test profile, the context-path is not set, so we use empty string.
-     */
     protected String apiPath() {
         return "";
     }
 
-    /**
-     * Creates a request specification with the required X-User-Id header and base path.
-     */
     protected RequestSpecification given() {
+        String token = jwtUtils.generateToken("admin");
+        return RestAssured.given()
+                .basePath(apiPath())
+                .header("X-User-Id", "test-user")
+                .header("Authorization", "Bearer " + token);
+    }
+
+    protected RequestSpecification givenJson() {
+        return given()
+                .contentType("application/json");
+    }
+
+    protected RequestSpecification givenNoAuth() {
         return RestAssured.given()
                 .basePath(apiPath())
                 .header("X-User-Id", "test-user");
     }
 
-    /**
-     * Creates a request specification with the required X-User-Id header and base path,
-     * including Content-Type application/json.
-     */
-    protected RequestSpecification givenJson() {
-        return given()
+    protected RequestSpecification givenJsonNoAuth() {
+        return givenNoAuth()
                 .contentType("application/json");
     }
 }

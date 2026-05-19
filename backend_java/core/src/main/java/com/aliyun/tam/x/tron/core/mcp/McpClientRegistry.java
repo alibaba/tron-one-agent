@@ -20,17 +20,12 @@ package com.aliyun.tam.x.tron.core.mcp;
 import com.aliyun.tam.x.tron.core.config.AgentMcpConfig;
 import com.aliyun.tam.x.tron.core.config.McpClientConfig;
 import com.aliyun.tam.x.tron.core.domain.repository.McpClientRepository;
-import com.google.common.cache.*;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
 import io.agentscope.core.tool.Toolkit;
 import io.agentscope.core.tool.mcp.McpClientBuilder;
 import io.agentscope.core.tool.mcp.McpClientWrapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
@@ -41,63 +36,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.*;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class McpClientRegistry {
-    private final ExecutorService executor = new ThreadPoolExecutor(1, 10, Long.MAX_VALUE, TimeUnit.MILLISECONDS,
-            new ArrayBlockingQueue<>(100),
-            r -> {
-                Thread t = new Thread(r, "mcp-client-builder");
-                t.setDaemon(true);
-                return t;
-            },
-            new ThreadPoolExecutor.CallerRunsPolicy());
 
     private final List<McpConfigBuilder> mcpConfigBuilders;
 
     private final McpClientRepository clientRepository;
-
-    private final LoadingCache<McpClientConfig, Optional<McpClientWrapper>> mcpClientCache = CacheBuilder.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
-            .removalListener((RemovalListener<McpClientConfig, Optional<McpClientWrapper>>) notification -> {
-                log.info("mcp client removed: {}", notification.getKey());
-                notification.getValue().ifPresent(McpClientWrapper::close);
-            })
-            .build(new CacheLoader<>() {
-                @Override
-                public Optional<McpClientWrapper> load(McpClientConfig key) throws Exception {
-                    log.info("building mcp client: {}", key);
-                    return buildMcpClient(key);
-                }
-
-                @Override
-                public ListenableFuture<Optional<McpClientWrapper>> reload(McpClientConfig key, Optional<McpClientWrapper> oldValue) throws Exception {
-                    ListenableFutureTask<Optional<McpClientWrapper>> task = ListenableFutureTask.create(() -> {
-                        log.info("rebuilding mcp client: {}", key);
-                        McpClientConfig config = getClientConfigById(key.getId());
-                        if (Objects.equals(config, key)) {
-                            return oldValue;
-                        }
-                        return Optional.empty();
-                    });
-                    executor.submit(task);
-                    return task;
-                }
-
-                @Override
-                public Map<McpClientConfig, Optional<McpClientWrapper>> loadAll(Iterable<? extends McpClientConfig> keys) throws Exception {
-                    log.info("building all mcp clients");
-                    Map<McpClientConfig, Optional<McpClientWrapper>> result = Maps.newHashMap();
-                    for (McpClientConfig key : keys) {
-                        Optional<McpClientWrapper> value = buildMcpClient(key);
-                        result.put(key, value);
-                    }
-                    return result;
-                }
-            });
 
     public void registerMcpClientsToToolkit(Toolkit toolkit, List<AgentMcpConfig> mcpClientConfigs) {
         if (CollectionUtils.isEmpty(mcpClientConfigs)) {
@@ -165,11 +112,16 @@ public class McpClientRegistry {
         if (config == null) {
             return null;
         }
-        return mcpClientCache.getUnchecked(config).orElse(null);
+        return getClient(config);
     }
 
     private McpClientWrapper getClient(McpClientConfig config) {
-        return mcpClientCache.getUnchecked(config).orElse(null);
+        try {
+            return buildMcpClient(config).orElse(null);
+        } catch (Exception e) {
+            log.error("Failed to build mcp client: {}", config.getId(), e);
+            return null;
+        }
     }
 
     private Optional<McpClientWrapper> buildMcpClient(McpClientConfig config) throws Exception {
@@ -210,8 +162,4 @@ public class McpClientRegistry {
         return Optional.of(wrapper);
     }
 
-    @PostConstruct
-    public void init() throws ExecutionException {
-        mcpClientCache.getAll(getClientConfigs());
-    }
 }
