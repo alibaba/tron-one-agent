@@ -23,6 +23,7 @@ import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
 import com.aliyun.tam.x.tron.core.agents.AgentResult;
+import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
 import com.aliyun.tam.x.tron.core.domain.models.contents.TextContent;
@@ -121,6 +122,10 @@ public abstract class BaseFuncTest {
         return null;
     }
 
+    protected AgentConfig agentConfig() {
+        return null;
+    }
+
     protected void executeSql(String script) throws IOException, SQLException {
         InputStream schemaStream = BaseFuncTest.class.getResourceAsStream(script);
         if (schemaStream == null) {
@@ -208,7 +213,7 @@ public abstract class BaseFuncTest {
                 agentMessage.getId()
         );
 
-        AgentHandler agentHandler = agentRegistry.getAgent(agentId, null, userId, sessionId);
+        AgentHandler agentHandler = agentRegistry.getAgent(agentId, agentConfig(), userId, sessionId);
         return agentHandler.handleInput(
                 AgentInput.builder()
                         .source(AgentInput.Source.USER)

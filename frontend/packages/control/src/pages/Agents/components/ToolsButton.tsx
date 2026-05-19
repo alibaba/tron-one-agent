@@ -22,6 +22,7 @@ import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';
 import { getAllTools } from '../../../services/tools';
 import { AgentToolConfig } from '../../../types/tool.interface';
+import { colors, commonStyles } from '../../../styles/tokens';
 
 const { Text } = Typography;
 
@@ -205,7 +206,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                       {tool.description && (
                         <div style={{ 
                           fontSize: '12px', 
-                          color: '#8c8c8c', 
+                          color: colors.bodyMuted, 
                           marginTop: '2px',
                           lineHeight: '1.4'
                         }}>
@@ -233,13 +234,13 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
               工具 ({pendingTools.length}个)：
             </Text>
             <div style={{ 
-              border: '1px solid #f0f0f0', 
+              border: `1px solid ${colors.dividerSoft}`, 
               borderRadius: 6, 
               padding: 16,
               minHeight: 200,
               maxHeight: 300,
               overflow: 'auto',
-              background: '#fafafa'
+              background: colors.surfacePearl
             }}>
               {pendingTools.length > 0 ? (
                 <List
@@ -250,7 +251,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                       <List.Item
                         style={{ 
                           padding: '12px 0',
-                          borderBottom: index < pendingTools.length - 1 ? '1px solid #f0f0f0' : 'none'
+                          borderBottom: index < pendingTools.length - 1 ? `1px solid ${colors.dividerSoft}` : 'none'
                         }}
                         actions={[
                           <Checkbox
@@ -277,7 +278,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                             <ToolOutlined 
                               style={{ 
                                 fontSize: '16px',
-                                color: tool.enabled ? '#1677ff' : '#d9d9d9'
+                                color: tool.enabled ? colors.primary : colors.borderDefault
                               }} 
                             />
                           }
@@ -292,7 +293,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                             toolInfo?.description && (
                               <div style={{ 
                                 fontSize: '12px', 
-                                color: '#8c8c8c', 
+                                color: colors.bodyMuted, 
                                 lineHeight: '1.4'
                               }}>
                                 {toolInfo.description}
@@ -307,7 +308,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
               ) : (
                 <div style={{ 
                   textAlign: 'center', 
-                  color: '#999', 
+                  color: colors.bodyMuted, 
                   padding: '40px 0' 
                 }}>
                   暂无配置工具
@@ -318,12 +319,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
 
           {/* 变更提示 */}
           {hasChanges() && (
-            <div style={{ 
-              padding: 12, 
-              background: '#e6f7ff', 
-              border: '1px solid #91d5ff',
-              borderRadius: 6 
-            }}>
+            <div style={commonStyles.infoBox}>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改
               </Text>

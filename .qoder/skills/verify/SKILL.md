@@ -18,7 +18,8 @@ Notes:
 
 ## Frontend (`frontend/`)
 
-1. **Lint** — Run `cd frontend && yarn workspace control lint`
-2. **Report results** — Summarize any errors or warnings found.
+1. **Type check** — Run `cd frontend && yarn workspace control tsc --noEmit` for fast TypeScript type validation.
+2. **Lint** — Run `cd frontend && yarn workspace control lint` to run ESLint (requires `.eslintrc.cjs` at `packages/control/.eslintrc.cjs`).
+3. **Report results** — Summarize any errors or warnings found. If lint errors appear, include the rule name and file location.
 
 If both parts were modified, run both. Report a summary of all results.

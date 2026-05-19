@@ -20,6 +20,7 @@ import { Button, Modal, Form, Input, Select, Row, Col, Divider, Space, Switch, m
 import { PlusOutlined, MinusCircleOutlined, EditOutlined } from '@ant-design/icons';
 import { McpClientConfig } from '../../../types/mcp.interface';
 import { createMcp, updateMcp } from '../../../services/mcp';
+import { colors } from '../../../styles/tokens';
 
 const { TextArea } = Input;
 
@@ -248,7 +249,7 @@ const McpManageButton: React.FC<McpManageButtonProps> = ({
               <Form.Item name="enabled" label="启用状态" valuePropName="checked">
                 <Space>
                   <Switch />
-                  <span style={{ color: '#8c8c8c', fontSize: '14px' }}>
+                  <span style={{ color: colors.bodyMuted, fontSize: '14px' }}>
                     开启后该MCP客户端将立即生效
                   </span>
                 </Space>

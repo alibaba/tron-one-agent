@@ -21,6 +21,7 @@ import { ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { AgentToolConfig } from '../../types/tool.interface';
 import { getAllTools } from '../../services/tools';
+import { colors } from '../../styles/tokens';
 import toolsStyles from './index.module.less';
 
 const ToolsPage: React.FC = () => {
@@ -58,7 +59,7 @@ const ToolsPage: React.FC = () => {
 			dataIndex: 'description',
       key: 'description',
       render: (description: string) => {
-        return <span style={{ color: '#666' }}>{description}</span>;
+        return <span style={{ color: colors.bodyMuted }}>{description}</span>;
       },
     },
   ];

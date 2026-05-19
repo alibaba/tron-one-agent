@@ -22,6 +22,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';
+import { colors } from '../../../styles/tokens';
+import agentsStyles from '../index.module.less';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -121,7 +123,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
         <Row gutter={24} style={{ marginTop: 16 }}>
           <Col span={12}>
             <div style={{ marginBottom: 12 }}>
-              <Text strong style={{ fontSize: '16px', color: '#262626' }}>编辑器</Text>
+              <Text strong style={{ fontSize: '16px', color: colors.ink }}>编辑器</Text>
             </div>
             <Form form={form}>
               <Form.Item
@@ -136,7 +138,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
                     fontSize: '14px',
                     lineHeight: '1.6',
                     borderRadius: '8px',
-                    border: '1px solid #d9d9d9',
+                    border: `1px solid ${colors.borderDefault}`,
                     resize: 'none'
                   }}
                   onChange={handleContentChange}
@@ -146,14 +148,16 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
           </Col>
           <Col span={12}>
             <div style={{ marginBottom: 12 }}>
-              <Text strong style={{ fontSize: '16px', color: '#262626' }}>预览</Text>
+              <Text strong style={{ fontSize: '16px', color: colors.ink }}>预览</Text>
             </div>
-            <div style={{
+            <div
+              className={agentsStyles.markdownPreview}
+              style={{
               height: '550px',
               overflow: 'auto',
               padding: '20px',
-              background: '#fafafa',
-              border: '1px solid #d9d9d9',
+              background: colors.surfacePearl,
+              border: `1px solid ${colors.borderDefault}`,
               borderRadius: '8px',
               fontSize: '14px',
               lineHeight: '1.7'
@@ -168,7 +172,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   height: '100%',
-                  color: '#8c8c8c'
+                  color: colors.bodyMuted
                 }}>
                   <Text type="secondary">在左侧编辑器中输入内容，这里将显示预览效果</Text>
                 </div>

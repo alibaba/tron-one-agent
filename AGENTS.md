@@ -74,19 +74,8 @@ yarn workspace control lint     # ESLint
 - Routing: HashRouter (`#/agents`, `#/mcp`, etc.)
 - TypeScript strict mode with `noUnusedLocals` and `noUnusedParameters`
 
-### UI Design
-
-All frontend UI must follow `frontend/DESIGN.md` — the single source of truth for colors, typography, spacing, components, and layout patterns. Key rules:
-- Primary interactive color: Cloud Blue `#1677ff` only — no second accent
-- Feature card colors signal domain: purple=AI, blue=compute, teal=data, dark=premium
-- Body text 14px; headlines use PingFang SC / Microsoft YaHei at weight 600 with zero letter-spacing
-- CSS Modules + Less variables should reference DESIGN.md tokens; never inline hex values
 
 ## Shared Conventions
 
 - All code, comments, commit messages in English
 - Branch naming: `feat/xxx`, `fix/xxx`, `chore/xxx`
-
-### License Header
-
-Every newly created source file (`.java`, `.ts`, `.tsx`, `.js`, `.jsx`, `.less`, `.css`) **must** begin with the Apache 2.0 license header wrapped in a `/* ... */` block comment. The canonical header text is in `LICENSE.txt` at the repository root. A PostToolUse hook validates its presence on every Write operation.

@@ -25,6 +25,7 @@ import { AgentConfig } from '../../types/agent.interface';
 import KbManageButton from './components/KbManageButton';
 import { getAllKbs, updateKb, deleteKb } from '../../services/kb';
 import { getAllAgents } from '../../services/agent';
+import { commonStyles } from '../../styles/tokens';
 import kbStyles from './index.module.less';
 
 const KBPage: React.FC = () => {
@@ -237,18 +238,13 @@ const KBPage: React.FC = () => {
       content: (
         <div>
           <p>您即将删除以下知识库：</p>
-          <div style={{ 
-            padding: '12px', 
-            background: '#f5f5f5', 
-            borderRadius: '6px', 
-            margin: '12px 0' 
-          }}>
+          <div style={commonStyles.confirmBox}>
             <p><strong>名称：</strong>{knowledgeBase?.name}</p>
             <p><strong>ID：</strong>{knowledgeBase?.id}</p>
             <p><strong>类型：</strong>{knowledgeBase?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ElasticSearch'}</p>
             <p><strong>配置：</strong>{configSummary}</p>
           </div>
-          <p style={{ color: '#ff4d4f', fontWeight: 500 }}>
+          <p style={commonStyles.confirmWarning}>
             ⚠️ 此操作不可撤销，请确认是否继续？
           </p>
         </div>

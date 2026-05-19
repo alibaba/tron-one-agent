@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
+@import '../../styles/tokens.less';
+
 .container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f2f5 0%, #e6e9ed 100%);
+  background: @gradient-cloud;
 }
 
 .card {
   width: 400px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: @radius-md;
+  box-shadow: @shadow-card;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: @spacing-xl;
 }
 
 .title {
-  margin-top: 16px !important;
-  margin-bottom: 4px !important;
+  margin-top: @spacing-md !important;
+  margin-bottom: @spacing-xxs !important;
 }
 
 .subtitle {
-  color: rgba(0, 0, 0, 0.45);
-  font-size: 14px;
+  color: @color-body-muted;
+  font-size: @font-size-body;
 }

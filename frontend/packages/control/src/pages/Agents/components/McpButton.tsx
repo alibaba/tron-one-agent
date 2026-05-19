@@ -38,6 +38,7 @@ import { AgentConfig } from "../../../types/agent.interface";
 import { McpClientConfig } from "../../../types/mcp.interface";
 import { updateAgent } from "../../../services/agent";
 import { getAllMcps } from "../../../services/mcp";
+import { colors, commonStyles } from "../../../styles/tokens";
 
 const { Text } = Typography;
 
@@ -128,8 +129,8 @@ const McpButton: React.FC<McpButtonProps> = ({
         {
           ...mcpToAdd,
           enabled: true,
-          enable_funcs: "",
-          disable_funcs: "",
+          enableFuncs: "",
+          disableFuncs: "",
         } as any,
       ]);
       setSelectedMcp("");
@@ -310,7 +311,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                       <div
                         style={{
                           fontSize: "12px",
-                          color: "#8c8c8c",
+                          color: colors.bodyMuted,
                           marginTop: "2px",
                           lineHeight: "1.4",
                         }}
@@ -347,13 +348,13 @@ const McpButton: React.FC<McpButtonProps> = ({
             </Text>
             <div
               style={{
-                border: "1px solid #f0f0f0",
+                border: `1px solid ${colors.dividerSoft}`,
                 borderRadius: 6,
                 padding: 16,
                 minHeight: 200,
                 maxHeight: 350,
                 overflow: "auto",
-                background: "#fafafa",
+                background: colors.surfacePearl,
               }}
             >
               {pendingMcps?.length > 0 ? (
@@ -372,7 +373,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                           padding: "12px 0",
                           borderBottom:
                             index < pendingMcps?.length - 1
-                              ? "1px solid #f0f0f0"
+                              ? `1px solid ${colors.dividerSoft}`
                               : "none",
                         }}
                         actions={[
@@ -398,7 +399,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                         ]}
                       >
                         <List.Item.Meta
-                          avatar={<ApiOutlined style={{ color: "#1677ff" }} />}
+                          avatar={<ApiOutlined style={{ color: colors.primary }} />}
                           title={
                             <Space>
                               <span>{mcp.name}</span>
@@ -421,7 +422,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                               <div
                                 style={{
                                   fontSize: "12px",
-                                  color: "#8c8c8c",
+                                  color: colors.bodyMuted,
                                   lineHeight: "1.4",
                                 }}
                               >
@@ -442,7 +443,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                                         display: "block",
                                       }}
                                     >
-                                      启用函数 <span style={{ fontSize: "12px", color: "#8c8c8c" }}>(不填写默认启用所有函数)</span>
+                                      启用函数 <span style={{ fontSize: "12px", color: colors.bodyMuted }}>(不填写默认启用所有函数)</span>
                                     </Text>
                                     <Input
                                       size="small"
@@ -483,10 +484,10 @@ const McpButton: React.FC<McpButtonProps> = ({
                                       size="small"
                                       placeholder="输入禁用的函数名，用英文逗号分隔"
                                       value={
-                                        typeof (mcp as any).disable_funcs ===
+                                        typeof (mcp as any).disableFuncs ===
                                         "string"
-                                          ? (mcp as any).disable_funcs
-                                          : (mcp as any).disable_funcs?.join(
+                                          ? (mcp as any).disableFuncs
+                                          : (mcp as any).disableFuncs?.join(
                                               ","
                                             ) || ""
                                       }
@@ -516,7 +517,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#999",
+                    color: colors.bodyMuted,
                     padding: "40px 0",
                   }}
                 >
@@ -529,12 +530,7 @@ const McpButton: React.FC<McpButtonProps> = ({
           {/* 变更提示 */}
           {hasChanges() && (
             <div
-              style={{
-                padding: 12,
-                background: "#e6f7ff",
-                border: "1px solid #91d5ff",
-                borderRadius: 6,
-              }}
+              style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
                 ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改

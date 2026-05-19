@@ -31,7 +31,7 @@ export default function ChatBoxHeader({
       <div
         onClick={onCreateSessionClick}
         style={{
-          color: "#a786f4",
+          color: "#1677ff",
           fontSize: "14px",
           cursor: "pointer",
           display: "flex",

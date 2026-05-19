@@ -37,6 +37,7 @@ import { AgentConfig, AgentSkillConfig } from "../../../types/agent.interface";
 import { SkillConfig } from "../../../types/skill.interface";
 import { updateAgent } from "../../../services/agent";
 import { getAllSkills } from "../../../services/skill";
+import { colors, commonStyles } from "../../../styles/tokens";
 
 const { Text } = Typography;
 
@@ -260,7 +261,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                         <div
                           style={{
                             fontSize: "12px",
-                            color: "#8c8c8c",
+                            color: colors.bodyMuted,
                             marginTop: "2px",
                             lineHeight: "1.4",
                           }}
@@ -297,13 +298,13 @@ const SkillButton: React.FC<SkillButtonProps> = ({
             </Text>
             <div
               style={{
-                border: "1px solid #f0f0f0",
+                border: `1px solid ${colors.dividerSoft}`,
                 borderRadius: 6,
                 padding: 16,
                 minHeight: 200,
                 maxHeight: 350,
                 overflow: "auto",
-                background: "#fafafa",
+                background: colors.surfacePearl,
               }}
             >
               {pendingSkills.length > 0 ? (
@@ -321,7 +322,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                           padding: "12px 0",
                           borderBottom:
                             index < pendingSkills.length - 1
-                              ? "1px solid #f0f0f0"
+                              ? `1px solid ${colors.dividerSoft}`
                               : "none",
                         }}
                         actions={[
@@ -349,7 +350,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                         <List.Item.Meta
                           avatar={
                             <ThunderboltOutlined
-                              style={{ color: "#faad14" }}
+                              style={{ color: colors.accentGold }}
                             />
                           }
                           title={
@@ -367,7 +368,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                               <div
                                 style={{
                                   fontSize: "12px",
-                                  color: "#8c8c8c",
+                                  color: colors.bodyMuted,
                                   lineHeight: "1.4",
                                 }}
                               >
@@ -384,7 +385,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#999",
+                    color: colors.bodyMuted,
                     padding: "40px 0",
                   }}
                 >
@@ -397,12 +398,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
           {/* 变更提示 */}
           {hasChanges() && (
             <div
-              style={{
-                padding: 12,
-                background: "#e6f7ff",
-                border: "1px solid #91d5ff",
-                borderRadius: 6,
-              }}
+              style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
                 检测到配置变更，点击"保存配置"按钮应用更改

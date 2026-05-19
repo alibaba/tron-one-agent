@@ -24,6 +24,7 @@ import { AgentConfig } from '../../types/agent.interface';
 import McpManageButton from './components/McpManageButton';
 import { getAllMcps, updateMcp, deleteMcp } from '../../services/mcp';
 import { getAllAgents } from '../../services/agent';
+import { commonStyles } from '../../styles/tokens';
 import mcpStyles from './index.module.less';
 
 const MCPPage: React.FC = () => {
@@ -214,17 +215,12 @@ const MCPPage: React.FC = () => {
       content: (
         <div>
           <p>您即将删除以下MCP客户端：</p>
-          <div style={{ 
-            padding: '12px', 
-            background: '#f5f5f5', 
-            borderRadius: '6px', 
-            margin: '12px 0' 
-          }}>
+          <div style={commonStyles.confirmBox}>
             <p><strong>名称：</strong>{mcpClient?.name}</p>
             <p><strong>标识：</strong>{mcpClient?.id}</p>
             <p><strong>URL：</strong>{mcpClient?.url}</p>
           </div>
-          <p style={{ color: '#ff4d4f', fontWeight: 500 }}>
+          <p style={commonStyles.confirmWarning}>
             ⚠️ 此操作不可撤销，请确认是否继续？
           </p>
         </div>
