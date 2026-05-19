@@ -146,25 +146,42 @@
   height: 56px;
   display: flex;
   align-items: center;
+}
 
-  .trigger {
-    font-size: 18px;
-    line-height: 56px;
-    padding: 0 @spacing-lg;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: @font-weight-regular;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    border: none;
-    color: @color-ink-muted-80;
+.trigger {
+  font-size: 18px;
+  line-height: 56px;
+  padding: 0 @spacing-lg;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: @font-weight-regular;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  border: none;
+  color: @color-ink-muted-80;
 
-    &:hover {
-      color: @color-primary;
-      background-color: @color-gradient-card-blue;
-    }
+  &:hover {
+    color: @color-primary;
+    background-color: @color-gradient-card-blue;
   }
+}
+
+.userInfo {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+}
+
+.username {
+  color: @color-body-muted;
+  font-size: @font-size-body;
+}
+
+.logoTitle {
+  color: @color-ink;
+  margin: 0;
 }
 
 .content {

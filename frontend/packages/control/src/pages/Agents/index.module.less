@@ -24,106 +24,102 @@
 }
 
 // Markdown preview style
-.ant-form-item {
-  .ant-form-item-control-input-content {
-    div[style*="background: #fafafa"] {
-      h1, h2, h3, h4, h5, h6 {
-        color: @color-ink;
-        margin-top: 16px;
-        margin-bottom: 8px;
-        font-weight: @font-weight-semibold;
+.markdownPreview {
+  h1, h2, h3, h4, h5, h6 {
+    color: @color-ink;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: @font-weight-semibold;
 
-        &:first-child {
-          margin-top: 0;
-        }
-      }
+    &:first-child {
+      margin-top: 0;
+    }
+  }
 
-      h1 {
-        font-size: 20px;
-        border-bottom: 1px solid @color-divider-soft;
-        padding-bottom: 4px;
-      }
+  h1 {
+    font-size: 20px;
+    border-bottom: 1px solid @color-divider-soft;
+    padding-bottom: 4px;
+  }
 
-      h2 {
-        font-size: 18px;
-      }
+  h2 {
+    font-size: 18px;
+  }
 
-      h3 {
-        font-size: 16px;
-      }
+  h3 {
+    font-size: 16px;
+  }
 
-      p {
-        line-height: @line-height-body;
-        margin-bottom: 8px;
-        color: @color-body-muted;
-      }
+  p {
+    line-height: @line-height-body;
+    margin-bottom: 8px;
+    color: @color-body-muted;
+  }
 
-      ul, ol {
-        margin-bottom: 8px;
-        padding-left: 20px;
+  ul, ol {
+    margin-bottom: 8px;
+    padding-left: 20px;
 
-        li {
-          margin-bottom: 4px;
-          line-height: 1.5;
-          color: @color-body-muted;
-        }
-      }
+    li {
+      margin-bottom: 4px;
+      line-height: 1.5;
+      color: @color-body-muted;
+    }
+  }
 
-      code {
-        background: @color-canvas-parchment;
-        padding: 2px 4px;
-        border-radius: @radius-xs;
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: @font-size-fine-print;
-        color: @color-accent-purple;
-      }
+  code {
+    background: @color-canvas-parchment;
+    padding: 2px 4px;
+    border-radius: @radius-xs;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: @font-size-fine-print;
+    color: @color-accent-purple;
+  }
 
-      pre {
-        background: @color-surface-pearl;
-        border: 1px solid @color-hairline;
-        border-radius: @radius-xs;
-        padding: 8px;
-        overflow-x: auto;
-        margin-bottom: 8px;
+  pre {
+    background: @color-surface-pearl;
+    border: 1px solid @color-hairline;
+    border-radius: @radius-xs;
+    padding: 8px;
+    overflow-x: auto;
+    margin-bottom: 8px;
 
-        code {
-          background: none;
-          padding: 0;
-          color: @color-ink;
-          font-size: @font-size-fine-print;
-        }
-      }
+    code {
+      background: none;
+      padding: 0;
+      color: @color-ink;
+      font-size: @font-size-fine-print;
+    }
+  }
 
-      blockquote {
-        border-left: 3px solid @color-primary;
-        padding-left: @spacing-sm;
-        margin: 8px 0;
-        color: @color-body-muted;
-        font-style: italic;
-      }
+  blockquote {
+    border-left: 3px solid @color-primary;
+    padding-left: @spacing-sm;
+    margin: 8px 0;
+    color: @color-body-muted;
+    font-style: italic;
+  }
 
-      strong {
-        font-weight: @font-weight-semibold;
-        color: @color-ink;
-      }
+  strong {
+    font-weight: @font-weight-semibold;
+    color: @color-ink;
+  }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 8px;
-        font-size: @font-size-fine-print;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: @font-size-fine-print;
 
-        th, td {
-          border: 1px solid @color-divider-soft;
-          padding: 4px 8px;
-          text-align: left;
-        }
+    th, td {
+      border: 1px solid @color-divider-soft;
+      padding: 4px 8px;
+      text-align: left;
+    }
 
-        th {
-          background: @color-surface-pearl;
-          font-weight: @font-weight-semibold;
-        }
-      }
+    th {
+      background: @color-surface-pearl;
+      font-weight: @font-weight-semibold;
     }
   }
 }

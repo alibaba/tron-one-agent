@@ -22,6 +22,7 @@ import { LongTermMemoryConfig } from '../../types/memory.interface';
 import { AgentConfig } from '../../types/agent.interface';
 import { getAllMemories, createMemory, updateMemory, deleteMemory } from '../../services/memory';
 import { getAllAgents } from '../../services/agent';
+import { commonStyles } from '../../styles/tokens';
 import memoryStyles from './index.module.less';
 
 const MemoryPage: React.FC = () => {
@@ -214,11 +215,11 @@ const MemoryPage: React.FC = () => {
       content: (
         <div>
           <p>您即将删除以下长期记忆配置：</p>
-          <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '6px', margin: '12px 0' }}>
+          <div style={{ ...commonStyles.confirmBox }}>
             <p><strong>名称：</strong>{memory?.name}</p>
             <p><strong>标识：</strong>{memory?.id}</p>
           </div>
-          <p style={{ color: '#ff4d4f', fontWeight: 500 }}>
+          <p style={commonStyles.confirmWarning}>
             ⚠️ 此操作不可撤销，请确认是否继续？
           </p>
         </div>

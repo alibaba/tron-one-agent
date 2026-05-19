@@ -24,6 +24,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { SkillConfig } from '../../types/skill.interface';
 import { getAllSkills, uploadSkill, updateSkill, deleteSkill, downloadSkill } from '../../services/skill';
+import { colors, commonStyles } from '../../styles/tokens';
 import skillStyles from './index.module.less';
 
 const SkillsPage: React.FC = () => {
@@ -73,14 +74,14 @@ const SkillsPage: React.FC = () => {
             return {
               key,
               title: name,
-              icon: <FileOutlined style={{ color: '#8c8c8c' }} />,
+              icon: <FileOutlined style={{ color: colors.bodyMuted }} />,
               isLeaf: true,
             };
           }
           return {
             key,
             title: name,
-            icon: <FolderOutlined style={{ color: '#faad14' }} />,
+            icon: <FolderOutlined style={{ color: colors.accentPurpleLight }} />,
             children: toTreeData(value, key),
           };
         });
@@ -330,17 +331,12 @@ const SkillsPage: React.FC = () => {
       content: (
         <div>
           <p>您即将删除以下Skill：</p>
-          <div style={{ 
-            padding: '12px', 
-            background: '#f5f5f5', 
-            borderRadius: '6px', 
-            margin: '12px 0' 
-          }}>
+          <div style={commonStyles.confirmBox}>
             <p><strong>名称：</strong>{skill?.name}</p>
             <p><strong>ID：</strong>{skill?.id}</p>
             {skill?.description && <p><strong>描述：</strong>{skill?.description}</p>}
           </div>
-          <p style={{ color: '#ff4d4f', fontWeight: 500 }}>
+          <p style={commonStyles.confirmWarning}>
             此操作不可撤销，请确认是否继续？
           </p>
         </div>
@@ -417,8 +413,8 @@ const SkillsPage: React.FC = () => {
           maxHeight: '60vh',
           overflow: 'auto',
           padding: '16px 20px',
-          background: '#fafafa',
-          border: '1px solid #f0f0f0',
+          background: colors.surfacePearl,
+          border: `1px solid ${colors.dividerSoft}`,
           borderRadius: '8px',
           fontSize: '14px',
           lineHeight: '1.7',
@@ -449,17 +445,17 @@ const SkillsPage: React.FC = () => {
               style={{ fontSize: '13px' }}
             />
           ) : (
-            <div style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>
+            <div style={{ textAlign: 'center', color: colors.bodyMuted, padding: '20px 0' }}>
               无文件
             </div>
           )}
         </div>
         <div style={{
-          borderTop: '1px solid #f0f0f0',
+          borderTop: `1px solid ${colors.dividerSoft}`,
           paddingTop: '8px',
           marginTop: '8px',
           fontSize: '12px',
-          color: '#8c8c8c',
+          color: colors.bodyMuted,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',

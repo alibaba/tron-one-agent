@@ -15,7 +15,7 @@
  */
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Menu, Button, Typography } from "antd";
 import {
   MenuFoldOutlined,
@@ -25,7 +25,6 @@ import {
   ToolOutlined,
   DatabaseOutlined,
   ThunderboltOutlined,
-  BugOutlined,
   BulbOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -37,65 +36,87 @@ import layoutStyles from "./index.module.less";
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
+/** Derive which submenu should be expanded based on the current pathname. */
+const getOpenKeys = (pathname: string): string[] => {
+  if (pathname.startsWith('/agents') || pathname.startsWith('/debug/agent')) return ['agents-group'];
+  if (pathname.startsWith('/tools') || pathname.startsWith('/debug/tool')) return ['tools-group'];
+  if (pathname.startsWith('/mcp') || pathname.startsWith('/debug/mcp')) return ['mcp-group'];
+  if (pathname.startsWith('/kb') || pathname.startsWith('/debug/kb')) return ['kb-group'];
+  return [];
+};
+
+/** Map the current pathname to the correct menu item key for selection highlighting. */
+const getSelectedKey = (pathname: string): string[] => {
+  if (pathname === '/agents' || pathname.startsWith('/agents/')) return ['/agents'];
+  if (pathname === '/debug/agent') return ['/debug/agent'];
+  if (pathname === '/tools') return ['/tools'];
+  if (pathname === '/debug/tool') return ['/debug/tool'];
+  if (pathname === '/mcp' || pathname.startsWith('/mcp/')) return ['/mcp'];
+  if (pathname === '/debug/mcp') return ['/debug/mcp'];
+  if (pathname === '/kb' || pathname.startsWith('/kb/')) return ['/kb'];
+  if (pathname === '/debug/kb') return ['/debug/kb'];
+  if (pathname === '/skills') return ['/skills'];
+  if (pathname === '/memory') return ['/memory'];
+  return [pathname];
+};
+
 const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const themeConfig = getThemeConfig();
+  const [openKeys, setOpenKeys] = useState<string[]>(getOpenKeys(location.pathname));
+
+  useEffect(() => {
+    setOpenKeys(getOpenKeys(location.pathname));
+  }, [location.pathname]);
 
   const menuItems = [
     {
-      key: "/agents",
+      key: "agents-group",
       icon: <RobotOutlined />,
-      label: "Agents管理",
+      label: "Agents",
+      children: [
+        { key: "/agents", label: "管理" },
+        { key: "/debug/agent", label: "调试" },
+      ],
     },
     {
-      key: "/mcp",
-      icon: <ApiOutlined />,
-      label: "MCP管理",
-    },
-    {
-      key: "/tools",
+      key: "tools-group",
       icon: <ToolOutlined />,
-      label: "Tools管理",
+      label: "Tools",
+      children: [
+        { key: "/tools", label: "管理" },
+        { key: "/debug/tool", label: "调试" },
+      ],
     },
     {
-      key: "/kb",
+      key: "mcp-group",
+      icon: <ApiOutlined />,
+      label: "MCP",
+      children: [
+        { key: "/mcp", label: "管理" },
+        { key: "/debug/mcp", label: "调试" },
+      ],
+    },
+    {
+      key: "kb-group",
       icon: <DatabaseOutlined />,
-      label: "知识库管理",
+      label: "知识库",
+      children: [
+        { key: "/kb", label: "管理" },
+        { key: "/debug/kb", label: "调试" },
+      ],
     },
     {
       key: "/skills",
       icon: <ThunderboltOutlined />,
-      label: "Skills管理",
+      label: "Skills",
     },
     {
       key: "/memory",
       icon: <BulbOutlined />,
       label: "长期记忆",
-    },
-    {
-      key: "/debug",
-      icon: <BugOutlined />,
-      label: "调试",
-      children: [
-        {
-          key: "/debug/agent",
-          label: "Agents调试",
-        },
-        {
-          key: "/debug/tool",
-          label: "Tools调试",
-        },
-        {
-          key: "/debug/mcp",
-          label: "MCP调试",
-        },
-        {
-          key: "/debug/kb",
-          label: "知识库调试",
-        },
-      ],
     },
   ];
 
@@ -113,7 +134,7 @@ const AppLayout: React.FC = () => {
       >
         <div className={layoutStyles.logo}>
           {!collapsed && (
-            <Title level={4} style={{ margin: 0, color: "#1a1a1a" }}>
+            <Title level={4} className={layoutStyles.logoTitle}>
               {themeConfig.title}
             </Title>
           )}
@@ -121,7 +142,9 @@ const AppLayout: React.FC = () => {
         <Menu
           theme="light"
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={getSelectedKey(location.pathname)}
+          openKeys={openKeys}
+          onOpenChange={setOpenKeys}
           items={menuItems}
           onClick={handleMenuClick}
         />
@@ -134,8 +157,8 @@ const AppLayout: React.FC = () => {
             onClick={() => setCollapsed(!collapsed)}
             className={layoutStyles.trigger}
           />
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: 'rgba(0, 0, 0, 0.65)', fontSize: '14px' }}>
+          <div className={layoutStyles.userInfo}>
+            <span className={layoutStyles.username}>
               {getUsername() || 'Admin'}
             </span>
             <Button

@@ -46,6 +46,7 @@ import { getAllMcps } from "../../services/mcp";
 import { getAllSkills } from "../../services/skill";
 import { SkillConfig } from "../../types/skill.interface";
 import { AgentToolConfig } from "../../types/tool.interface";
+import { colors, commonStyles } from "../../styles/tokens";
 import StatusToggleButton from "./components/StatusToggleButton";
 import ToolsButton from "./components/ToolsButton";
 import McpButton from "./components/McpButton";
@@ -105,7 +106,7 @@ const AgentDetail: React.FC = () => {
     try {
       setLoading(true);
       const agentData = await getAgentById(id);
-      setAgent(agentData.data || {});
+      setAgent(agentData.data || null);
     } catch (error) {
       console.error("加载Agent详情失败:", error);
       message.error("加载Agent详情失败，请重试");
@@ -120,6 +121,7 @@ const AgentDetail: React.FC = () => {
     loadAvailableTools();
     loadAvailableMcps();
     loadAvailableSkills();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleSuccess = () => {
@@ -158,10 +160,10 @@ const AgentDetail: React.FC = () => {
 
   const getTypeConfig = (type: LocalAgentType) => {
     const typeMap = {
-      [LocalAgentType.REACT]: { text: "ReAct Agent", color: "green" },
-      [LocalAgentType.ONE]: { text: "OneAgent", color: "purple" },
+      [LocalAgentType.REACT]: { text: "ReAct Agent", style: { background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink } },
+      [LocalAgentType.ONE]: { text: "OneAgent", style: { background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink } },
     };
-    return typeMap[type] || { text: "Unknown", color: "default" };
+    return typeMap[type] || { text: "Unknown", style: {} };
   };
 
   return (
@@ -187,7 +189,7 @@ const AgentDetail: React.FC = () => {
               <Descriptions.Item label="ID">{agent.id}</Descriptions.Item>
               <Descriptions.Item label="名称">{agent.name}</Descriptions.Item>
               <Descriptions.Item label="类型">
-                <Tag color={getTypeConfig(agent.type).color}>
+                <Tag style={getTypeConfig(agent.type).style}>
                   {getTypeConfig(agent.type).text}
                 </Tag>
               </Descriptions.Item>
@@ -224,16 +226,7 @@ const AgentDetail: React.FC = () => {
           >
             {agent.chatModel ? (
               <div
-                style={{
-                  maxHeight: "300px",
-                  overflow: "auto",
-                  padding: "16px",
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
-                  borderRadius: "8px",
-                  fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                  fontSize: "12px",
-                }}
+                style={commonStyles.codePreview}
               >
                 <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
                   {JSON.stringify(agent.chatModel, null, 2)}
@@ -241,13 +234,7 @@ const AgentDetail: React.FC = () => {
               </div>
             ) : (
               <div
-                style={{
-                  padding: "40px",
-                  textAlign: "center",
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
-                  borderRadius: "8px",
-                }}
+                style={commonStyles.emptyState}
               >
                 <Text type="secondary">未配置Chat模型</Text>
               </div>
@@ -270,8 +257,8 @@ const AgentDetail: React.FC = () => {
                   maxHeight: "500px",
                   overflow: "auto",
                   padding: "20px",
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
+                  background: colors.surfacePearl,
+                  border: `1px solid ${colors.dividerSoft}`,
                   borderRadius: "8px",
                 }}
               >
@@ -281,13 +268,7 @@ const AgentDetail: React.FC = () => {
               </div>
             ) : (
               <div
-                style={{
-                  padding: "40px",
-                  textAlign: "center",
-                  background: "#fafafa",
-                  border: "1px solid #f0f0f0",
-                  borderRadius: "8px",
-                }}
+                style={commonStyles.emptyState}
               >
                 <Text type="secondary">未设置提示词</Text>
               </div>
@@ -313,7 +294,7 @@ const AgentDetail: React.FC = () => {
                 return (
                   <List.Item>
                     <List.Item.Meta
-                      avatar={<ToolOutlined style={{ color: "#1677ff" }} />}
+                      avatar={<ToolOutlined style={{ color: colors.primary }} />}
                       title={
                         <Space>
                           <span>{tool.name}</span>
@@ -327,12 +308,7 @@ const AgentDetail: React.FC = () => {
                       description={
                         toolInfo?.description && (
                           <div
-                            style={{
-                              fontSize: "13px",
-                              color: "#595959",
-                              lineHeight: "1.4",
-                              marginTop: "4px",
-                            }}
+                            style={commonStyles.descriptionText}
                           >
                             {toolInfo.description}
                           </div>
@@ -367,7 +343,7 @@ const AgentDetail: React.FC = () => {
                   return (
                     <List.Item>
                       <List.Item.Meta
-                        avatar={<ApiOutlined style={{ color: "#1677ff" }} />}
+                        avatar={<ApiOutlined style={{ color: colors.primary }} />}
                         title={
                           <Space>
                             <span>{mcpInfo?.name || mcp.clientId}</span>
@@ -395,7 +371,7 @@ const AgentDetail: React.FC = () => {
                               <div
                                 style={{
                                   fontSize: "13px",
-                                  color: "#595959",
+                                  color: colors.inkMuted80,
                                   lineHeight: "1.4",
                                   marginBottom: "8px",
                                 }}
@@ -407,7 +383,7 @@ const AgentDetail: React.FC = () => {
                               <div
                                 style={{
                                   fontSize: "12px",
-                                  color: "#8c8c8c",
+                                  color: colors.bodyMuted,
                                   fontFamily:
                                     'Monaco, Menlo, "Ubuntu Mono", monospace',
                                   marginBottom: "8px",
@@ -460,7 +436,7 @@ const AgentDetail: React.FC = () => {
                 <List.Item>
                   <List.Item.Meta
                     avatar={
-                      <DatabaseOutlined style={{ color: "#722ed1" }} />
+                      <DatabaseOutlined style={{ color: colors.accentPurple }} />
                     }
                     title={kb.name}
                     description={
@@ -502,7 +478,7 @@ const AgentDetail: React.FC = () => {
                       <List.Item.Meta
                         avatar={
                           <ThunderboltOutlined
-                            style={{ color: "#faad14" }}
+                            style={{ color: colors.accentPurpleLight }}
                           />
                         }
                         title={
@@ -516,13 +492,8 @@ const AgentDetail: React.FC = () => {
                         description={
                           skillInfo?.description && (
                             <div
-                              style={{
-                                fontSize: "13px",
-                                color: "#595959",
-                                lineHeight: "1.4",
-                                marginTop: "4px",
-                              }}
-                            >
+                            style={commonStyles.descriptionText}
+                          >
                               {skillInfo.description}
                             </div>
                           )
@@ -579,7 +550,7 @@ const AgentDetail: React.FC = () => {
                         padding: "16px 0",
                         borderBottom:
                           index < (agent.subAgents?.length || 0) - 1
-                            ? "1px solid #f0f0f0"
+                            ? `1px solid ${colors.dividerSoft}`
                             : "none",
                       }}
                     >
@@ -587,11 +558,11 @@ const AgentDetail: React.FC = () => {
                         avatar={
                           isRemoteAgent ? (
                             <ApiOutlined
-                              style={{ color: "#fa8c16", fontSize: 16 }}
+                              style={{ color: colors.accentPurpleLight, fontSize: 16 }}
                             />
                           ) : (
                             <TeamOutlined
-                              style={{ color: "#1677ff", fontSize: 16 }}
+                              style={{ color: colors.primary, fontSize: 16 }}
                             />
                           )
                         }
@@ -608,7 +579,7 @@ const AgentDetail: React.FC = () => {
                               style={{
                                 fontWeight: 500,
                                 fontSize: "14px",
-                                color: "#262626",
+                                color: colors.ink,
                                 wordBreak: "break-all",
                                 minWidth: 0,
                                 flex: "0 1 auto",
@@ -645,7 +616,7 @@ const AgentDetail: React.FC = () => {
                             <div
                               style={{
                                 fontSize: "13px",
-                                color: "#595959",
+                                color: colors.inkMuted80,
                                 lineHeight: "1.4",
                                 wordBreak: "break-word",
                               }}
@@ -657,9 +628,9 @@ const AgentDetail: React.FC = () => {
                               <div
                                 style={{
                                   fontSize: "12px",
-                                  color: "#8c8c8c",
+                                  color: colors.bodyMuted,
                                   padding: "6px 8px",
-                                  background: "#f5f5f5",
+                                  background: colors.canvasParchment,
                                   borderRadius: "4px",
                                   wordBreak: "break-all",
                                 }}

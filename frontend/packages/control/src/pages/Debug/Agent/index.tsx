@@ -17,6 +17,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { colors } from "../../../styles/tokens";
 import styles from "./index.module.less";
 import {
   ContentType,
@@ -82,7 +83,7 @@ const eventColumns = [
             title: `事件详情 (ID: ${record.id})`,
             width: 800,
             content: (
-              <pre style={{ maxHeight: 500, overflow: "auto", fontSize: 12, background: "#f5f5f5", padding: 12, borderRadius: 4 }}>
+              <pre style={{ maxHeight: 500, overflow: "auto", fontSize: 12, background: colors.canvasParchment, padding: 12, borderRadius: 4 }}>
                 {JSON.stringify(record, null, 2)}
               </pre>
             ),
@@ -117,7 +118,7 @@ const generateSessionId = () => {
 };
 
 const userName = getUserName();
-const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
+const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [agentsOptions, setAgentsOptions] = useState<AgentConfig[]>([]);
@@ -183,7 +184,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
 
   const stopInlineTts = useCallback(() => {
     if (currentAudioSourceRef.current) {
-      try { currentAudioSourceRef.current.stop(); } catch (_) {}
+      try { currentAudioSourceRef.current.stop(); } catch (_) { /* ignore stop error */ }
       currentAudioSourceRef.current = null;
     }
     audioQueueRef.current = [];
@@ -789,6 +790,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
         abortControllerRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -837,7 +839,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>调试面板</span>
               <Space size="small">
-                <span style={{ fontSize: 12, color: "#666" }}>协议</span>
+                <span style={{ fontSize: 12, color: colors.bodyMuted }}>协议</span>
                 <Switch
                   size="small"
                   checkedChildren="WS"
@@ -855,7 +857,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                       {wsConnected ? "已连接" : "未连接"}
                     </Tag>
                     <ReloadOutlined
-                      style={{ cursor: "pointer", fontSize: 14, color: "#1677ff" }}
+                      style={{ cursor: "pointer", fontSize: 14, color: colors.primary }}
                       onClick={() => {
                         if (agentIdChanged && sessionId) {
                           connectWebSocket(agentIdChanged, sessionId);
@@ -864,7 +866,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                     />
                   </>
                 )}
-                <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>自动TTS</span>
+                <span style={{ fontSize: 12, color: colors.bodyMuted, marginLeft: 8 }}>自动TTS</span>
                 <Switch
                   size="small"
                   checked={ttsAutoPlay}
@@ -889,9 +891,9 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                   <Select.Option key={agent.id} value={agent.id}>
                     {agent.name}
                     {agent.type === LocalAgentType.ONE ? (
-                      <Tag color="purple" style={{ marginLeft: 8 }}>OneAgent</Tag>
+                      <Tag style={{ marginLeft: 8, background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink }}>OneAgent</Tag>
                     ) : (
-                      <Tag color="green" style={{ marginLeft: 8 }}>ReAct</Tag>
+                      <Tag style={{ marginLeft: 8, background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink }}>ReAct</Tag>
                     )}
                   </Select.Option>
                 ))}
@@ -949,7 +951,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = ({}) => {
                           <List.Item
                             style={{
                               cursor: "pointer",
-                              background: item.id === sessionId ? "#e6f4ff" : undefined,
+                              background: item.id === sessionId ? colors.gradientCardBlue : undefined,
                               padding: "8px 12px",
                             }}
                             onClick={() => handleSwitchSession(item.id)}

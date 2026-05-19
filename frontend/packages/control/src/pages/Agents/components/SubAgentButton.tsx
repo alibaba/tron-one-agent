@@ -49,6 +49,7 @@ import {
   SubAgentTypeNameMap,
 } from "../../../types/common.interface";
 import { updateAgent, getAllAgents } from "../../../services/agent";
+import { colors, commonStyles } from "../../../styles/tokens";
 
 const { Text } = Typography;
 
@@ -482,13 +483,13 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
             </Text>
             <div
               style={{
-                border: "1px solid #f0f0f0",
+                border: `1px solid ${colors.dividerSoft}`,
                 borderRadius: 6,
                 padding: 16,
                 minHeight: 200,
                 maxHeight: 400,
                 overflow: "auto",
-                background: "#fafafa",
+                background: colors.surfacePearl,
               }}
             >
               {pendingSubAgents.length > 0 ? (
@@ -500,7 +501,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                         padding: "12px 0",
                         borderBottom:
                           index < pendingSubAgents.length - 1
-                            ? "1px solid #f0f0f0"
+                            ? `1px solid ${colors.dividerSoft}`
                             : "none",
                       }}
                       actions={[
@@ -535,7 +536,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             )
                           }
                           style={{
-                            color: subAgent.enabled ? "#ff4d4f" : "#52c41a",
+                            color: subAgent.enabled ? colors.statusDanger : colors.statusSuccess,
                           }}
                         >
                           {subAgent.enabled ? "禁用" : "启用"}
@@ -556,11 +557,11 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                         avatar={
                           subAgent.type === SubAgentType.A2A ? (
                             <ApiOutlined
-                              style={{ color: "#fa8c16", fontSize: 16 }}
+                              style={{ color: colors.accentOrange, fontSize: 16 }}
                             />
                           ) : (
                             <TeamOutlined
-                              style={{ color: "#1677ff", fontSize: 16 }}
+                              style={{ color: colors.primary, fontSize: 16 }}
                             />
                           )
                         }
@@ -577,7 +578,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                               style={{
                                 fontWeight: 500,
                                 fontSize: "14px",
-                                color: "#262626",
+                                color: colors.ink,
                                 wordBreak: "break-all",
                                 minWidth: 0,
                                 flex: "0 1 auto",
@@ -616,7 +617,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             <div
                               style={{
                                 fontSize: "13px",
-                                color: "#595959",
+                                color: colors.inkMuted60,
                                 lineHeight: "1.4",
                                 wordBreak: "break-word",
                               }}
@@ -635,9 +636,9 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                               <div
                                 style={{
                                   fontSize: "12px",
-                                  color: "#8c8c8c",
+                                  color: colors.bodyMuted,
                                   padding: "6px 8px",
-                                  background: "#f5f5f5",
+                                  background: colors.canvasParchment,
                                   borderRadius: "4px",
                                   wordBreak: "break-all",
                                 }}
@@ -688,15 +689,15 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                                   key={idx}
                                                   style={{
                                                     padding: "8px",
-                                                    background: "#fff",
+                                                    background: colors.canvas,
                                                     borderRadius: "4px",
-                                                    border: "1px solid #e8e8e8",
+                                                    border: `1px solid ${colors.hairline}`,
                                                   }}
                                                 >
                                                   <div
                                                     style={{
                                                       fontWeight: 500,
-                                                      color: "#262626",
+                                                      color: colors.ink,
                                                       marginBottom: "4px",
                                                     }}
                                                   >
@@ -705,7 +706,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                                   <div
                                                     style={{
                                                       fontSize: "12px",
-                                                      color: "#595959",
+                                                      color: colors.inkMuted60,
                                                       marginBottom: "4px",
                                                     }}
                                                   >
@@ -775,7 +776,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                 <div
                   style={{
                     textAlign: "center",
-                    color: "#999",
+                    color: colors.bodyMuted,
                     padding: "40px 0",
                   }}
                 >
@@ -788,12 +789,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
           {/* 变更提示 */}
           {hasChanges() && (
             <div
-              style={{
-                padding: 12,
-                background: "#e6f7ff",
-                border: "1px solid #91d5ff",
-                borderRadius: 6,
-              }}
+              style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
                 ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改

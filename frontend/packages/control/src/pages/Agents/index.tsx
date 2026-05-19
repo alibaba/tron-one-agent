@@ -40,6 +40,7 @@ import type { ColumnsType } from "antd/es/table";
 import { AgentConfig } from "../../types/agent.interface";
 import { LocalAgentType } from "../../types/common.interface";
 import { getAllAgents } from "../../services/agent";
+import { colors } from "../../styles/tokens";
 import RenameButton from "./components/RenameButton";
 import StatusToggleButton from "./components/StatusToggleButton";
 import ToolsButton from "./components/ToolsButton";
@@ -84,7 +85,7 @@ const AgentsPage: React.FC = () => {
       title: "工具",
       key: "toolsCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ToolOutlined />} color="blue">
+        <Tag icon={<ToolOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
           {record.tools?.length || 0}
         </Tag>
       ),
@@ -93,7 +94,7 @@ const AgentsPage: React.FC = () => {
       title: "MCP",
       key: "mcpCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ApiOutlined />} color="green">
+        <Tag icon={<ApiOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
           {record.mcpClients?.length || 0}
         </Tag>
       ),
@@ -102,7 +103,7 @@ const AgentsPage: React.FC = () => {
       title: "知识库",
       key: "kbCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<DatabaseOutlined />} color="purple">
+        <Tag icon={<DatabaseOutlined />} style={{ background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink }}>
           {record.knowledgeBases?.length || 0}
         </Tag>
       ),
@@ -111,7 +112,7 @@ const AgentsPage: React.FC = () => {
       title: "Skills",
       key: "skillsCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ThunderboltOutlined />} color="orange">
+        <Tag icon={<ThunderboltOutlined />} style={{ background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink }}>
           {record.skills?.length || 0}
         </Tag>
       ),
@@ -173,7 +174,7 @@ const AgentsPage: React.FC = () => {
       title: "子Agent",
       key: "subAgentCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<TeamOutlined />} color="orange">
+        <Tag icon={<TeamOutlined />} style={{ background: colors.gradientCardDark, borderColor: colors.gradientCardDark, color: colors.onDark }}>
           {record.subAgents?.length || 0}
         </Tag>
       ),
@@ -182,7 +183,7 @@ const AgentsPage: React.FC = () => {
       title: "工具",
       key: "toolsCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ToolOutlined />} color="blue">
+        <Tag icon={<ToolOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
           {record.tools?.length || 0}
         </Tag>
       ),
@@ -191,7 +192,7 @@ const AgentsPage: React.FC = () => {
       title: "MCP",
       key: "mcpCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ApiOutlined />} color="green">
+        <Tag icon={<ApiOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
           {record.mcpClients?.length || 0}
         </Tag>
       ),
@@ -200,7 +201,7 @@ const AgentsPage: React.FC = () => {
       title: "知识库",
       key: "kbCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<DatabaseOutlined />} color="purple">
+        <Tag icon={<DatabaseOutlined />} style={{ background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink }}>
           {record.knowledgeBases?.length || 0}
         </Tag>
       ),
@@ -209,7 +210,7 @@ const AgentsPage: React.FC = () => {
       title: "Skills",
       key: "skillsCount",
       render: (_, record: AgentConfig) => (
-        <Tag icon={<ThunderboltOutlined />} color="orange">
+        <Tag icon={<ThunderboltOutlined />} style={{ background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink }}>
           {record.skills?.length || 0}
         </Tag>
       ),
@@ -253,8 +254,7 @@ const AgentsPage: React.FC = () => {
     try {
       setLoading(true);
       const agentsData = await getAllAgents();
-      console.log("agentsData", agentsData);
-      setAgents(agentsData.data);
+      setAgents(agentsData.data || []);
     } catch (error) {
       console.error("加载Agents失败:", error);
       message.error("加载Agents失败，请重试");

@@ -21,6 +21,7 @@ import { Card, Descriptions, Button, Tag, Space, Typography, Spin, message } fro
 import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
 import { McpClientConfig } from '../../types/mcp.interface';
 import { getMcpById } from '../../services/mcp';
+import { colors } from '../../styles/tokens';
 
 const { Text } = Typography;
 
@@ -48,6 +49,7 @@ const MCPDetail: React.FC = () => {
 
   useEffect(() => {
     loadMcpClient();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (loading) {
@@ -118,7 +120,7 @@ const MCPDetail: React.FC = () => {
             {mcpClient.description}
           </Descriptions.Item>
           <Descriptions.Item label="请求头" span={2}>
-            <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
+            <pre style={{ background: colors.canvasParchment, padding: '8px', borderRadius: '4px' }}>
               {JSON.stringify(mcpClient.headers, null, 2)}
             </pre>
           </Descriptions.Item>
