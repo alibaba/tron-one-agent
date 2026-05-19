@@ -28,8 +28,6 @@ import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.OssFileDO;
 import com.aliyun.tam.x.tron.infra.dal.mapper.OssFileMapper;
 import com.aliyun.tam.x.tron.infra.sequence.SequenceService;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
@@ -46,7 +44,6 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,11 +79,6 @@ public class OssStorageProvider implements StorageProvider, InitializingBean {
 
     private final SequenceService sequenceService;
 
-    private final Cache<Long, String> publicUrlCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(60, TimeUnit.MINUTES)
-            .maximumSize(10000)
-            .build();
-
     @Override
     public Long upload(String userId, String suffix, InputStream is) throws IOException {
         long id = sequenceService.nextSequence(SequenceService.SequenceName.FILE);
@@ -119,11 +111,9 @@ public class OssStorageProvider implements StorageProvider, InitializingBean {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            String publicUrl = publicUrlCache.get(id, () -> {
-                GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(file.getOssBucket(), file.getOssFileKey(), HttpMethod.GET);
-                request.setExpiration(new Date(System.currentTimeMillis() + 7200_000));
-                return ossClient.generatePresignedUrl(request).toString();
-            });
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(file.getOssBucket(), file.getOssFileKey(), HttpMethod.GET);
+            request.setExpiration(new Date(System.currentTimeMillis() + 7200_000));
+            String publicUrl = ossClient.generatePresignedUrl(request).toString();
             return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT)
                     .header("Location", publicUrl)
                     .build();
@@ -147,11 +137,9 @@ public class OssStorageProvider implements StorageProvider, InitializingBean {
                     return url;
                 }
 
-                return publicUrlCache.get(id, () -> {
-                    GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(file.getOssBucket(), file.getOssFileKey(), HttpMethod.GET);
-                    request.setExpiration(new Date(System.currentTimeMillis() + 7200_000));
-                    return ossClient.generatePresignedUrl(request).toString();
-                });
+                GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(file.getOssBucket(), file.getOssFileKey(), HttpMethod.GET);
+                request.setExpiration(new Date(System.currentTimeMillis() + 7200_000));
+                return ossClient.generatePresignedUrl(request).toString();
             } else if (url.startsWith(ossHost) && url.contains("x-oss-signature")) {
                 URI uri = new URI(url);
                 String fileKey = uri.getPath();
@@ -159,9 +147,6 @@ public class OssStorageProvider implements StorageProvider, InitializingBean {
                     fileKey = fileKey.substring(1);
                 }
 
-                if (publicUrlCache.asMap().containsValue(url)) {
-                    return url;
-                }
                 GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, fileKey, HttpMethod.GET);
                 request.setExpiration(new Date(System.currentTimeMillis() + 7200_000));
                 return ossClient.generatePresignedUrl(request).toString();
