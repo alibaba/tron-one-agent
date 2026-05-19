@@ -16,21 +16,40 @@
 
 package com.aliyun.tam.x.tron.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import com.aliyun.tam.x.tron.ws.AgentWsHandler;
+import com.aliyun.tam.x.tron.ws.AsrWsHandler;
+import com.aliyun.tam.x.tron.ws.TtsWsHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+import org.springframework.web.reactive.HandlerMapping;
+import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
+import org.springframework.web.reactive.socket.WebSocketHandler;
+import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class WebSocketConfig {
 
-    /**
-     * ServerEndpointExporter 仅在 Servlet 容器环境中有效，
-     * 测试环境（Mock）下不加载此 Bean
-     */
     @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
-        return new ServerEndpointExporter();
+    public HandlerMapping webSocketHandlerMapping(
+            AgentWsHandler agentWsHandler,
+            AsrWsHandler asrWsHandler,
+            TtsWsHandler ttsWsHandler) {
+        Map<String, WebSocketHandler> map = new HashMap<>();
+        map.put("/ws/agents/**", agentWsHandler);
+        map.put("/asr", asrWsHandler);
+        map.put("/tts", ttsWsHandler);
+
+        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        mapping.setUrlMap(map);
+        mapping.setOrder(-1);
+        return mapping;
+    }
+
+    @Bean
+    public WebSocketHandlerAdapter webSocketHandlerAdapter() {
+        return new WebSocketHandlerAdapter();
     }
 }

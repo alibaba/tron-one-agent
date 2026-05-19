@@ -25,7 +25,6 @@ import com.aliyun.tam.x.tron.api.request.CreateSessionRequest;
 import com.aliyun.tam.x.tron.core.agents.AgentHandler;
 import com.aliyun.tam.x.tron.core.agents.AgentInput;
 import com.aliyun.tam.x.tron.core.agents.AgentRegistry;
-import com.aliyun.tam.x.tron.core.agents.AgentResult;
 import com.aliyun.tam.x.tron.core.config.AgentConfig;
 import com.aliyun.tam.x.tron.core.domain.models.Session;
 import com.aliyun.tam.x.tron.core.domain.models.contents.Content;
@@ -46,8 +45,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aliyun.tam.x.tron.core.tts.TtsEventSinkWrapper;
 import com.aliyun.tam.x.tron.core.tts.TtsService;
 import com.aliyun.tam.x.tron.api.response.TtsResponse;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.opentelemetry.context.Context;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -57,23 +54,20 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -100,29 +94,11 @@ public class SessionController {
 
     private final TtsService ttsService;
 
-    private final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-            10,
-            10,
-            Long.MAX_VALUE,
-            TimeUnit.SECONDS,
-            new LinkedBlockingDeque<>(1000),
-            new ThreadFactoryBuilder()
-                    .setNameFormat("chat-%d")
-                    .setDaemon(true)
-                    .build(),
-            new ThreadPoolExecutor.CallerRunsPolicy()
-    );
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
         if (e instanceof IllegalArgumentException) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
-        }
-        if (e instanceof AsyncRequestTimeoutException) {
-            log.debug("sse timeout", e);
-            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
-                    .body("Request timeout");
         }
         log.error("Internal server error", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -330,29 +306,41 @@ public class SessionController {
         }
 
         if (Objects.equals("text/event-stream", accept)) {
-            SseEmitter emitter = new SseEmitter(300_000L);
-            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, emitter);
-            threadPoolExecutor.submit(callable);
+            Sinks.Many<ServerSentEvent<?>> sink = Sinks.many().unicast().onBackpressureBuffer();
+            Runnable task = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, sink);
+            Mono.fromRunnable(task)
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .subscribe(
+                            null,
+                            err -> log.error("chat task failed", err)
+                    );
+            Flux<ServerSentEvent<?>> flux = sink.asFlux()
+                    .doOnCancel(() -> agent.cancel(null));
             return ResponseEntity.status(HttpStatus.OK)
                     .contentType(MediaType.TEXT_EVENT_STREAM)
-                    .body(emitter);
+                    .body(flux);
         } else {
-            Callable<AgentResult> callable = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, null);
-            threadPoolExecutor.submit(callable);
+            Runnable task = this.doChat(agent, agentId, userId, userName, sessionId, chatRequest, null);
+            Mono.fromRunnable(task)
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .subscribe(
+                            null,
+                            err -> log.error("chat task failed", err)
+                    );
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("success");
         }
     }
 
-    private Callable<AgentResult> doChat(
+    private Runnable doChat(
             AgentHandler agentHandler,
             String agentId,
             String userId,
             String userName,
             String sessionId,
             ChatRequest chatRequest,
-            SseEmitter sseEmitter
+            Sinks.Many<ServerSentEvent<?>> sseSink
     ) {
         List<Content<?>> contents = chatRequest.getInput()
                 .stream()
@@ -389,7 +377,7 @@ public class SessionController {
                 sessionId,
                 agentMessage.getId()
         );
-        EventSink eventSink = wrapEventSink(agentHandler, rawEventSink, chatRequest, sseEmitter);
+        EventSink eventSink = wrapEventSink(agentHandler, rawEventSink, chatRequest, sseSink);
 
         eventSink.newUserMessage(userMessage);
         eventSink.newAgentMessage(agentMessage);
@@ -397,7 +385,7 @@ public class SessionController {
             io.agentscope.core.session.Session session = agentStateRepository.agentSessionsOf(agentId, userId);
             try {
                 agentHandler.loadFrom(session, sessionId);
-                return agentHandler.handleInput(AgentInput.builder()
+                agentHandler.handleInput(AgentInput.builder()
                         .source(AgentInput.Source.USER)
                         .userMessage(userMessage)
                         .eventSink(eventSink)
@@ -408,9 +396,9 @@ public class SessionController {
         };
     }
 
-    private EventSink wrapEventSink(AgentHandler handler, EventSink rawEventSink, ChatRequest chatRequest, SseEmitter sseEmitter) {
+    private EventSink wrapEventSink(AgentHandler handler, EventSink rawEventSink, ChatRequest chatRequest, Sinks.Many<ServerSentEvent<?>> sseSink) {
         EventSink eventSink;
-        if (sseEmitter == null) {
+        if (sseSink == null) {
             eventSink = rawEventSink;
         } else if (!chatRequest.isEnableTts()) {
             AtomicBoolean completed = new AtomicBoolean(false);
@@ -421,18 +409,11 @@ public class SessionController {
                     if (completed.get()) {
                         return;
                     }
-                    try {
-                        sseEmitter.send(event);
-                    } catch (IllegalStateException e) {
-                        log.warn("SseEmitter is closed");
+                    Sinks.EmitResult result = sseSink.tryEmitNext(ServerSentEvent.builder().data(event).build());
+                    if (result.isFailure()) {
+                        log.warn("SSE sink emit failed: {}", result);
                         handler.cancel(null);
                         completed.set(true);
-                    } catch (Exception e) {
-                        try {
-                            sseEmitter.completeWithError(e);
-                            completed.set(true);
-                        } catch (Exception ex) {
-                        }
                     }
                 }
 
@@ -449,7 +430,7 @@ public class SessionController {
                 @Override
                 public void onComplete() {
                     rawEventSink.onComplete();
-                    sseEmitter.complete();
+                    sseSink.tryEmitComplete();
                 }
             };
         } else {
@@ -464,25 +445,25 @@ public class SessionController {
                     send(TtsResponse.builder().finished(true).build());
 
                     rawEventSink.onComplete();
-                    sseEmitter.complete();
+                    sseSink.tryEmitComplete();
                 }
 
                 @Override
                 public void onError(Throwable t) {
                     send(TtsResponse.builder().success(false).error(t.getMessage()).build());
-                    sseEmitter.completeWithError(t);
+                    sseSink.tryEmitError(t);
                 }
 
                 private void send(TtsResponse response) {
-                    try {
-                        sseEmitter.send(CustomEvent.builder()
-                                .type(SessionEventType.TTS_RESPONSE)
-                                .needPersistent(false)
-                                .data(response)
-                                .build()
-                        );
-                    } catch (IOException e) {
-                        log.error("Failed to send text to client", e);
+                    Sinks.EmitResult result = sseSink.tryEmitNext(ServerSentEvent.builder()
+                            .data(CustomEvent.builder()
+                                    .type(SessionEventType.TTS_RESPONSE)
+                                    .needPersistent(false)
+                                    .data(response)
+                                    .build())
+                            .build());
+                    if (result.isFailure()) {
+                        log.error("Failed to send text to client: {}", result);
                     }
                 }
             });
@@ -495,18 +476,11 @@ public class SessionController {
                     if (completed.get()) {
                         return;
                     }
-                    try {
-                        sseEmitter.send(event);
-                    } catch (IllegalStateException e) {
-                        log.warn("SseEmitter is closed");
+                    Sinks.EmitResult result = sseSink.tryEmitNext(ServerSentEvent.builder().data(event).build());
+                    if (result.isFailure()) {
+                        log.warn("SSE sink emit failed: {}", result);
                         handler.cancel(null);
                         completed.set(true);
-                    } catch (Exception e) {
-                        try {
-                            sseEmitter.completeWithError(e);
-                            completed.set(true);
-                        } catch (Exception ex) {
-                        }
                     }
                 }
 

@@ -18,20 +18,22 @@
 package com.aliyun.tam.x.tron.api;
 
 import com.aliyun.tam.x.tron.infra.storage.StorageProvider;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 @Controller
@@ -49,21 +51,21 @@ public class FileController {
     private StorageProvider storageProvider;
 
     @PostMapping(value = "", consumes = "multipart/form-data")
-    public ResponseEntity<String> upload(
+    public Mono<ResponseEntity<String>> upload(
             @RequestHeader("X-User-Id") String userId,
-            @RequestParam("file") MultipartFile file,
-            HttpServletRequest request) throws IOException, URISyntaxException {
+            @RequestPart("file") FilePart file,
+            ServerHttpRequest request) throws IOException {
         if (storageProvider == null) {
-            return ResponseEntity.notFound().build();
+            return Mono.just(ResponseEntity.notFound().build());
         }
 
-        String fileName = file.getOriginalFilename();
+        String fileName = file.filename();
         if (fileName == null || fileName.isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid file name");
+            return Mono.just(ResponseEntity.badRequest().body("Invalid file name"));
         }
 
         if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
-            return ResponseEntity.badRequest().body("Invalid file name");
+            return Mono.just(ResponseEntity.badRequest().body("Invalid file name"));
         }
 
         String suffix;
@@ -73,30 +75,40 @@ public class FileController {
                     "jpg", "jpeg", "png"
             );
             if (!allowedExtensions.contains(suffix)) {
-                return ResponseEntity.badRequest()
-                        .body("File type not allowed");
+                return Mono.just(ResponseEntity.badRequest()
+                        .body("File type not allowed"));
             }
         } else {
             suffix = "";
         }
 
-        long id = storageProvider.upload(userId, suffix, file.getInputStream());
-        URI uri = URI.create(request.getRequestURL().toString());
-
-        if (StringUtils.hasText(serverBaseUrl)) {
-            return ResponseEntity.created(URI.create(serverBaseUrl + "/" + id)).build();
-        } else {
-            String host = uri.getHost();
-            if (host.equals(ALL_HOSTS)) {
-                host = LOCALHOST;
-            }
-            if (uri.getPort() > 0) {
-                host += ":" + uri.getPort();
-            }
-            return ResponseEntity.created(new URI(
-                    String.format("%s://%s%s/%d", uri.getScheme(), host, uri.getPath(), id)
-            )).build();
-        }
+        String finalSuffix = suffix;
+        Path tempFile = Files.createTempFile("upload", fileName);
+        return file.transferTo(tempFile)
+                .then(Mono.fromCallable(() -> {
+                    long id = storageProvider.upload(userId, finalSuffix, Files.newInputStream(tempFile));
+                    URI uri = request.getURI();
+                    if (StringUtils.hasText(serverBaseUrl)) {
+                        return ResponseEntity.created(URI.create(serverBaseUrl + "/" + id)).<String>build();
+                    } else {
+                        String host = uri.getHost();
+                        if (host.equals(ALL_HOSTS)) {
+                            host = LOCALHOST;
+                        }
+                        if (uri.getPort() > 0) {
+                            host += ":" + uri.getPort();
+                        }
+                        return ResponseEntity.created(URI.create(
+                                String.format("%s://%s%s/%d", uri.getScheme(), host, uri.getPath(), id)
+                        )).<String>build();
+                    }
+                }))
+                .doFinally(s -> {
+                    try {
+                        Files.deleteIfExists(tempFile);
+                    } catch (IOException e) {
+                    }
+                });
     }
 
     @GetMapping(value = "/{id}")

@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -45,15 +45,15 @@ public class LongTermMemoryRegistry {
 
     private final LongTermMemoryRepository longTermMemoryRepository;
 
-    private final RestClient restClient;
+    private final WebClient webClient;
 
     public LongTermMemoryRegistry(
             List<LongTermMemoryConfigBuilder> longTermMemoryConfigBuilders,
             LongTermMemoryRepository longTermMemoryRepository,
-            RestClient.Builder restClientBuilder) {
+            WebClient.Builder webClientBuilder) {
         this.longTermMemoryConfigBuilders = longTermMemoryConfigBuilders;
         this.longTermMemoryRepository = longTermMemoryRepository;
-        this.restClient = restClientBuilder.build();
+        this.webClient = webClientBuilder.build();
     }
 
     public List<LongTermMemoryConfig> getConfigs() {
@@ -140,28 +140,24 @@ public class LongTermMemoryRegistry {
         return new LongTermMemory() {
             @Override
             public Mono<Void> record(List<Msg> msgs) {
-                return Mono.fromRunnable(() -> {
-                    restClient.post()
-                            .uri("https://dashscope.aliyuncs.com/api/v2/apps/memory/add")
-                            .header("Authorization", "Bearer " + apiKey)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(toAddMemoryRequest(userId, msgs, memoryLibraryId, projectId, profileSchema))
-                            .retrieve()
-                            .body(Void.class);
-                });
+                return webClient.post()
+                        .uri("https://dashscope.aliyuncs.com/api/v2/apps/memory/add")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(toAddMemoryRequest(userId, msgs, memoryLibraryId, projectId, profileSchema))
+                        .retrieve()
+                        .bodyToMono(Void.class);
             }
 
             @Override
             public Mono<String> retrieve(Msg msg) {
-                return Mono.fromCallable(() -> {
-                    return restClient.post()
-                            .uri("https://dashscope.aliyuncs.com/api/v2/apps/memory/memory_nodes/search")
-                            .header("Authorization", "Bearer " + apiKey)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(toSearchMemoryRequest(userId, msg, memoryLibraryId, projectId))
-                            .retrieve()
-                            .body(String.class);
-                });
+                return webClient.post()
+                        .uri("https://dashscope.aliyuncs.com/api/v2/apps/memory/memory_nodes/search")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(toSearchMemoryRequest(userId, msg, memoryLibraryId, projectId))
+                        .retrieve()
+                        .bodyToMono(String.class);
             }
         };
     }

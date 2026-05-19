@@ -19,7 +19,6 @@ package com.aliyun.tam.x.tron.core.domain.service;
 import com.aliyun.tam.x.tron.core.domain.models.events.CustomEvent;
 import com.aliyun.tam.x.tron.core.domain.models.events.EventSink;
 import com.aliyun.tam.x.tron.core.domain.models.events.SessionEventType;
-import com.aliyun.tam.x.tron.core.domain.repository.SessionRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -34,14 +33,13 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,70 +59,72 @@ public class FollowupSuggestionService {
     private final Tracer tracer;
 
     public void suggest(Model model, List<Msg> history, EventSink eventSink) {
-        if (enabled) {
-            Context otelContext = Context.current();
-            try {
-                doSuggest(model, history, eventSink, otelContext);
-            } catch (JsonProcessingException e) {
-                log.error("Failed to process suggestions", e);
-            }
+        if (!enabled) {
+            return;
         }
-    }
+        Context otelContext = Context.current();
 
-    @Async
-    public void doSuggest(Model model, List<Msg> history, EventSink eventSink, Context otelContext) throws JsonProcessingException {
+        String text = "Below is the history of the conversation :\n\n";
+        text += history.stream()
+                .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
+                .filter(h -> CollectionUtils.isEmpty(h.getContentBlocks(ToolUseBlock.class)))
+                .filter(h -> h.getTextContent() != null)
+                .limit(historyLimit)
+                .map(m -> {
+                    return String.format("%s: %s", m.getRole(), m.getTextContent());
+                }).collect(Collectors.joining("\n"));
+        text += """
+                \n
+                From user's perspective, give at most 3 follow-up questions(in user's language) based on the history and latest input. Each question should be a complete sentence and stand alone as a valid question.
+                Output in JSON format(without any description and annotation, just the JSON content):
+                Example:
+                ["content of suggestion 1", "content of suggestion 2", "content of suggestion 3"]
+                """;
+
+        Msg prompt = Msg.builder()
+                .role(MsgRole.USER)
+                .textContent(text)
+                .build();
+
         Span span = tracer.spanBuilder("followup suggestion")
                 .setParent(otelContext)
                 .setAttribute("agent.id", eventSink.getAgentId())
                 .setAttribute("session.id", eventSink.getSessionId())
                 .startSpan();
-        try (Scope ignored = span.makeCurrent()) {
-            String text = "Below is the history of the conversation :\n\n";
-            text += history.stream()
-                    .filter(h -> h.getRole() == MsgRole.USER || h.getRole() == MsgRole.ASSISTANT)
-                    .filter(h -> CollectionUtils.isEmpty(h.getContentBlocks(ToolUseBlock.class)))
-                    .filter(h -> h.getTextContent() != null)
-                    .limit(historyLimit)
-                    .map(m -> {
-                        return String.format("%s: %s", m.getRole(), m.getTextContent());
-                    }).collect(Collectors.joining("\n"));
-            text += """
-                    \n
-                    From user's perspective, give at most 3 follow-up questions(in user's language) based on the history and latest input. Each question should be a complete sentence and stand alone as a valid question.
-                    Output in JSON format(without any description and annotation, just the JSON content):
-                    Example:
-                    ["content of suggestion 1", "content of suggestion 2", "content of suggestion 3"]
-                    """;
-
-            Msg prompt = Msg.builder()
-                    .role(MsgRole.USER)
-                    .textContent(text)
-                    .build();
-            String suggestionContent = model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
-                            .build())
-                    .map(ChatResponse::getContent)
-                    .flatMap(Flux::fromIterable)
-                    .filter(c -> c instanceof TextBlock)
-                    .map(c -> (TextBlock) c)
-                    .map(TextBlock::getText)
-                    .reduce((s, s2) -> s + s2)
-                    .block();
-            span.setAttribute("suggestions", suggestionContent);
-            List<String> suggestions = objectMapper.readValue(suggestionContent, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            eventSink.newEvent(
-                    CustomEvent.builder()
-                            .type(SessionEventType.FOLLOW_UP_SUGGESTION)
-                            .needPersistent(false)
-                            .data(suggestions)
-                            .build()
-            );
-            span.setStatus(StatusCode.OK);
-        } catch (Exception e) {
-            span.setStatus(StatusCode.ERROR, e.getMessage());
-            span.recordException(e);
-            throw e;
-        } finally {
-            span.end();
-        }
+        model.stream(Lists.newArrayList(prompt), Lists.newArrayList(), GenerateOptions.builder()
+                        .build())
+                .map(ChatResponse::getContent)
+                .flatMap(Flux::fromIterable)
+                .filter(c -> c instanceof TextBlock)
+                .map(c -> (TextBlock) c)
+                .map(TextBlock::getText)
+                .reduce((s, s2) -> s + s2)
+                .doOnSuccess(suggestionContent -> {
+                    try {
+                        span.setAttribute("suggestions", suggestionContent);
+                        List<String> suggestions = objectMapper.readValue(suggestionContent, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                        eventSink.newEvent(
+                                CustomEvent.builder()
+                                        .type(SessionEventType.FOLLOW_UP_SUGGESTION)
+                                        .needPersistent(false)
+                                        .data(suggestions)
+                                        .build()
+                        );
+                        span.setStatus(StatusCode.OK);
+                    } catch (JsonProcessingException e) {
+                        span.setStatus(StatusCode.ERROR, e.getMessage());
+                        span.recordException(e);
+                    }
+                })
+                .doOnError(e -> {
+                    span.setStatus(StatusCode.ERROR, e.getMessage());
+                    span.recordException(e);
+                })
+                .doFinally(s -> span.end())
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe(
+                        null,
+                        e -> log.error("Failed to generate suggestions: agentId={}, sessionId={}", eventSink.getAgentId(), eventSink.getSessionId(), e)
+                );
     }
 }

@@ -51,8 +51,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -108,8 +106,8 @@ public class A2AController {
     public ResponseEntity<Object> jsonRpc(
             @PathVariable("agent_id") String agentId,
             @RequestHeader HttpHeaders headers,
-            InputStream requestBody
-    ) throws IOException {
+            @RequestBody String requestBody
+    ) {
         AgentBuilder agentBuilder = agentRegistry.getAgentBuilders()
                 .stream()
                 .filter(b -> Objects.equals(agentId, b.getAgentId()))
@@ -123,8 +121,7 @@ public class A2AController {
             return ResponseEntity.notFound().build();
         }
         JsonRpcTransportWrapper wrapper = getJsonRpcTransportWrapper(agentBuilder, agentCard);
-        String body = new String(requestBody.readAllBytes());
-        return ResponseEntity.ok(wrapper.handleRequest(body, ImmutableMap.of(), ImmutableMap.of()));
+        return ResponseEntity.ok(wrapper.handleRequest(requestBody, ImmutableMap.of(), ImmutableMap.of()));
     }
 
     private class TronAgentExecutor implements AgentExecutor {

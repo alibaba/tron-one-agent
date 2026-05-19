@@ -1,9 +1,9 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
+  webflux:
+    base-path: /api
   application:
     name: tron-one-agent
   datasource:
@@ -15,10 +15,8 @@ spring:
     serialization:
       WRITE_ENUMS_USING_TO_STRING: false
       WRITE_ENUMS_USING_INDEX: false
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+  codec:
+    max-in-memory-size: 10MB
 
 mybatis-plus:
   global-config:

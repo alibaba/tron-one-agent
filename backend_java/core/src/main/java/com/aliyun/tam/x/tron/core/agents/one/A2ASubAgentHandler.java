@@ -116,67 +116,60 @@ public class A2ASubAgentHandler extends SubAgentHandler {
 
                 @Override
                 public Mono<ToolResultBlock> callAsync(ToolCallParam param) {
-
                     long startTime = System.currentTimeMillis();
                     AgentResult.Task task = AgentResult.Task.builder().agentId(subAgentConfig.getAgentId()).build();
-
                     ToolUseBlock toolUse = param.getToolUseBlock();
-                    Long taskId = null;
-                    try {
-                        String taskName = (String) param.getInput().get(PARAM_TASK_NAME);
-                        String taskDetail = (String) param.getInput().get(PARAM_TASK_DETAIL);
 
-                        String sessionId = String.format("%s_%s", userMessage.getSessionId(), eventSink.getAgentId());
-                        String userId = String.format("%s_%s", userMessage.getUserId(), eventSink.getAgentId());
+                    String taskName = (String) param.getInput().get(PARAM_TASK_NAME);
+                    String taskDetail = (String) param.getInput().get(PARAM_TASK_DETAIL);
 
-                        Long finalTaskId = eventSink.newTask(eventSink.getAgentId(), taskName, String.format("%s (%s)", taskDetail, agentId()));
-                        taskId = finalTaskId;
-                        task.setId(finalTaskId);
-                        task.setName(taskName);
+                    String sessionId = String.format("%s_%s", userMessage.getSessionId(), eventSink.getAgentId());
+                    String userId = String.format("%s_%s", userMessage.getUserId(), eventSink.getAgentId());
 
-                        Session subSession = agentStateRepository.agentSessionsOf(agentId(), userId);
-                        try {
-                            a2aAgent.loadFrom(subSession, sessionId);
-                            String result = a2aAgent.call(Msg.builder()
-                                            .name(userMessage.getName())
-                                            .role(io.agentscope.core.message.MsgRole.USER)
-                                            .content(ImmutableList.of(TextBlock.builder()
-                                                    .text(taskDetail)
-                                                    .build()))
-                                            .build()
-                                    ).map(Msg::getTextContent)
-                                    .block();
-                            eventSink.appendContentToTask(finalTaskId, Lists.newArrayList(
-                                    TextContent.builder()
-                                            .type(ContentType.TEXT)
-                                            .text(result)
-                                            .build()
-                            ));
-                            eventSink.changeTaskStatus(finalTaskId, TaskStatus.SUCCEED, result);
-                            return Mono.just(
-                                    ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
-                                            .text(result)
-                                            .build())
-                            );
-                        } finally {
-                            a2aAgent.saveTo(subSession, sessionId);
-                        }
-                    } catch (Exception e) {
-                        if (taskId != null) {
-                            StringWriter sw = new StringWriter();
-                            e.printStackTrace(new PrintWriter(sw));
-                            eventSink.changeTaskStatus(taskId, TaskStatus.FAILED, sw.toString());
-                        }
-                        task.setSuccess(false);
-                        return Mono.just(
-                                ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
-                                        .text("failed to process this task temporarily, try it again next time please")
-                                        .build())
-                        );
-                    } finally {
-                        task.setCostInMs(System.currentTimeMillis() - startTime);
-                        executedTasks.add(task);
-                    }
+                    Long finalTaskId = eventSink.newTask(eventSink.getAgentId(), taskName, String.format("%s (%s)", taskDetail, agentId()));
+                    task.setId(finalTaskId);
+                    task.setName(taskName);
+
+                    Session subSession = agentStateRepository.agentSessionsOf(agentId(), userId);
+                    a2aAgent.loadFrom(subSession, sessionId);
+
+                    return a2aAgent.call(Msg.builder()
+                                    .name(userMessage.getName())
+                                    .role(io.agentscope.core.message.MsgRole.USER)
+                                    .content(ImmutableList.of(TextBlock.builder()
+                                            .text(taskDetail)
+                                            .build()))
+                                    .build()
+                            ).map(Msg::getTextContent)
+                            .doOnSuccess(result -> {
+                                a2aAgent.saveTo(subSession, sessionId);
+                                eventSink.appendContentToTask(finalTaskId, Lists.newArrayList(
+                                        TextContent.builder()
+                                                .type(ContentType.TEXT)
+                                                .text(result)
+                                                .build()
+                                ));
+                                eventSink.changeTaskStatus(finalTaskId, TaskStatus.SUCCEED, result);
+                            })
+                            .map(result -> ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
+                                    .text(result)
+                                    .build()))
+                            .onErrorResume(e -> {
+                                a2aAgent.saveTo(subSession, sessionId);
+                                StringWriter sw = new StringWriter();
+                                e.printStackTrace(new PrintWriter(sw));
+                                eventSink.changeTaskStatus(finalTaskId, TaskStatus.FAILED, sw.toString());
+                                task.setSuccess(false);
+                                return Mono.just(
+                                        ToolResultBlock.of(toolUse.getId(), toolUse.getName(), TextBlock.builder()
+                                                .text("failed to process this task temporarily, try it again next time please")
+                                                .build())
+                                );
+                            })
+                            .doFinally(s -> {
+                                task.setCostInMs(System.currentTimeMillis() - startTime);
+                                executedTasks.add(task);
+                            });
                 }
             };
 

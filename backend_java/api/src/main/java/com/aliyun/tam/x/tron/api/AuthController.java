@@ -23,7 +23,6 @@ import com.aliyun.tam.x.tron.api.dto.AdminDTO;
 import com.aliyun.tam.x.tron.api.request.LoginRequest;
 import com.aliyun.tam.x.tron.core.domain.service.AdminService;
 import com.aliyun.tam.x.tron.infra.dal.dataobject.AdminUserDO;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 
 @Slf4j
 @RestController
@@ -66,8 +66,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ConfigController.ControlResponse<?> me(HttpServletRequest request) {
-        String username = (String) request.getAttribute(JwtAuthInterceptor.ATTR_USERNAME);
+    public ConfigController.ControlResponse<?> me(ServerWebExchange exchange) {
+        String username = exchange.getAttribute(JwtAuthInterceptor.ATTR_USERNAME);
         return ConfigController.ControlResponse.success(AdminDTO.builder().username(username).build());
     }
 }

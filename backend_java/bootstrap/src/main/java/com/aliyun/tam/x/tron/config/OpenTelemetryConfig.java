@@ -28,7 +28,7 @@ import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporterBuilder;
 import io.opentelemetry.instrumentation.jdbc.datasource.JdbcTelemetry;
-import io.opentelemetry.instrumentation.spring.webmvc.v6_0.SpringWebMvcTelemetry;
+import io.opentelemetry.instrumentation.spring.webflux.v5_3.SpringWebfluxServerTelemetry;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -37,7 +37,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.sdk.trace.samplers.SamplingDecision;
 import io.opentelemetry.sdk.trace.samplers.SamplingResult;
-import jakarta.servlet.Filter;
+import org.springframework.web.server.WebFilter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -188,8 +188,8 @@ public class OpenTelemetryConfig implements ApplicationListener<ApplicationStart
     }
 
     @Bean
-    public Filter webMvcTracingFilter(OpenTelemetry openTelemetry) {
-        return SpringWebMvcTelemetry.create(openTelemetry).createServletFilter();
+    public WebFilter webFluxTracingFilter(OpenTelemetry openTelemetry) {
+        return SpringWebfluxServerTelemetry.create(openTelemetry).createWebFilter();
     }
 
     @Bean

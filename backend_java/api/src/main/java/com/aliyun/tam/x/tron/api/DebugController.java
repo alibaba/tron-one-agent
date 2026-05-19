@@ -22,10 +22,8 @@ import com.aliyun.tam.x.tron.core.rag.KnowledgeRegistry;
 import com.aliyun.tam.x.tron.core.tools.ToolRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.model.ToolSchema;
 import io.agentscope.core.rag.Knowledge;
-import io.agentscope.core.rag.model.Document;
 import io.agentscope.core.rag.model.RetrieveConfig;
 import io.agentscope.core.tool.AgentTool;
 import io.agentscope.core.tool.ToolCallParam;
@@ -35,8 +33,8 @@ import io.modelcontextprotocol.spec.McpSchema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,82 +81,70 @@ public class DebugController {
     }
 
     @PostMapping("/tools/{tool_name}")
-    public ResponseEntity<?> debugTool(
+    public Mono<ResponseEntity<?>> debugTool(
             @PathVariable("tool_name") String toolName,
-            InputStream requestBody
+            @RequestBody Map<String, Object> inputMap
     ) {
         Toolkit toolkit = toolRegistry.getAllTools();
         AgentTool tool = toolkit.getTool(toolName);
         if (tool == null) {
-            return ResponseEntity.notFound().build();
+            return Mono.just(ResponseEntity.notFound().build());
         }
 
-        try {
-            Map<String, Object> inputMap = objectMapper.readValue(requestBody, Map.class);
-            ToolCallParam param = ToolCallParam.builder()
-                    .input(inputMap)
-                    .build();
-            ToolResultBlock result = tool.callAsync(param).block();
-            return ResponseEntity.ok(
-                    result.getOutput()
-            );
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        ToolCallParam param = ToolCallParam.builder()
+                .input(inputMap)
+                .build();
+        Mono<ResponseEntity<?>> mono = tool.callAsync(param)
+                .map(result -> ResponseEntity.ok(result.getOutput()));
+        return mono.onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(e.getMessage())));
     }
 
     @PostMapping("/mcp/{client_id}/tools/{func_name}")
-    public ResponseEntity<?> debugMcpTool(
+    public Mono<ResponseEntity<?>> debugMcpTool(
             @PathVariable("client_id") String clientId,
             @PathVariable("func_name") String funcName,
-            InputStream requestBody
+            @RequestBody Map<String, Object> inputMap
     ) {
         McpClientWrapper client = mcpClientRegistry.getClient(clientId);
         if (client == null) {
-            return ResponseEntity.notFound().build();
+            return Mono.just(ResponseEntity.notFound().build());
         }
-        try {
-            Map<String, Object> inputMap = objectMapper.readValue(requestBody, Map.class);
-            McpSchema.CallToolResult result = client.callTool(funcName, inputMap).block();
-            return ResponseEntity.ok(result.content());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        Mono<ResponseEntity<?>> mono = client.callTool(funcName, inputMap)
+                .map(result -> ResponseEntity.ok(result.content()));
+        return mono.onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(e.getMessage())));
     }
 
     @GetMapping("/mcp/{client_id}/tools")
-    public ResponseEntity<?> getMcpTools(
+    public Mono<ResponseEntity<?>> getMcpTools(
             @PathVariable("client_id") String clientId
     ) {
         McpClientWrapper client = mcpClientRegistry.getClient(clientId);
         if (client == null) {
-            return ResponseEntity.notFound().build();
+            return Mono.just(ResponseEntity.notFound().build());
         }
-        return ResponseEntity.ok(client.listTools().block());
+        Mono<ResponseEntity<?>> mono = client.listTools()
+                .map(tools -> ResponseEntity.ok(tools));
+        return mono;
     }
 
     @PostMapping("/knowledge_base/{knowledge_base_id}")
-    public ResponseEntity<?> debugKnowledgeBase(
+    public Mono<ResponseEntity<?>> debugKnowledgeBase(
             @PathVariable("knowledge_base_id") String knowledgeBaseId,
-            InputStream inputStream
+            @RequestBody Map<String, Object> body
     ) {
         Knowledge knowledgeBase = knowledgeRegistry.getKnowledgeBase(knowledgeBaseId);
         if (knowledgeBase == null) {
-            return ResponseEntity.notFound().build();
+            return Mono.just(ResponseEntity.notFound().build());
         }
 
-        try {
-            Map<String, Object> obj = objectMapper.readValue(inputStream, Map.class);
-            String query = (String) obj.get("query");
-            Integer limit = Optional.ofNullable((Integer) obj.get("limit")).orElse(5);
-            Double scoreThreshold = Optional.ofNullable((Double) obj.get("score_threshold")).orElse(0.2);
-            List<Document> docs = knowledgeBase.retrieve(query, RetrieveConfig.builder()
-                    .limit(limit)
-                    .scoreThreshold(scoreThreshold)
-                    .build()).block();
-            return ResponseEntity.ok(docs);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        String query = (String) body.get("query");
+        Integer limit = Optional.ofNullable((Integer) body.get("limit")).orElse(5);
+        Double scoreThreshold = Optional.ofNullable((Double) body.get("score_threshold")).orElse(0.2);
+        Mono<ResponseEntity<?>> mono = knowledgeBase.retrieve(query, RetrieveConfig.builder()
+                        .limit(limit)
+                        .scoreThreshold(scoreThreshold)
+                        .build())
+                .map(docs -> ResponseEntity.ok(docs));
+        return mono.onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(e.getMessage())));
     }
 }

@@ -40,14 +40,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @Slf4j
@@ -105,6 +105,12 @@ public class ConfigController {
     private final LongTermMemoryRegistry longTermMemoryRegistry;
 
     private final LongTermMemoryRepository longTermMemoryRepository;
+
+    @ExceptionHandler(org.springframework.core.codec.DecodingException.class)
+    public ResponseEntity<ControlResponse<?>> handleDecodingException(org.springframework.core.codec.DecodingException e) {
+        return ResponseEntity.badRequest()
+                .body(ControlResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
+    }
 
     @ExceptionHandler
     public ControlResponse<?> handleException(Exception e) {
@@ -369,25 +375,30 @@ public class ConfigController {
     }
 
     @PostMapping(value = "/skills", consumes = "multipart/form-data")
-    public ControlResponse<?> uploadSkill(
-            @RequestParam(value = "id", required = false) Long id,
-            @RequestParam("file") MultipartFile file
+    public Mono<ControlResponse<?>> uploadSkill(
+            @RequestPart(value = "id", required = false) Long id,
+            @RequestPart("file") FilePart file
     ) throws IOException {
-        Path tempFile = Files.createTempFile("skill", file.getOriginalFilename());
-        try {
-            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-            SkillConfig skillConfig = skillConfigService.upload(file.getOriginalFilename(), tempFile);
-            if (id != null) {
-                skillConfig.setId(id);
-                skillConfigRepository.update(skillConfig);
-            } else {
-                skillConfig.setEnabled(true);
-                skillConfigRepository.add(skillConfig);
-            }
-            return ControlResponse.success(skillConfig.getId());
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+        String fileName = file.filename();
+        Path tempFile = Files.createTempFile("skill", fileName);
+        return file.transferTo(tempFile)
+                .then(Mono.<ControlResponse<?>>fromCallable(() -> {
+                    SkillConfig skillConfig = skillConfigService.upload(fileName, tempFile);
+                    if (id != null) {
+                        skillConfig.setId(id);
+                        skillConfigRepository.update(skillConfig);
+                    } else {
+                        skillConfig.setEnabled(true);
+                        skillConfigRepository.add(skillConfig);
+                    }
+                    return ControlResponse.success(skillConfig.getId());
+                }))
+                .doFinally(s -> {
+                    try {
+                        Files.deleteIfExists(tempFile);
+                    } catch (IOException e) {
+                    }
+                });
     }
 
     @PatchMapping("/skills/{skill_id}")
