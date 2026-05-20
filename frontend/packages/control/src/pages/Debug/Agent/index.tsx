@@ -44,57 +44,9 @@ import { LocalAgentType } from "@/types/common.interface";
 import { getUserId, getUserName } from "@/utils/userInfo";
 import { ReloadOutlined } from "@ant-design/icons";
 import { updateMessageListByEvents } from "chatbox/utils/updateMessagesByEvents";
+import { useTranslation } from "react-i18next";
 
-const EventTypeNameMap: Record<number, string> = {
-  [SessionEventType.SESSION_NAME_CHANGED]: "会话名变更",
-  [SessionEventType.NEW_USER_INPUT]: "用户输入",
-  [SessionEventType.NEW_AGENT_MESSAGE]: "Agent消息",
-  [SessionEventType.AGENT_MESSAGE_APPEND_CONTENT]: "Agent追加内容",
-  [SessionEventType.AGENT_MESSAGE_STATUS_CHANGED]: "Agent消息状态变更",
-  [SessionEventType.TASK_APPEND_CONTENT]: "Task追加内容",
-  [SessionEventType.TASK_STATUS_CHANGED]: "Task状态变更",
-  [SessionEventType.ACTION_APPEND_CONTENT]: "Action追加内容",
-  [SessionEventType.ACTION_STATUS_CHANGED]: "Action状态变更",
-};
 
-const eventColumns = [
-  {
-    title: "ID",
-    dataIndex: "id",
-    key: "id",
-    width: 160,
-  },
-  {
-    title: "类型",
-    dataIndex: "type",
-    key: "type",
-    width: 160,
-    render: (type: number) => (
-      <Tag color="blue">{EventTypeNameMap[type] || `未知(${type})`}</Tag>
-    ),
-  },
-  {
-    title: "内容",
-    key: "content",
-    render: (_: any, record: EventItem) => (
-      <Typography.Link
-        onClick={() => {
-          Modal.info({
-            title: `事件详情 (ID: ${record.id})`,
-            width: 800,
-            content: (
-              <pre style={{ maxHeight: 500, overflow: "auto", fontSize: 12, background: colors.canvasParchment, padding: 12, borderRadius: 4 }}>
-                {JSON.stringify(record, null, 2)}
-              </pre>
-            ),
-          });
-        }}
-      >
-        查看
-      </Typography.Link>
-    ),
-  },
-];
 
 export interface ChatBoxDemoProps {}
 
@@ -137,10 +89,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
 
   const [sessionId, setSessionId] = useState<string>(initialSessionId);
   const [ttsAutoPlay, setTtsAutoPlay] = useState<boolean>(initialTts);
+  const { t } = useTranslation(["debug", "common"]);
 
   const [chatState, setChatState] = useState<ChatState>({
     sessionId: initialSessionId,
-    sessionName: "新会话",
+    sessionName: t("debug:agent.newSession"),
     messages: [],
     lastEventId: 0,
   });
@@ -150,6 +103,57 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
   const [chatProtocol, setChatProtocol] = useState<"sse" | "ws">(initialProtocol);
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const eventTypeNameMap: Record<number, string> = useMemo(() => ({
+    [SessionEventType.SESSION_NAME_CHANGED]: t("debug:agent.events.sessionNameChanged"),
+    [SessionEventType.NEW_USER_INPUT]: t("debug:agent.events.newUserInput"),
+    [SessionEventType.NEW_AGENT_MESSAGE]: t("debug:agent.events.newAgentMessage"),
+    [SessionEventType.AGENT_MESSAGE_APPEND_CONTENT]: t("debug:agent.events.agentMessageAppendContent"),
+    [SessionEventType.AGENT_MESSAGE_STATUS_CHANGED]: t("debug:agent.events.agentMessageStatusChanged"),
+    [SessionEventType.TASK_APPEND_CONTENT]: t("debug:agent.events.taskAppendContent"),
+    [SessionEventType.TASK_STATUS_CHANGED]: t("debug:agent.events.taskStatusChanged"),
+    [SessionEventType.ACTION_APPEND_CONTENT]: t("debug:agent.events.actionAppendContent"),
+    [SessionEventType.ACTION_STATUS_CHANGED]: t("debug:agent.events.actionStatusChanged"),
+  }), [t]);
+
+  const eventColumns = useMemo(() => [
+    {
+      title: t("debug:agent.columnId"),
+      dataIndex: "id",
+      key: "id",
+      width: 160,
+    },
+    {
+      title: t("debug:agent.columnType"),
+      dataIndex: "type",
+      key: "type",
+      width: 160,
+      render: (type: number) => (
+        <Tag color="blue">{eventTypeNameMap[type] || t("debug:agent.unknownType", { type })}</Tag>
+      ),
+    },
+    {
+      title: t("debug:agent.columnContent"),
+      key: "content",
+      render: (_: any, record: EventItem) => (
+        <Typography.Link
+          onClick={() => {
+            Modal.info({
+              title: t("debug:agent.eventDetail", { id: record.id }),
+              width: 800,
+              content: (
+                <pre style={{ maxHeight: 500, overflow: "auto", fontSize: 12, background: colors.canvasParchment, padding: 12, borderRadius: 4 }}>
+                  {JSON.stringify(record, null, 2)}
+                </pre>
+              ),
+            });
+          }}
+        >
+          {t("debug:agent.viewDetail")}
+        </Typography.Link>
+      ),
+    },
+  ], [t, eventTypeNameMap]);
 
   // ========== Inline TTS Audio Playback ==========
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -372,7 +376,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
         const loadedMessages = messagesResult.records.reverse();
         setChatState({
           sessionId: sid,
-          sessionName: sessionDetail.name || "新会话",
+          sessionName: sessionDetail.name || t("debug:agent.newSession"),
           messages: loadedMessages,
           lastEventId: sessionDetail.lastAppliedEventId,
         });
@@ -381,7 +385,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
     } catch (err) {
       console.debug("Failed to load session details (may be a new session):", err);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (chatProtocol === "ws" && agentIdChanged && sessionId) {
@@ -402,7 +406,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
       setSuggestions([]);
 
       if (chatProtocol === "ws" && !wsConnected) {
-        message.warning("WebSocket 未连接，请等待连接建立后再发送");
+        message.warning(t("debug:agent.errors.wsNotReady"));
         return false;
       }
 
@@ -424,15 +428,15 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
             // SSE 模式需要通过 API 创建 session
             try {
               await createSession(agentIdChanged, {
-                data: { name: "新会话" },
+                data: { name: t("debug:agent.newSession") },
               });
             } catch {
               // session 不存在时后端会自动创建，忽略
             }
           }
         } catch (error) {
-          console.error("创建会话失败:", error);
-          message.error("创建会话失败，请重试");
+          console.error("Failed to create session:", error);
+          message.error(t("debug:agent.errors.createSessionFailedRetry"));
           return false;
         }
       }
@@ -480,7 +484,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
       if (chatProtocol === "ws") {
         // ========== WebSocket JSON-RPC 模式 ==========
         if (!wsConnectionRef.current || !wsConnected) {
-          message.warning("WebSocket 未连接，请等待连接建立后再发送");
+          message.warning(t("debug:agent.errors.wsNotReady"));
           setChatState((prev) => ({
             ...prev,
             messages: prev.messages.map((msg) =>
@@ -534,11 +538,11 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
                   ...prev,
                   messages: prev.messages.map((msg) =>
                     msg.id === newMessageId
-                      ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: error.message || "对话失败" }
+                      ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: error.message || t("debug:agent.errors.chatFailed") }
                       : msg
                   ),
                 }));
-                message.error("对话失败");
+                message.error(t("debug:agent.errors.chatFailed"));
               },
               onComplete: () => {
                 console.log("SSE 连接完成");
@@ -561,16 +565,16 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
             ...prev,
             messages: prev.messages.map((msg) =>
               msg.id === newMessageId
-                ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: (error as Error).message || "对话创建失败" }
+                ? { ...msg, status: SessionMessageStatus.FAILED, errorMessage: (error as Error).message || t("debug:agent.errors.chatCreateFailed") }
                 : msg
             ),
           }));
-          message.error("对话创建失败");
+          message.error(t("debug:agent.errors.chatCreateFailed"));
         }
       }
       return true;
     },
-    [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected]
+    [sessionId, agentIdChanged, chatProtocol, connectWebSocket, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected, t]
   );
 
   const handleHitlSubmit = useCallback(
@@ -589,7 +593,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
 
       if (chatProtocol === "ws") {
         if (!wsConnectionRef.current || !wsConnected) {
-          message.warning("WebSocket 未连接，请等待连接建立后再提交");
+          message.warning(t("debug:agent.errors.wsNotReadyHitl"));
           setRunning(false);
           return;
         }
@@ -622,7 +626,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
             onError: (error: Error) => {
               console.error("HITL SSE 错误:", error);
               setRunning(false);
-              message.error("提交失败");
+              message.error(t("debug:agent.errors.submitFailed"));
             },
             onComplete: () => {
               setRunning(false);
@@ -631,7 +635,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
         );
       }
     },
-    [sessionId, agentIdChanged, chatProtocol, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected]
+    [sessionId, agentIdChanged, chatProtocol, ttsAutoPlay, stopInlineTts, handleTtsResponse, wsConnected, t]
   );
   const onCreateSessionClick = useCallback(() => {
     const newId = generateSessionId();
@@ -641,7 +645,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
     setSuggestions([]);
     setChatState({
       sessionId: newId,
-      sessionName: "新会话",
+      sessionName: t("debug:agent.newSession"),
       messages: [],
       lastEventId: 0,
     });
@@ -654,7 +658,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
     }
     setRunning(false);
     updateUrlParams({ sessionId: newId });
-  }, [chatProtocol, agentIdChanged, connectWebSocket, updateUrlParams]);
+  }, [chatProtocol, agentIdChanged, connectWebSocket, updateUrlParams, t]);
 
   const configValuesChanged = (changedValues: any, allValues: any) => {
     if (isInitialLoadRef.current) return;
@@ -663,7 +667,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
 
     disconnectWebSocket();
     
-    console.log("Agent 切换，重置会话:", changedValues, allValues);
+    console.log("Agent switched, resetting session:", changedValues, allValues);
     
     if (running) {
       if (abortControllerRef.current) {
@@ -681,7 +685,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
     setSuggestions([]);
     setChatState({
       sessionId: newId,
-      sessionName: "新会话",
+      sessionName: t("debug:agent.newSession"),
       messages: [],
       lastEventId: 0,
     });
@@ -728,7 +732,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
     setSessionId(targetSessionId);
     setChatState({
       sessionId: targetSessionId,
-      sessionName: "新会话",
+      sessionName: t("debug:agent.newSession"),
       messages: [],
       lastEventId: 0,
     });
@@ -751,18 +755,18 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
           // 使用消息列表更新状态
           setChatState({
             sessionId: targetSessionId,
-            sessionName: sessionDetail.name || "新会话",
+            sessionName: sessionDetail.name || t("debug:agent.newSession"),
             messages: loadedMessages,
             lastEventId: sessionDetail.lastAppliedEventId,
           });
           lastEventIdRef.current = sessionDetail.lastAppliedEventId;
         }
       } catch (err) {
-        console.error("获取会话详情失败:", err);
-        message.error("加载会话失败");
+        console.error("Failed to load session details:", err);
+        message.error(t("debug:agent.errors.loadSessionFailed"));
       }
     }
-  }, [sessionId, agentIdChanged]);
+  }, [sessionId, agentIdChanged, t]);
 
   // 中断当前对话（仅 WS 模式支持）
   const handleStop = useCallback(() => {
@@ -796,7 +800,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
   return (
     <div className={styles.container}>
       <Card
-        title="Agent调试"
+        title={t("debug:agent.title")}
         className={styles.pageCard}
         classNames={{
           body: styles.pageCardBody,
@@ -837,9 +841,9 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
           className={styles.operateWrap}
           title={
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>调试面板</span>
+              <span>{t("debug:agent.panel")}</span>
               <Space size="small">
-                <span style={{ fontSize: 12, color: colors.bodyMuted }}>协议</span>
+                <span style={{ fontSize: 12, color: colors.bodyMuted }}>{t("debug:agent.protocol")}</span>
                 <Switch
                   size="small"
                   checkedChildren="WS"
@@ -854,7 +858,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
                 {chatProtocol === "ws" && (
                   <>
                     <Tag color={wsConnected ? "green" : "red"} style={{ marginLeft: 4 }}>
-                      {wsConnected ? "已连接" : "未连接"}
+                      {wsConnected ? t("debug:agent.wsConnected") : t("debug:agent.wsDisconnected")}
                     </Tag>
                     <ReloadOutlined
                       style={{ cursor: "pointer", fontSize: 14, color: colors.primary }}
@@ -866,7 +870,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
                     />
                   </>
                 )}
-                <span style={{ fontSize: 12, color: colors.bodyMuted, marginLeft: 8 }}>自动TTS</span>
+                <span style={{ fontSize: 12, color: colors.bodyMuted, marginLeft: 8 }}>{t("debug:agent.autoTts")}</span>
                 <Switch
                   size="small"
                   checked={ttsAutoPlay}
@@ -885,8 +889,8 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
             initialValues={{ fetchEventMethod: "SSE" }}
             onValuesChange={configValuesChanged}
           >
-            <Form.Item label="选择Agent" name="agentId" style={{ marginBottom: 12 }}>
-              <Select placeholder="请选择Agent">
+            <Form.Item label={t("debug:agent.selectAgent")} name="agentId" style={{ marginBottom: 12 }}>
+              <Select placeholder={t("debug:agent.selectAgentPlaceholder")}>
                 {agentsOptions?.map((agent) => (
                   <Select.Option key={agent.id} value={agent.id}>
                     {agent.name}
@@ -911,13 +915,13 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
             items={[
               {
                 key: "events",
-                label: `事件 (${events.length})`,
+                label: t("debug:agent.eventsTab", { count: events.length }),
                 children: (
                   <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     <Space size={[4, 4]} wrap style={{ marginBottom: 12, flexShrink: 0 }}>
                       {Object.entries(
                         events.reduce<Record<string, number>>((acc, e) => {
-                          const name = EventTypeNameMap[e.type] || `未知(${e.type})`;
+                          const name = eventTypeNameMap[e.type] || t("debug:agent.unknownType", { type: e.type });
                           acc[name] = (acc[name] || 0) + 1;
                           return acc;
                         }, {})
@@ -939,7 +943,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
               },
               {
                 key: "sessions",
-                label: "会话历史",
+                label: t("debug:agent.sessionsTab"),
                 children: (
                   <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
@@ -960,7 +964,7 @@ const ChatBoxDemo: React.FC<ChatBoxDemoProps> = (_props) => {
                               <div style={{ fontWeight: item.id === sessionId ? 600 : 400 }}>
                                 {item.name || item.id}
                                 {item.id === sessionId && (
-                                  <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}>当前</Tag>
+                                  <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}>{t("debug:agent.current")}</Tag>
                                 )}
                               </div>
                               <Typography.Text type="secondary" style={{ fontSize: 12 }}>

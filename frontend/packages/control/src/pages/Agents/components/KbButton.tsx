@@ -18,6 +18,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, List, Tag, Space, Typography, message, Select, Checkbox, Form, Input, Radio } from 'antd';
 import { DatabaseOutlined, PlusOutlined, DeleteOutlined, CheckOutlined, SettingOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig, AgentKnowledgeBaseConfig } from '../../../types/agent.interface';
 import { AnyKnowledgeBaseConfig, ElasticSearchKnowledgeBaseConfig } from '../../../types/kb.interface';
 import { KnowledgeBaseType } from '../../../types/common.interface';
@@ -35,6 +36,7 @@ interface KbButtonProps {
 }
 
 const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [availableKbs, setAvailableKbs] = useState<AnyKnowledgeBaseConfig[]>([]);
@@ -52,8 +54,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
       const kbsData = await getAllKbs();
       setAvailableKbs(kbsData.data || []);
     } catch (error) {
-      console.error('加载知识库列表失败:', error);
-      message.error('加载知识库列表失败');
+      console.error('Load KB list failed:', error);
+      message.error(t('agents:kb.loadFailed'));
     } finally {
       setKbsLoading(false);
     }
@@ -85,12 +87,12 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
 
   const handleAddKb = () => {
     if (!selectedKb) {
-      message.warning('请选择要添加的知识库');
+      message.warning(t('agents:kb.selectPlaceholder'));
       return;
     }
     
     if (pendingKbs.some(kb => kb.knowledgeId === selectedKb)) {
-      message.warning('该知识库已存在');
+      message.warning(t('agents:kb.duplicate'));
       return;
     }
     
@@ -143,13 +145,13 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
               } 
             : kb
         ));
-        message.success('知识库配置更新成功');
+        message.success(t('agents:kb.configUpdated'));
         setConfigModalVisible(false);
         setEditingKb(null);
       }
     } catch (error) {
-      console.error('配置保存失败:', error);
-      message.error('配置保存失败，请重试');
+      console.error('Config save failed:', error);
+      message.error(t('agents:kb.configFailed'));
     }
   };
 
@@ -158,7 +160,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
       setLoading(true);
       if (agent.id) {
         await updateAgent(agent.id, { knowledgeBases: pendingKbs });
-        message.success('知识库配置保存成功');
+        message.success(t('agents:kb.saveSuccess'));
         
         if (onSuccess) {
           onSuccess(agent);
@@ -169,12 +171,12 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
         throw new Error('Agent ID不存在');
       }
     } catch (error) {
-      console.error('知识库配置保存失败:', error);
+      console.error('KB config save failed:', error);
       
       if (onError) {
         onError(error);
       } else {
-        message.error('知识库配置保存失败，请重试');
+        message.error(t('agents:kb.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -226,17 +228,17 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
         icon={<DatabaseOutlined />}
         onClick={handleClick}
       >
-        {children || '知识库'}
+        {children || t('agents:kb.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - 知识库管理`}
+        title={`${agent.name} - ${t('agents:kb.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSaveChanges}
         onCancel={handleModalClose}
         width={800}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         okButtonProps={{ 
           icon: <CheckOutlined />,
@@ -249,7 +251,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
             <Space style={{ width: '100%' }}>
               <Select
                 style={{ flex: 1, minWidth: 300 }}
-                placeholder="选择要添加的知识库"
+                placeholder={t('agents:kb.selectPlaceholder')}
                 value={selectedKb}
                 onChange={setSelectedKb}
                 allowClear
@@ -277,17 +279,17 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                         lineHeight: '1.4'
                       }}>
                         {isBailian
-                          ? `工作空间: ${bailianKb.workspaceId} | 索引: ${bailianKb.indexId}`
-                          : `地址: ${(kb as ElasticSearchKnowledgeBaseConfig).url} | 索引: ${(kb as ElasticSearchKnowledgeBaseConfig).indexName}`
+                          ? `${t('agents:kb.workspace')}: ${bailianKb.workspaceId} | ${t('agents:kb.index')}: ${bailianKb.indexId}`
+                          : `${t('agents:kb.address')}: ${(kb as ElasticSearchKnowledgeBaseConfig).url} | ${t('agents:kb.index')}: ${(kb as ElasticSearchKnowledgeBaseConfig).indexName}`
                         }
                       </div>
                       <Space style={{ marginTop: '4px' }}>
                         <Tag color={isBailian ? 'purple' : 'orange'}>{isBailian ? 'Bailian' : 'ES'}</Tag>
                         <Tag color={kb.enabled ? 'green' : 'red'}>
-                          {kb.enabled ? '在线' : '离线'}
+                          {kb.enabled ? t('common:online') : t('common:offline')}
                         </Tag>
-                        {isBailian && bailianKb.enableRewrite && <Tag color="blue">重写</Tag>}
-                        {isBailian && bailianKb.enableRerank && <Tag color="cyan">重排</Tag>}
+                        {isBailian && bailianKb.enableRewrite && <Tag color="blue">{t('agents:kb.rewrite')}</Tag>}
+                        {isBailian && bailianKb.enableRerank && <Tag color="cyan">{t('agents:kb.rerank')}</Tag>}
                       </Space>
                     </div>
                   </Select.Option>
@@ -300,7 +302,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                 onClick={handleAddKb}
                 disabled={!selectedKb}
               >
-                添加
+                {t('common:add')}
               </Button>
             </Space>
           </div>
@@ -308,7 +310,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
           {/* 知识库列表区域 */}
           <div>
             <Text strong style={{ marginBottom: 12, display: 'block' }}>
-              已配置知识库 ({pendingKbs.length}个)：
+              {t('agents:kb.listTitle', { count: pendingKbs.length })}
             </Text>
             <div style={{ 
               border: '1px solid #f0f0f0', 
@@ -343,7 +345,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                             checked={kb.enabled}
                             onChange={(e) => handleToggleKb(kb.knowledgeId, e.target.checked)}
                           >
-                            启用
+                            {t('agents:kb.enabled')}
                           </Checkbox>,
                           <Button
                             key="config"
@@ -352,7 +354,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                             icon={<SettingOutlined />}
                             onClick={() => handleConfigKb(kb)}
                           >
-                            配置
+                            {t('agents:kb.config')}
                           </Button>,
                           <Button
                             key="remove"
@@ -362,7 +364,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                             icon={<DeleteOutlined />}
                             onClick={() => handleRemoveKb(kb.knowledgeId)}
                           >
-                            移除
+                            {t('agents:kb.remove')}
                           </Button>
                         ]}
                       >
@@ -377,10 +379,10 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                                 {kbInfo?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ES'}
                               </Tag>
                               <Tag color={kbOnlineStatus ? 'green' : 'red'}>
-                                {kbOnlineStatus ? '在线' : '离线'}
+                                {kbOnlineStatus ? t('common:online') : t('common:offline')}
                               </Tag>
                               <Tag color={kb.mode === 'AGENTIC' ? 'orange' : 'blue'}>
-                                {kb.mode === 'AGENTIC' ? '智能模式' : '通用模式'}
+                                {kb.mode === 'AGENTIC' ? t('agents:kb.modeAgentic') : t('agents:kb.modeGeneric')}
                               </Tag>
                             </Space>
                           }
@@ -393,21 +395,21 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                                   lineHeight: '1.4'
                                 }}>
                                   {kbInfo.type === KnowledgeBaseType.BAILIAN
-                                    ? <><div>工作空间: {(kbInfo as any).workspaceId}</div><div style={{ marginTop: '2px' }}>索引ID: {(kbInfo as any).indexId}</div></>
-                                    : <><div>地址: {(kbInfo as ElasticSearchKnowledgeBaseConfig).url}</div><div style={{ marginTop: '2px' }}>索引: {(kbInfo as ElasticSearchKnowledgeBaseConfig).indexName}</div></>
+                                    ? <><div>{t('agents:kb.workspace')}: {(kbInfo as any).workspaceId}</div><div style={{ marginTop: '2px' }}>{t('agents:kb.indexId')}: {(kbInfo as any).indexId}</div></>
+                                    : <><div>{t('agents:kb.address')}: {(kbInfo as ElasticSearchKnowledgeBaseConfig).url}</div><div style={{ marginTop: '2px' }}>{t('agents:kb.index')}: {(kbInfo as ElasticSearchKnowledgeBaseConfig).indexName}</div></>
                                   }
                                 </div>
                               )}
                               <Space wrap>
                                 <Tag color="geekblue">
-                                  限制: {kb.defaultLimit || 10}
+                                  {t('agents:kb.limitTag', { value: kb.defaultLimit || 10 })}
                                 </Tag>
                                 <Tag color="cyan">
-                                  阈值: {kb.defaultScoreThreshold || 0.7}
+                                  {t('agents:kb.thresholdTag', { value: kb.defaultScoreThreshold || 0.7 })}
                                 </Tag>
                                 {kb.mode === 'AGENTIC' && kb.agenticToolDescription && (
                                   <Tag color="orange">
-                                    已配置工具描述
+                                    {t('agents:kb.toolDescConfigured')}
                                   </Tag>
                                 )}
                               </Space>
@@ -426,8 +428,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
                   fontSize: 14
                 }}>
                   <DatabaseOutlined style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }} />
-                  <div>暂无配置知识库</div>
-                  <div style={{ fontSize: 12, marginTop: 8 }}>请从上方下拉框中选择知识库进行添加</div>
+                  <div>{t('agents:kb.empty')}</div>
+                  <div style={{ fontSize: 12, marginTop: 8 }}>{t('agents:kb.emptyHint')}</div>
                 </div>
               )}
             </div>
@@ -442,7 +444,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
               borderRadius: 6 
             }}>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改
+                {t('common:changeDetected')}
               </Text>
             </div>
           )}
@@ -451,7 +453,7 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
 
       {/* 知识库配置弹窗 */}
       <Modal
-        title={`配置知识库 - ${editingKb ? getKbInfo(editingKb.knowledgeId)?.name || editingKb.knowledgeId : ''}`}
+        title={`${t('agents:kb.configTitle')} - ${editingKb ? getKbInfo(editingKb.knowledgeId)?.name || editingKb.knowledgeId : ''}`}
         open={configModalVisible}
         onOk={handleSaveConfig}
         onCancel={() => {
@@ -460,8 +462,8 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
           configForm.resetFields();
         }}
         width={600}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
       >
         <Form
           form={configForm}
@@ -470,12 +472,12 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
         >
           <Form.Item
             name="mode"
-            label="知识库模式"
-            rules={[{ required: true, message: '请选择知识库模式' }]}
+            label={t('agents:kb.mode')}
+            rules={[{ required: true, message: t('agents:kb.modeRequired') }]}
           >
             <Radio.Group>
-              <Radio value="GENERIC">通用模式</Radio>
-              <Radio value="AGENTIC">智能模式</Radio>
+              <Radio value="GENERIC">{t('agents:kb.modeGeneric')}</Radio>
+              <Radio value="AGENTIC">{t('agents:kb.modeAgentic')}</Radio>
             </Radio.Group>
           </Form.Item>
 
@@ -488,12 +490,12 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
               return mode === 'AGENTIC' ? (
                 <Form.Item
                   name="agenticToolDescription"
-                  label="智能工具描述"
-                  tooltip="在智能模式下，描述该知识库作为工具的功能和用途"
+                  label={t('agents:kb.agenticDesc')}
+                  tooltip={t('agents:kb.agenticDescTooltip')}
                 >
                   <Input.TextArea 
                     rows={3}
-                    placeholder="请描述该知识库在智能模式下的功能和用途"
+                    placeholder={t('agents:kb.agenticDescPlaceholder')}
                     maxLength={500}
                     showCount
                   />
@@ -504,24 +506,24 @@ const KbButton: React.FC<KbButtonProps> = ({ agent, onManageKb, onSuccess, onErr
 
           <Form.Item
             name="defaultLimit"
-            label="默认限制数量"
+            label={t('agents:kb.defaultLimit')}
             rules={[
-              { required: true, message: '请输入默认限制数量' },
-              { type: 'number', min: 1, max: 100, message: '限制数量必须在1-100之间' }
+              { required: true, message: t('agents:kb.limitRequired') },
+              { type: 'number', min: 1, max: 100, message: t('agents:kb.limitRange') }
             ]}
-            tooltip="每次查询返回的最大结果数量"
+            tooltip={t('agents:kb.limitTooltip')}
           >
             <Input type="number" min={1} max={100} placeholder="10" />
           </Form.Item>
 
           <Form.Item
             name="defaultScoreThreshold"
-            label="默认分数阈值"
+            label={t('agents:kb.defaultThreshold')}
             rules={[
-              { required: true, message: '请输入默认分数阈值' },
-              { type: 'number', min: 0, max: 1, message: '分数阈值必须在0-1之间' }
+              { required: true, message: t('agents:kb.thresholdRequired') },
+              { type: 'number', min: 0, max: 1, message: t('agents:kb.thresholdRange') }
             ]}
-            tooltip="查询结果的最低相似度分数，范围0-1"
+            tooltip={t('agents:kb.thresholdTooltip')}
           >
             <Input type="number" min={0} max={1} step={0.1} placeholder="0.7" />
           </Form.Item>

@@ -19,6 +19,7 @@ import { UserSessionMessage, AgentSessionMessage } from "./base";
 import { EventItem } from "./event";
 import { EventSourceService } from "../eventSource/EventSource";
 import { SessionMessageStatus } from "./enums";
+import { t } from '../locale';
 
 export interface PageResult<T> {
   pageNum: number;
@@ -77,6 +78,7 @@ export interface UseChatReturn {
   ) => void;
 }
 
+
 export interface ChatState {
   sessionName: string;
   messages: Array<UserSessionMessage | AgentSessionMessage>;
@@ -86,7 +88,7 @@ export interface ChatState {
 export type ChatReducerFn = (state: ChatState, action: ChatAction) => ChatState;
 
 export const Default_Chat_State: ChatState = {
-  sessionName: "新会话",
+  sessionName: t('newSession'),
   messages: [],
   sessionId: "",
   lastEventId: 0,

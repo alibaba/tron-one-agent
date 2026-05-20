@@ -1,0 +1,63 @@
+{
+  "title": "Knowledge Base Management",
+  "loadFailed": "Failed to load knowledge bases, please retry",
+  "loadAgentsFailed": "Failed to load agents, please retry",
+  "columns": {
+    "name": "Name",
+    "type": "Type",
+    "config": "Key Config",
+    "relatedAgents": "Related Agents",
+    "status": "Status",
+    "rewrite": "Rewrite",
+    "rerank": "Rerank",
+    "action": "Action"
+  },
+  "workspace": "Workspace",
+  "index": "Index",
+  "address": "Address",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "relatedTooltip": "Related agents: {{names}}",
+  "noRelated": "No related agents",
+  "deleteDisabled": "This KB is referenced by {{count}} agent(s) and cannot be deleted",
+  "deleteEnabled": "Delete knowledge base",
+  "toggleSuccess": "Knowledge base {{status}}",
+  "enableSuccess": "Knowledge base enabled",
+  "disableSuccess": "Knowledge base disabled",
+  "toggleFailed": "Status update failed, please retry",
+  "deleteSuccess": "Knowledge base deleted",
+  "deleteFailed": "Delete failed, please retry",
+  "edit": "Edit",
+  "delete": "Delete",
+  "confirmDelete": {
+    "title": "Confirm delete knowledge base",
+    "intro": "You are about to delete the following knowledge base:",
+    "name": "Name: ",
+    "id": "ID: ",
+    "type": "Type: ",
+    "config": "Config: ",
+    "warning": "⚠️ This action is irreversible. Continue?",
+    "ok": "Confirm delete"
+  },
+  "manage": {
+    "addTitle": "Create knowledge base",
+    "editTitle": "Edit knowledge base",
+    "addButton": "Add KB",
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "workspaceId": "Workspace ID",
+      "indexId": "Index ID",
+      "apiKey": "API Key",
+      "url": "URL",
+      "indexName": "Index Name",
+      "topK": "TopK",
+      "enableRewrite": "Enable Rewrite",
+      "enableRerank": "Enable Rerank",
+      "enabled": "Enabled",
+      "nameRequired": "Please input name"
+    },
+    "submitSuccess": "Saved successfully",
+    "submitFailed": "Save failed, please retry"
+  }
+}

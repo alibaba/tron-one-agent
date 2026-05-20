@@ -1,0 +1,11 @@
+{
+  "tool": {
+    "loadSkill": "Load Skill",
+    "webSearch": "Web Search",
+    "knowledgeRetrieval": "Knowledge Retrieval",
+    "executeCommand": "Execute Command",
+    "updateFile": "Update File",
+    "readFile": "Read File",
+    "readDirectory": "Read Directory"
+  }
+}

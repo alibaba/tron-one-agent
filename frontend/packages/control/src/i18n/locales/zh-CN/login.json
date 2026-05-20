@@ -1,0 +1,11 @@
+{
+  "title": "Tron OneAgent",
+  "subtitle": "管理员登录",
+  "usernamePlaceholder": "用户名",
+  "passwordPlaceholder": "密码",
+  "usernameRequired": "请输入用户名",
+  "passwordRequired": "请输入密码",
+  "submit": "登录",
+  "loginSuccess": "登录成功",
+  "loginFailed": "登录失败，请检查用户名和密码"
+}

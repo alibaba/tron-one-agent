@@ -29,8 +29,10 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getThemeConfig } from "../../config/theme";
 import { getUsername, clearAuth } from '@/utils/auth';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import layoutStyles from "./index.module.less";
 
 const { Header, Sider, Content } = Layout;
@@ -65,6 +67,7 @@ const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const themeConfig = getThemeConfig();
+  const { t } = useTranslation(['menu', 'layout']);
   const [openKeys, setOpenKeys] = useState<string[]>(getOpenKeys(location.pathname));
 
   useEffect(() => {
@@ -75,48 +78,48 @@ const AppLayout: React.FC = () => {
     {
       key: "agents-group",
       icon: <RobotOutlined />,
-      label: "Agents",
+      label: t('menu:agents'),
       children: [
-        { key: "/agents", label: "管理" },
-        { key: "/debug/agent", label: "调试" },
+        { key: "/agents", label: t('menu:manage') },
+        { key: "/debug/agent", label: t('menu:debug') },
       ],
     },
     {
       key: "tools-group",
       icon: <ToolOutlined />,
-      label: "Tools",
+      label: t('menu:tools'),
       children: [
-        { key: "/tools", label: "管理" },
-        { key: "/debug/tool", label: "调试" },
+        { key: "/tools", label: t('menu:manage') },
+        { key: "/debug/tool", label: t('menu:debug') },
       ],
     },
     {
       key: "mcp-group",
       icon: <ApiOutlined />,
-      label: "MCP",
+      label: t('menu:mcp'),
       children: [
-        { key: "/mcp", label: "管理" },
-        { key: "/debug/mcp", label: "调试" },
+        { key: "/mcp", label: t('menu:manage') },
+        { key: "/debug/mcp", label: t('menu:debug') },
       ],
     },
     {
       key: "kb-group",
       icon: <DatabaseOutlined />,
-      label: "知识库",
+      label: t('menu:kb'),
       children: [
-        { key: "/kb", label: "管理" },
-        { key: "/debug/kb", label: "调试" },
+        { key: "/kb", label: t('menu:manage') },
+        { key: "/debug/kb", label: t('menu:debug') },
       ],
     },
     {
       key: "/skills",
       icon: <ThunderboltOutlined />,
-      label: "Skills",
+      label: t('menu:skills'),
     },
     {
       key: "/memory",
       icon: <BulbOutlined />,
-      label: "长期记忆",
+      label: t('menu:memory'),
     },
   ];
 
@@ -158,8 +161,9 @@ const AppLayout: React.FC = () => {
             className={layoutStyles.trigger}
           />
           <div className={layoutStyles.userInfo}>
+            <LanguageSwitcher />
             <span className={layoutStyles.username}>
-              {getUsername() || 'Admin'}
+              {getUsername() || t('layout:defaultUser')}
             </span>
             <Button
               type="text"
@@ -169,7 +173,7 @@ const AppLayout: React.FC = () => {
                 navigate('/login');
               }}
             >
-              退出
+              {t('layout:logout')}
             </Button>
           </div>
         </Header>

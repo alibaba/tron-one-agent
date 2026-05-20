@@ -1,0 +1,52 @@
+{
+  "title": "MCP管理",
+  "loadFailed": "加载MCP客户端列表失败，请重试",
+  "loadAgentsFailed": "加载Agents列表失败，请重试",
+  "columns": {
+    "name": "名称",
+    "description": "描述",
+    "transport": "传输方式",
+    "url": "URL",
+    "relatedAgents": "已关联Agents",
+    "status": "状态",
+    "action": "操作"
+  },
+  "relatedTooltip": "关联的Agents: {{names}}",
+  "noRelated": "暂无关联的Agents",
+  "deleteDisabled": "该MCP客户端已被 {{count}} 个Agent关联，无法删除",
+  "deleteEnabled": "删除MCP客户端",
+  "toggleSuccess": "MCP客户端已{{status}}",
+  "enableSuccess": "MCP客户端已启用",
+  "disableSuccess": "MCP客户端已禁用",
+  "toggleFailed": "状态更新失败，请重试",
+  "deleteSuccess": "MCP客户端删除成功",
+  "deleteFailed": "删除失败，请重试",
+  "confirmDelete": {
+    "title": "确认删除MCP客户端",
+    "intro": "您即将删除以下MCP客户端：",
+    "name": "名称：",
+    "id": "标识：",
+    "url": "URL：",
+    "warning": "⚠️ 此操作不可撤销，请确认是否继续？",
+    "ok": "确认删除"
+  },
+  "edit": "编辑",
+  "delete": "删除",
+  "manage": {
+    "addTitle": "新增MCP客户端",
+    "editTitle": "编辑MCP客户端",
+    "addButton": "新增MCP",
+    "fields": {
+      "name": "名称",
+      "description": "描述",
+      "transport": "传输方式",
+      "url": "URL",
+      "headers": "请求头",
+      "enabled": "启用",
+      "nameRequired": "请输入名称",
+      "urlRequired": "请输入URL"
+    },
+    "submitSuccess": "保存成功",
+    "submitFailed": "保存失败，请重试"
+  }
+}

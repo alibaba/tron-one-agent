@@ -17,6 +17,7 @@
 
 import { AttachmentItem } from '../types';
 import styles from '../index.module.less';
+import { t } from '../../../../locale';
 
 interface AttachmentPreviewProps {
   attachments: AttachmentItem[];
@@ -48,13 +49,13 @@ export function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewPr
           {attachment.uploadError && (
             <div className={`${styles.attachmentOverlay} ${styles.attachmentOverlayError}`}>
               <i className="fas fa-exclamation-circle"></i>
-              <span>上传失败</span>
+              <span>{t('uploadFailed')}</span>
             </div>
           )}
           <button
             className={styles.removeAttachment}
             onClick={() => onRemove(index)}
-            title="移除"
+            title={t('remove')}
           >
             <i className="fas fa-times"></i>
           </button>

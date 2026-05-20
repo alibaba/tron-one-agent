@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   Select,
@@ -41,6 +42,7 @@ interface Tool {
 }
 
 const ToolDebugger: React.FC = () => {
+  const { t } = useTranslation(["debug", "common"]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedTool, setSelectedTool] = useState<string>("");
@@ -56,7 +58,7 @@ const ToolDebugger: React.FC = () => {
       setTools(result.data || []);
     } catch (error) {
       console.error("获取工具列表失败:", error);
-      message.error("获取工具列表失败");
+      message.error(t("debug:tool.errors.fetchToolsFailed"));
     } finally {
       setLoading(false);
     }
@@ -74,7 +76,7 @@ const ToolDebugger: React.FC = () => {
       setSchema(result);
     } catch (error) {
       console.error("获取工具Schema失败:", error);
-      message.error("获取工具Schema失败");
+      message.error(t("debug:tool.errors.fetchSchemaFailed"));
     } finally {
       setSchemaLoading(false);
     }
@@ -90,8 +92,8 @@ const ToolDebugger: React.FC = () => {
       });
       setDebugResult(result);
     } catch (error) {
-      message.error("调试工具失败");
-      setDebugResult({ error: (error as Error).message || "调试工具失败" });
+      message.error(t("debug:tool.errors.debugFailed"));
+      setDebugResult({ error: (error as Error).message || t("debug:tool.errors.debugFailed") });
     } finally {
       setDebugLoading(false);
     }
@@ -106,12 +108,13 @@ const ToolDebugger: React.FC = () => {
 
   useEffect(() => {
     fetchAllTools();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className={styles.container}>
       <Card
-        title="Tool调试"
+        title={t("debug:tool.title")}
         className={styles.pageCard}
         classNames={{
           body: styles.pageCardBody,
@@ -121,7 +124,7 @@ const ToolDebugger: React.FC = () => {
         <Row gutter={16} style={{ width: "100%" }}>
           {/* 左侧卡片：工具Schema和提示结果 */}
           <Col span={12}>
-            <Card title="工具 Schema">
+            <Card title={t("debug:tool.schemaTitle")}>
               <Spin spinning={schemaLoading}>
                 {schema ? (
                   <Card size="small" className={styles.schemaCard}>
@@ -131,20 +134,20 @@ const ToolDebugger: React.FC = () => {
                   </Card>
                 ) : (
                   <div style={{ textAlign: "center", padding: "24px" }}>
-                    <Text type="secondary">请先选择具体需要调试的工具</Text>
+                    <Text type="secondary">{t("debug:tool.selectToolEmpty")}</Text>
                   </div>
                 )}
               </Spin>
 
               {(debugResult || debugLoading) && (
                 <div className={styles.section} style={{ marginTop: 24 }}>
-                  <Title level={5}>调试结果</Title>
+                  <Title level={5}>{t("debug:tool.debugResult")}</Title>
                   <Spin spinning={debugLoading}>
                     <Card size="small" className={styles.resultCard}>
                       <pre className={styles.jsonDisplay}>
                         {debugResult
                           ? JSON.stringify(debugResult, null, 2)
-                          : "等待调试结果..."}
+                          : t("debug:tool.waitingResult")}
                       </pre>
                     </Card>
                   </Spin>
@@ -155,12 +158,12 @@ const ToolDebugger: React.FC = () => {
 
           {/* 右侧卡片：选择工具、调试面板等 */}
           <Col span={12}>
-            <Card title="调试面板">
+            <Card title={t("debug:tool.panel")}>
               <div className={styles.section}>
-                <Title level={5}>选择工具</Title>
+                <Title level={5}>{t("debug:tool.selectTool")}</Title>
                 <Select
                   showSearch
-                  placeholder="请选择要调试的工具"
+                  placeholder={t("debug:tool.selectToolPlaceholder")}
                   optionFilterProp="children"
                   onChange={handleToolChange}
                   value={selectedTool}
@@ -176,7 +179,7 @@ const ToolDebugger: React.FC = () => {
               </div>
               {schema?.function?.parameters && (
                 <div className={styles.parametersWrap}>
-                  <Title level={5}>调试参数</Title>
+                  <Title level={5}>{t("debug:tool.debugParams")}</Title>
                   <div className={styles.parameters}>
                     <Form
                       schema={schema.function.parameters}
@@ -190,7 +193,7 @@ const ToolDebugger: React.FC = () => {
                         htmlType="submit"
                         loading={debugLoading}
                       >
-                        执行调试
+                        {t("debug:tool.executeDebug")}
                       </Button>
                     </Form>
                   </div>

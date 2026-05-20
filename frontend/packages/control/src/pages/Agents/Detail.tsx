@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -61,6 +62,7 @@ import MemoryButton from "./components/MemoryButton";
 const { Text } = Typography;
 
 const AgentDetail: React.FC = () => {
+  const { t } = useTranslation(["agents", "common"]);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [agent, setAgent] = useState<AgentConfig | null>(null);
@@ -109,7 +111,7 @@ const AgentDetail: React.FC = () => {
       setAgent(agentData.data || null);
     } catch (error) {
       console.error("加载Agent详情失败:", error);
-      message.error("加载Agent详情失败，请重试");
+      message.error(t("agents:detail.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -134,7 +136,7 @@ const AgentDetail: React.FC = () => {
       <div style={{ padding: "24px", textAlign: "center" }}>
         <Spin size="large" />
         <div style={{ marginTop: 16 }}>
-          <Text type="secondary">加载中...</Text>
+          <Text type="secondary">{t("common:loading")}</Text>
         </div>
       </div>
     );
@@ -144,14 +146,14 @@ const AgentDetail: React.FC = () => {
     return (
       <Card>
         <div style={{ textAlign: "center", padding: "50px 0" }}>
-          <Text type="secondary">Agent不存在</Text>
+          <Text type="secondary">{t("agents:detail.notFound")}</Text>
           <br />
           <Button
             type="primary"
             onClick={() => navigate("/agents")}
             style={{ marginTop: 16 }}
           >
-            返回列表
+            {t("agents:detail.backToList")}
           </Button>
         </div>
       </Card>
@@ -176,38 +178,38 @@ const AgentDetail: React.FC = () => {
               icon={<ArrowLeftOutlined />}
               onClick={() => navigate("/agents")}
             >
-              返回
+              {t("agents:detail.back")}
             </Button>
-            <span>{agent.name} - 详情</span>
+            <span>{agent.name} - {t("agents:detail.titleSuffix")}</span>
           </Space>
         }
       >
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           {/* 基本信息区域 */}
-          <Card title="基本信息" size="small">
+          <Card title={t("agents:detail.basic")} size="small">
             <Descriptions column={2} bordered>
-              <Descriptions.Item label="ID">{agent.id}</Descriptions.Item>
-              <Descriptions.Item label="名称">{agent.name}</Descriptions.Item>
-              <Descriptions.Item label="类型">
+              <Descriptions.Item label={t("agents:detail.id")}>{agent.id}</Descriptions.Item>
+              <Descriptions.Item label={t("agents:detail.name")}>{agent.name}</Descriptions.Item>
+              <Descriptions.Item label={t("agents:detail.type")}>
                 <Tag style={getTypeConfig(agent.type).style}>
                   {getTypeConfig(agent.type).text}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="状态">
+              <Descriptions.Item label={t("agents:detail.status")}>
                 <Tag color={agent.enabled ? "green" : "red"}>
-                  {agent.enabled ? "启用" : "禁用"}
+                  {agent.enabled ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="最大迭代次数">
-                {agent.type === LocalAgentType.ONE ? "不支持" : agent.maxIters}
+              <Descriptions.Item label={t("agents:detail.maxIters")}>
+                {agent.type === LocalAgentType.ONE ? t("agents:detail.notSupported") : agent.maxIters}
               </Descriptions.Item>
-              <Descriptions.Item label="操作">
+              <Descriptions.Item label={t("agents:detail.action")}>
                 <Space>
                   <RenameButton agent={agent} onSuccess={handleSuccess}>
-                    编辑名称
+                    {t("agents:detail.editName")}
                   </RenameButton>
                   <StatusToggleButton agent={agent} onSuccess={handleSuccess}>
-                    {agent.enabled ? "下线" : "上线"}
+                    {agent.enabled ? t("agents:detail.offline") : t("agents:detail.online")}
                   </StatusToggleButton>
                 </Space>
               </Descriptions.Item>
@@ -216,11 +218,11 @@ const AgentDetail: React.FC = () => {
 
           {/* Chat配置区域 */}
           <Card
-            title="Chat配置"
+            title={t("agents:detail.chatConfig")}
             size="small"
             extra={
               <ChatConfigButton agent={agent} onSuccess={handleSuccess}>
-                编辑Chat配置
+                {t("agents:detail.editChatConfig")}
               </ChatConfigButton>
             }
           >
@@ -236,18 +238,18 @@ const AgentDetail: React.FC = () => {
               <div
                 style={commonStyles.emptyState}
               >
-                <Text type="secondary">未配置Chat模型</Text>
+                <Text type="secondary">{t("agents:detail.noChatModel")}</Text>
               </div>
             )}
           </Card>
 
           {/* 提示词区域 */}
           <Card
-            title="提示词"
+            title={t("agents:detail.systemPrompt")}
             size="small"
             extra={
               <SystemPromptButton agent={agent} onSuccess={handleSuccess}>
-                编辑提示词
+                {t("agents:detail.editSystemPrompt")}
               </SystemPromptButton>
             }
           >
@@ -270,18 +272,18 @@ const AgentDetail: React.FC = () => {
               <div
                 style={commonStyles.emptyState}
               >
-                <Text type="secondary">未设置提示词</Text>
+                <Text type="secondary">{t("agents:detail.noSystemPrompt")}</Text>
               </div>
             )}
           </Card>
 
           {/* 工具配置区域 */}
           <Card
-            title={`工具 (${agent.tools?.length || 0})`}
+            title={t("agents:detail.toolsTitle", { count: agent.tools?.length || 0 })}
             size="small"
             extra={
               <ToolsButton agent={agent} onSuccess={handleSuccess}>
-                管理工具
+                {t("agents:detail.manageTools")}
               </ToolsButton>
             }
           >
@@ -301,7 +303,7 @@ const AgentDetail: React.FC = () => {
                           <Tag
                             color={tool.enabled !== false ? "green" : "red"}
                           >
-                            {tool.enabled !== false ? "启用" : "禁用"}
+                            {tool.enabled !== false ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                           </Tag>
                         </Space>
                       }
@@ -318,17 +320,17 @@ const AgentDetail: React.FC = () => {
                   </List.Item>
                 );
               }}
-              locale={{ emptyText: "暂无配置工具" }}
+              locale={{ emptyText: t("agents:detail.noTools") }}
             />
           </Card>
 
           {/* MCP客户端区域 */}
           <Card
-            title={`MCP (${agent.mcpClients?.length || 0})`}
+            title={t("agents:detail.mcpTitle", { count: agent.mcpClients?.length || 0 })}
             size="small"
             extra={
               <McpButton agent={agent} onSuccess={handleSuccess}>
-                管理MCP
+                {t("agents:detail.manageMcp")}
               </McpButton>
             }
           >
@@ -356,7 +358,7 @@ const AgentDetail: React.FC = () => {
                               <Tag
                                 color={mcpInfo.enabled ? "green" : "red"}
                               >
-                                {mcpInfo.enabled ? "在线" : "离线"}
+                                {mcpInfo.enabled ? t("agents:online") : t("agents:offline")}
                               </Tag>
                             )}
                           </Space>
@@ -394,20 +396,20 @@ const AgentDetail: React.FC = () => {
                             )}
                             <Space wrap>
                               <Tag color={mcp.enabled ? "green" : "red"}>
-                                {mcp.enabled ? "启用" : "禁用"}
+                                {mcp.enabled ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                               </Tag>
                               {mcp.enableFuncs &&
                                 Array.isArray(mcp.enableFuncs) &&
                                 mcp.enableFuncs.length > 0 && (
                                   <Tag color="blue">
-                                    启用函数: {mcp.enableFuncs.join(", ")}
+                                    {t("agents:detail.enabledFuncs")}: {mcp.enableFuncs.join(", ")}
                                   </Tag>
                                 )}
                               {mcp.disableFuncs &&
                                 Array.isArray(mcp.disableFuncs) &&
                                 mcp.disableFuncs.length > 0 && (
                                   <Tag color="orange">
-                                    禁用函数: {mcp.disableFuncs.join(", ")}
+                                    {t("agents:detail.disabledFuncs")}: {mcp.disableFuncs.join(", ")}
                                   </Tag>
                                 )}
                             </Space>
@@ -417,16 +419,16 @@ const AgentDetail: React.FC = () => {
                     </List.Item>
                   );
                 }}
-                locale={{ emptyText: "暂无配置MCP客户端" }}
+                locale={{ emptyText: t("agents:detail.noMcp") }}
               />
           </Card>
           {/* 知识库区域 */}
           <Card
-            title={`知识库 (${agent.knowledgeBases?.length || 0})`}
+            title={t("agents:detail.kbTitle", { count: agent.knowledgeBases?.length || 0 })}
             size="small"
             extra={
               <KbButton agent={agent} onSuccess={handleSuccess}>
-                管理知识库
+                {t("agents:detail.manageKb")}
               </KbButton>
             }
           >
@@ -442,28 +444,28 @@ const AgentDetail: React.FC = () => {
                     description={
                       <Space>
                         <Text type="secondary">
-                          工作空间: {kb.workspaceId}
+                          {t("agents:detail.workspace")}: {kb.workspaceId}
                         </Text>
-                        <Text type="secondary">索引: {kb.indexId}</Text>
+                        <Text type="secondary">{t("agents:detail.index")}: {kb.indexId}</Text>
                         <Tag color={kb.enabled ? "green" : "red"}>
-                          {kb.enabled ? "启用" : "禁用"}
+                          {kb.enabled ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                         </Tag>
                       </Space>
                     }
                   />
                 </List.Item>
               )}
-              locale={{ emptyText: "暂无配置知识库" }}
+              locale={{ emptyText: t("agents:detail.noKb") }}
             />
           </Card>
 
           {/* Skills区域 */}
           <Card
-            title={`Skills (${agent.skills?.length || 0})`}
+            title={t("agents:detail.skillsTitle", { count: agent.skills?.length || 0 })}
             size="small"
             extra={
               <SkillButton agent={agent} onSuccess={handleSuccess}>
-                管理Skills
+                {t("agents:detail.manageSkills")}
               </SkillButton>
             }
           >
@@ -485,7 +487,7 @@ const AgentDetail: React.FC = () => {
                           <Space>
                             <span>{skill.name}</span>
                             <Tag color={skill.enabled ? "green" : "red"}>
-                              {skill.enabled ? "启用" : "禁用"}
+                              {skill.enabled ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                             </Tag>
                           </Space>
                         }
@@ -502,26 +504,26 @@ const AgentDetail: React.FC = () => {
                     </List.Item>
                   );
                 }}
-                locale={{ emptyText: "暂无配置Skills" }}
+                locale={{ emptyText: t("agents:detail.noSkills") }}
               />
           </Card>
 
           {/* 长期记忆区域 */}
           <Card
-            title="长期记忆"
+            title={t("agents:detail.memory")}
             size="small"
             extra={
               <MemoryButton agent={agent} onSuccess={handleSuccess}>
-                配置长期记忆
+                {t("agents:detail.configMemory")}
               </MemoryButton>
             }
           >
             <Descriptions column={1} bordered size="small">
-              <Descriptions.Item label="关联记忆配置">
+              <Descriptions.Item label={t("agents:detail.memoryRelated")}>
                 {agent.longTermMemoryId ? (
                   <Tag color="purple">{agent.longTermMemoryId}</Tag>
                 ) : (
-                  <Text type="secondary">自动选择</Text>
+                  <Text type="secondary">{t("agents:detail.memoryAuto")}</Text>
                 )}
               </Descriptions.Item>
             </Descriptions>
@@ -530,11 +532,11 @@ const AgentDetail: React.FC = () => {
           {/* 子Agent区域 - 仅在Multi类型时显示 */}
           {agent.type === LocalAgentType.ONE && (
             <Card
-              title={`子Agent (${agent.subAgents?.length || 0})`}
+              title={t("agents:detail.subAgentTitle", { count: agent.subAgents?.length || 0 })}
               size="small"
               extra={
                 <SubAgentButton agent={agent} onSuccess={handleSuccess}>
-                  管理子Agent
+                  {t("agents:detail.manageSubAgent")}
                 </SubAgentButton>
               }
             >
@@ -597,12 +599,12 @@ const AgentDetail: React.FC = () => {
                               <Tag
                                 color={isRemoteAgent ? "orange" : "blue"}
                               >
-                                {isRemoteAgent ? "远程" : "本地"}
+                                {isRemoteAgent ? t("agents:detail.remote") : t("agents:detail.local")}
                               </Tag>
                               <Tag
                                 color={subAgent.enabled ? "green" : "red"}
                               >
-                                {subAgent.enabled ? "启用" : "禁用"}
+                                {subAgent.enabled ? t("agents:detail.enabled") : t("agents:detail.disabled")}
                               </Tag>
                             </div>
                           </div>
@@ -621,7 +623,7 @@ const AgentDetail: React.FC = () => {
                                 wordBreak: "break-word",
                               }}
                             >
-                              <strong>能力描述：</strong>
+                              <strong>{t("agents:detail.capacities")}</strong>
                               {(subAgent as any).capacities}
                             </div>
                             {isRemoteAgent && (
@@ -636,13 +638,13 @@ const AgentDetail: React.FC = () => {
                                 }}
                               >
                                 <div>
-                                  <strong>端点：</strong>
+                                  <strong>{t("agents:detail.endpoint")}</strong>
                                   {(subAgent as any).endpoint}
                                 </div>
                                 <div style={{ marginTop: "2px" }}>
-                                  <strong>传输：</strong>
+                                  <strong>{t("agents:detail.transport")}</strong>
                                   {(subAgent as any).transport?.toUpperCase()} |
-                                  <strong>超时：</strong>
+                                  <strong>{t("agents:detail.timeout")}</strong>
                                   {(subAgent as any).timeout || 30}s
                                 </div>
                               </div>
@@ -653,7 +655,7 @@ const AgentDetail: React.FC = () => {
                     </List.Item>
                   );
                 }}
-                locale={{ emptyText: "暂无配置子Agent" }}
+                locale={{ emptyText: t("agents:detail.noSubAgent") }}
               />
             </Card>
           )}

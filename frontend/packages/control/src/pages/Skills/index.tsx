@@ -22,6 +22,7 @@ import type { ColumnsType } from 'antd/es/table';
 import type { DataNode } from 'antd/es/tree';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
 import { SkillConfig } from '../../types/skill.interface';
 import { getAllSkills, uploadSkill, updateSkill, deleteSkill, downloadSkill } from '../../services/skill';
 import { colors, commonStyles } from '../../styles/tokens';
@@ -40,6 +41,7 @@ const SkillsPage: React.FC = () => {
   const [filesModal, setFilesModal] = useState<{ visible: boolean; name: string; files: string[] }>({
     visible: false, name: '', files: [],
   });
+  const { t } = useTranslation(['skills', 'common']);
 
   // 将扁平文件路径列表转换为树形结构
   const buildFileTree = (files: string[]): DataNode[] => {
@@ -97,14 +99,14 @@ const SkillsPage: React.FC = () => {
 
   const columns: ColumnsType<SkillConfig> = [
     {
-      title: 'ID',
+      title: t('common:id'),
       dataIndex: 'id',
       key: 'id',
       width: 100,
       render: (id: number, record: SkillConfig) => (
         record.builtin ? (
           <Tag icon={<LockOutlined />} color="purple">
-            内置
+            {t('skills:builtin')}
           </Tag>
         ) : (
           id
@@ -112,12 +114,12 @@ const SkillsPage: React.FC = () => {
       ),
     },
     {
-      title: '名称',
+      title: t('skills:columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '描述',
+      title: t('skills:columns.description'),
       dataIndex: 'description',
       key: 'description',
       render: (description: string) => (
@@ -135,7 +137,7 @@ const SkillsPage: React.FC = () => {
       ),
     },
     {
-      title: '指令',
+      title: t('skills:columns.instruction'),
       dataIndex: 'instruction',
       key: 'instruction',
       render: (instruction: string, record: SkillConfig) => {
@@ -163,7 +165,7 @@ const SkillsPage: React.FC = () => {
       },
     },
     {
-      title: '文件列表',
+      title: t('skills:columns.files'),
       dataIndex: 'files',
       key: 'files',
       render: (files: string[], record: SkillConfig) => {
@@ -176,13 +178,13 @@ const SkillsPage: React.FC = () => {
             onClick={() => setFilesModal({ visible: true, name: record.name, files })}
             style={{ padding: 0 }}
           >
-            {files.length} 个文件
+            {t('skills:fileCount', { count: files.length })}
           </Button>
         );
       },
     },
     {
-      title: '状态',
+      title: t('skills:columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record: SkillConfig) => (
@@ -194,7 +196,7 @@ const SkillsPage: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('skills:columns.action'),
       key: 'action',
       render: (_, record: SkillConfig) => (
         <Space size="middle">
@@ -204,7 +206,7 @@ const SkillsPage: React.FC = () => {
             onClick={() => handleUpdateFile(record.id)}
             disabled={record.builtin}
           >
-            更新文件
+            {t('skills:updateFile')}
           </Button>
           <Button
             type="link"
@@ -212,7 +214,7 @@ const SkillsPage: React.FC = () => {
             onClick={() => handleDownload(record.id)}
             disabled={record.builtin}
           >
-            下载
+            {t('skills:download')}
           </Button>
           <Button
             type="link"
@@ -221,30 +223,31 @@ const SkillsPage: React.FC = () => {
             onClick={() => handleDelete(record.id)}
             disabled={record.builtin}
           >
-            删除
+            {t('skills:delete')}
           </Button>
         </Space>
       ),
     },
   ];
 
-  // 加载Skill列表
+  // Load skill list
   const loadSkills = async () => {
     try {
       setLoading(true);
       const response = await getAllSkills();
       setSkills(response.data || []);
     } catch (error) {
-      console.error('加载Skill列表失败:', error);
-      message.error('加载Skill列表失败，请重试');
+      console.error('Failed to load skills:', error);
+      message.error(t('skills:loadFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  // 组件挂载时加载数据
+  // Load on mount
   useEffect(() => {
     loadSkills();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleEnabled = async (id: number, enabled: boolean) => {
@@ -253,10 +256,10 @@ const SkillsPage: React.FC = () => {
       setSkills(prev => prev.map(skill => 
         skill.id === id ? { ...skill, enabled } : skill
       ));
-      message.success(`Skill已${enabled ? '启用' : '禁用'}`);
+      message.success(enabled ? t('skills:enableSuccess') : t('skills:disableSuccess'));
     } catch (error) {
-      console.error('状态更新失败:', error);
-      message.error('状态更新失败，请重试');
+      console.error('Status update failed:', error);
+      message.error(t('skills:toggleFailed'));
     }
   };
 
@@ -269,7 +272,7 @@ const SkillsPage: React.FC = () => {
     if (!file) return;
 
     if (!file.name.endsWith('.zip')) {
-      message.error('请上传.zip格式的文件');
+      message.error(t('skills:uploadInvalid'));
       event.target.value = '';
       return;
     }
@@ -277,11 +280,11 @@ const SkillsPage: React.FC = () => {
     try {
       setUploadLoading(true);
       await uploadSkill(file);
-      message.success('Skill上传成功');
+      message.success(t('skills:uploadSuccess'));
       loadSkills();
     } catch (error) {
-      console.error('上传失败:', error);
-      message.error('上传失败，请重试');
+      console.error('Upload failed:', error);
+      message.error(t('skills:uploadFailed'));
     } finally {
       setUploadLoading(false);
       event.target.value = '';
@@ -298,7 +301,7 @@ const SkillsPage: React.FC = () => {
     if (!file || updatingSkillId === null) return;
 
     if (!file.name.endsWith('.zip')) {
-      message.error('请上传.zip格式的文件');
+      message.error(t('skills:uploadInvalid'));
       event.target.value = '';
       return;
     }
@@ -306,11 +309,11 @@ const SkillsPage: React.FC = () => {
     try {
       setUploadLoading(true);
       await uploadSkill(file, updatingSkillId);
-      message.success('Skill文件更新成功');
+      message.success(t('skills:updateSuccess'));
       loadSkills();
     } catch (error) {
-      console.error('更新文件失败:', error);
-      message.error('更新文件失败，请重试');
+      console.error('Update file failed:', error);
+      message.error(t('skills:updateFailed'));
     } finally {
       setUploadLoading(false);
       setUpdatingSkillId(null);
@@ -327,32 +330,32 @@ const SkillsPage: React.FC = () => {
     const skill = skills.find(s => s.id === id);
 
     Modal.confirm({
-      title: '确认删除Skill',
+      title: t('skills:confirmDelete.title'),
       content: (
         <div>
-          <p>您即将删除以下Skill：</p>
+          <p>{t('skills:confirmDelete.intro')}</p>
           <div style={commonStyles.confirmBox}>
-            <p><strong>名称：</strong>{skill?.name}</p>
-            <p><strong>ID：</strong>{skill?.id}</p>
-            {skill?.description && <p><strong>描述：</strong>{skill?.description}</p>}
+            <p><strong>{t('skills:confirmDelete.name')}</strong>{skill?.name}</p>
+            <p><strong>{t('skills:confirmDelete.id')}</strong>{skill?.id}</p>
+            {skill?.description && <p><strong>{t('skills:confirmDelete.desc')}</strong>{skill?.description}</p>}
           </div>
           <p style={commonStyles.confirmWarning}>
-            此操作不可撤销，请确认是否继续？
+            {t('skills:confirmDelete.warning')}
           </p>
         </div>
       ),
-      okText: '确认删除',
-      cancelText: '取消',
+      okText: t('skills:confirmDelete.ok'),
+      cancelText: t('common:cancel'),
       okType: 'danger',
       width: 500,
       onOk: async () => {
         try {
           await deleteSkill(id);
           setSkills(prev => prev.filter(skill => skill.id !== id));
-          message.success('Skill删除成功');
+          message.success(t('skills:deleteSuccess'));
         } catch (error) {
-          console.error('删除失败:', error);
-          message.error('删除失败，请重试');
+          console.error('Delete failed:', error);
+          message.error(t('skills:deleteFailed'));
         }
       },
     });
@@ -360,14 +363,14 @@ const SkillsPage: React.FC = () => {
 
   return (
     <div className={skillStyles.container}>
-      <Card title="Skills管理" extra={
+      <Card title={t('skills:title')} extra={
         <Space>
           <Button 
             icon={<ReloadOutlined />} 
             onClick={loadSkills}
             loading={loading}
           >
-            刷新
+            {t('common:refresh')}
           </Button>
           <Button
             type="primary"
@@ -375,7 +378,7 @@ const SkillsPage: React.FC = () => {
             onClick={handleUpload}
             loading={uploadLoading}
           >
-            上传Skill
+            {t('skills:uploadButton')}
           </Button>
         </Space>
       }>
@@ -392,7 +395,7 @@ const SkillsPage: React.FC = () => {
         accept=".zip"
         style={{ display: 'none' }}
         onChange={handleFileChange}
-        aria-label="上传Skill文件"
+        aria-label={t('skills:uploadAria')}
       />
       <input
         ref={updateFileInputRef}
@@ -400,10 +403,10 @@ const SkillsPage: React.FC = () => {
         accept=".zip"
         style={{ display: 'none' }}
         onChange={handleUpdateFileChange}
-        aria-label="更新Skill文件"
+        aria-label={t('skills:updateAria')}
       />
       <Modal
-        title={`${instructionModal.name} - 指令详情`}
+        title={t('skills:instructionModalTitle', { name: instructionModal.name })}
         open={instructionModal.visible}
         onCancel={() => setInstructionModal({ visible: false, name: '', content: '' })}
         footer={null}
@@ -425,7 +428,7 @@ const SkillsPage: React.FC = () => {
         </div>
       </Modal>
       <Modal
-        title={`${filesModal.name} - 文件列表`}
+        title={t('skills:filesModalTitle', { name: filesModal.name })}
         open={filesModal.visible}
         onCancel={() => setFilesModal({ visible: false, name: '', files: [] })}
         footer={null}
@@ -446,7 +449,7 @@ const SkillsPage: React.FC = () => {
             />
           ) : (
             <div style={{ textAlign: 'center', color: colors.bodyMuted, padding: '20px 0' }}>
-              无文件
+              {t('skills:noFile')}
             </div>
           )}
         </div>
@@ -460,8 +463,8 @@ const SkillsPage: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
         }}>
-          <span>共 {filesModal.files.length} 个文件</span>
-          <span>请下载后查看详细内容</span>
+          <span>{t('skills:fileSummary', { count: filesModal.files.length })}</span>
+          <span>{t('skills:downloadHint')}</span>
         </div>
       </Modal>
     </div>

@@ -18,6 +18,7 @@
 import React, { useState } from 'react';
 import { Button, Modal, List, Typography, message, Select, Space, Checkbox } from 'antd';
 import { ToolOutlined, PlusOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';
 import { getAllTools } from '../../../services/tools';
@@ -35,6 +36,7 @@ interface ToolsButtonProps {
 }
 
 const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pendingTools, setPendingTools] = useState<{name: string, enabled: boolean}[]>([]);
@@ -49,8 +51,8 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
       const toolsData = await getAllTools();
       setAvailableTools(toolsData.data || []);
     } catch (error) {
-      console.error('加载工具列表失败:', error);
-      message.error('加载工具列表失败');
+      console.error('Load tools failed:', error);
+      message.error(t('agents:tools.loadFailed'));
     } finally {
       setToolsLoading(false);
     }
@@ -73,12 +75,12 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
 
   const handleAddTool = () => {
     if (!selectedTool) {
-      message.warning('请选择要添加的工具');
+      message.warning(t('agents:tools.selectTool'));
       return;
     }
     
     if (pendingTools.some(tool => tool.name === selectedTool)) {
-      message.warning('该工具已存在');
+      message.warning(t('agents:tools.duplicateTool'));
       return;
     }
     
@@ -107,7 +109,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
         }));
         
         await updateAgent(agent.id, { tools: updatedTools });
-        message.success('工具配置保存成功');
+        message.success(t('agents:tools.saveSuccess'));
         
         // 调用成功回调
         if (onSuccess) {
@@ -119,13 +121,12 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
         throw new Error('Agent ID不存在');
       }
     } catch (error) {
-      console.error('工具配置保存失败:', error);
+      console.error('Tools config save failed:', error);
       
-      // 调用错误回调
       if (onError) {
         onError(error);
       } else {
-        message.error('工具配置保存失败，请重试');
+        message.error(t('agents:tools.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -165,17 +166,17 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
         icon={<ToolOutlined />}
         onClick={handleClick}
       >
-        {children || '工具'}
+        {children || t('agents:tools.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - 工具管理`}
+        title={`${agent.name} - ${t('agents:tools.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSaveChanges}
         onCancel={handleModalClose}
         width={650}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         okButtonProps={{ 
           icon: <CheckOutlined />,
@@ -188,7 +189,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
             <Space style={{ width: '100%' }}>
               <Select
                 style={{ flex: 1, minWidth: 200 }}
-                placeholder="选择要添加的工具"
+                placeholder={t('agents:tools.selectPlaceholder')}
                 value={selectedTool}
                 onChange={setSelectedTool}
                 allowClear
@@ -223,7 +224,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                 onClick={handleAddTool}
                 disabled={!selectedTool}
               >
-                添加
+                {t('common:add')}
               </Button>
             </Space>
           </div>
@@ -231,7 +232,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
           {/* 工具列表区域 */}
           <div>
             <Text strong style={{ marginBottom: 12, display: 'block' }}>
-              工具 ({pendingTools.length}个)：
+              {t('agents:tools.listTitle', { count: pendingTools.length })}
             </Text>
             <div style={{ 
               border: `1px solid ${colors.dividerSoft}`, 
@@ -259,7 +260,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                             checked={tool.enabled}
                             onChange={(e) => handleToggleTool(tool.name, e.target.checked)}
                           >
-                            启用
+                            {t('agents:tools.enabled')}
                           </Checkbox>,
                           <Button
                             key="remove"
@@ -269,7 +270,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                             icon={<DeleteOutlined />}
                             onClick={() => handleRemoveTool(tool.name)}
                           >
-                            移除
+                            {t('agents:tools.remove')}
                           </Button>
                         ]}
                       >
@@ -311,7 +312,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
                   color: colors.bodyMuted, 
                   padding: '40px 0' 
                 }}>
-                  暂无配置工具
+                  {t('agents:tools.empty')}
                 </div>
               )}
             </div>
@@ -321,7 +322,7 @@ const ToolsButton: React.FC<ToolsButtonProps> = ({ agent, onManageTools, onSucce
           {hasChanges() && (
             <div style={commonStyles.infoBox}>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改
+                {t('common:changeDetected')}
               </Text>
             </div>
           )}

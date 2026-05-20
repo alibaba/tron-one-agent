@@ -24,6 +24,7 @@ import { useASR } from './hooks/useASR';
 import { AttachmentPreview } from './components/AttachmentPreview';
 import { ContentType } from '../../../types/enums';
 import styles from './index.module.less';
+import { t } from '../../../locale';
 
 export interface MultiModeMessageInputProps extends BaseMessageInputProps {}
 
@@ -138,13 +139,13 @@ export function MultiModeMessageInput({
           multiple
           style={{ display: 'none' }}
           onChange={handleFileChange}
-          title="选择文件"
+          title={t('selectFile')}
         />
         <button
           className={styles.attachButton}
           onClick={handleFileSelect}
           disabled={disabled || isRecording}
-          title="上传文件"
+          title={t('uploadFile')}
         >
           <i className="fas fa-paperclip"></i>
         </button>
@@ -155,7 +156,7 @@ export function MultiModeMessageInput({
             className={`${styles.voiceButton} ${isRecording ? styles.recording : ''}`}
             onClick={handleVoiceClick}
             disabled={disabled}
-            title={isRecording ? '停止录音' : '语音输入'}
+            title={isRecording ? t('stopRecording') : t('voiceInput')}
           >
             <i className={`fas ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
           </button>
@@ -168,7 +169,7 @@ export function MultiModeMessageInput({
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          placeholder={isRecording ? '正在录音...' : (placeholder || '输入消息... (Enter发送，Shift+Enter换行)')}
+          placeholder={isRecording ? t('recording') : (placeholder || t('chatPlaceholder'))}
           className={styles.messageTextarea}
           rows={2}
           disabled={disabled || isRecording}
@@ -177,7 +178,7 @@ export function MultiModeMessageInput({
           onClick={running && onStop ? onStop : handleSend}
           disabled={running ? !onStop : ((!value.trim() && attachments.length === 0) || disabled || isUploading || isRecording)}
           className={`${styles.sendButton}${running && onStop ? ` ${styles.stopButton}` : ''}`}
-          title={isUploading ? '文件上传中...' : running && onStop ? '中断' : undefined}
+          title={isUploading ? t('uploading') : running && onStop ? t('interrupt') : undefined}
         >
           {running && onStop ? (
             <i className="fas fa-stop"></i>

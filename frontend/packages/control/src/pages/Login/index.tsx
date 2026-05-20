@@ -18,9 +18,11 @@ import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { login } from '@/services/auth';
 import { setToken, setUsername } from '@/utils/auth';
 import { LoginRequest } from '@/types/admin.interface';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import styles from './index.module.less';
 
 const { Title } = Typography;
@@ -28,6 +30,7 @@ const { Title } = Typography;
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation('login');
 
   const handleSubmit = async (values: LoginRequest) => {
     try {
@@ -35,11 +38,11 @@ const LoginPage: React.FC = () => {
       const response = await login(values);
       setToken(response.data.token);
       setUsername(response.data.username);
-      message.success('登录成功');
+      message.success(t('loginSuccess'));
       navigate('/agents');
     } catch (error) {
-      console.error('登录失败:', error);
-      message.error('登录失败，请检查用户名和密码');
+      console.error('login failed:', error);
+      message.error(t('loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -47,10 +50,13 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 10 }}>
+        <LanguageSwitcher />
+      </div>
       <Card className={styles.card}>
         <div className={styles.header}>
-          <Title level={3} className={styles.title}>Tron OneAgent</Title>
-          <div className={styles.subtitle}>管理员登录</div>
+          <Title level={3} className={styles.title}>{t('title')}</Title>
+          <div className={styles.subtitle}>{t('subtitle')}</div>
         </div>
         <Form
           name="login"
@@ -60,20 +66,20 @@ const LoginPage: React.FC = () => {
         >
           <Form.Item
             name="username"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            rules={[{ required: true, message: t('usernameRequired') }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="用户名"
+              placeholder={t('usernamePlaceholder')}
             />
           </Form.Item>
           <Form.Item
             name="password"
-            rules={[{ required: true, message: '请输入密码' }]}
+            rules={[{ required: true, message: t('passwordRequired') }]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="密码"
+              placeholder={t('passwordPlaceholder')}
             />
           </Form.Item>
           <Form.Item>
@@ -83,7 +89,7 @@ const LoginPage: React.FC = () => {
               loading={loading}
               block
             >
-              登录
+              {t('submit')}
             </Button>
           </Form.Item>
         </Form>

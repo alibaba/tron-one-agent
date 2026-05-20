@@ -20,6 +20,7 @@ import ActionContent from "../ActionContent";
 import TextContent from "../TextContent";
 import { ContentType, TaskContent, TaskStatus } from "../../types";
 import styles from "./index.module.less";
+import { t } from "../../locale";
 
 export interface TaskContentProps {
   task: TaskContent;
@@ -113,7 +114,7 @@ const TaskContentRender: React.FC<TaskContentProps> = ({ task, onToggleExpand })
           <span className={styles.taskTitle}>{task.title}</span>
           {task.gmtFinished && (
             <span className={styles.taskTime}>
-              完成于 {formatTime(task.gmtFinished)}
+              {t('task.finishedAt', { time: formatTime(task.gmtFinished) })}
             </span>
           )}
         </div>

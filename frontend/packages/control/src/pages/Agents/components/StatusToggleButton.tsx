@@ -18,6 +18,7 @@
 import React from 'react';
 import { Button, Modal, message } from 'antd';
 import { PoweroffOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';
 
@@ -30,20 +31,21 @@ interface StatusToggleButtonProps {
 }
 
 const StatusToggleButton: React.FC<StatusToggleButtonProps> = ({ agent, onToggleStatus, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
+  const actionText = agent.enabled ? t('agents:statusToggle.offline') : t('agents:statusToggle.online');
+
   const handleClick = () => {
     Modal.confirm({
-      title: `确认${agent.enabled ? '下线' : '上线'}`,
-      content: `确定要${agent.enabled ? '下线' : '上线'}Agent "${agent.name}" 吗？`,
+      title: t('agents:statusToggle.confirmTitle', { action: actionText }),
+      content: t('agents:statusToggle.confirmContent', { action: actionText, name: agent.name }),
       onOk: async () => {
         try {
           if (onToggleStatus) {
-            // 使用外部提供的状态切换逻辑
             onToggleStatus(agent);
           } else {
-            // 内置处理逻辑：调用API更新agent状态
             if (agent.id) {
               await updateAgent(agent.id, { enabled: !agent.enabled });
-              message.success(`Agent已${agent.enabled ? '下线' : '上线'}`);
+              message.success(agent.enabled ? t('agents:statusToggle.successDisable') : t('agents:statusToggle.successEnable'));
             } else {
               throw new Error('Agent ID不存在');
             }
@@ -54,13 +56,12 @@ const StatusToggleButton: React.FC<StatusToggleButtonProps> = ({ agent, onToggle
             onSuccess(agent);
           }
         } catch (error) {
-          console.error('状态切换失败:', error);
+          console.error('Status toggle failed:', error);
           
-          // 调用错误回调
           if (onError) {
             onError(error);
           } else {
-            message.error('状态切换失败，请重试');
+            message.error(t('agents:statusToggle.failed'));
           }
         }
       },
@@ -74,7 +75,7 @@ const StatusToggleButton: React.FC<StatusToggleButtonProps> = ({ agent, onToggle
       icon={agent.enabled ? <PoweroffOutlined /> : <CheckCircleOutlined />}
       onClick={handleClick}
     >
-      {children || (agent.enabled ? '下线' : '上线')}
+      {children || actionText}
     </Button>
   );
 };

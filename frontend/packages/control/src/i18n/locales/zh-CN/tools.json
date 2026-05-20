@@ -1,0 +1,9 @@
+{
+  "title": "Tools管理",
+  "loadFailed": "加载工具列表失败，请重试",
+  "columns": {
+    "name": "工具名称",
+    "description": "工具描述"
+  },
+  "emptyTools": "暂无工具数据"
+}

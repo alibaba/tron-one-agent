@@ -18,6 +18,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip, Form, Input } from 'antd';
 import { PlusOutlined, DeleteOutlined, ReloadOutlined, TeamOutlined, EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import { LongTermMemoryConfig } from '../../types/memory.interface';
 import { AgentConfig } from '../../types/agent.interface';
 import { getAllMemories, createMemory, updateMemory, deleteMemory } from '../../services/memory';
@@ -33,48 +34,49 @@ const MemoryPage: React.FC = () => {
   const [editingMemory, setEditingMemory] = useState<LongTermMemoryConfig | null>(null);
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation(['memory', 'common']);
 
   const columns: ColumnsType<LongTermMemoryConfig> = [
     {
-      title: 'ID',
+      title: t('common:id'),
       dataIndex: 'id',
       key: 'id',
       width: 120,
     },
     {
-      title: '名称',
+      title: t('memory:columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '记忆库ID',
+      title: t('memory:columns.memoryLibraryId'),
       dataIndex: 'memoryLibraryId',
       key: 'memoryLibraryId',
       render: (val: string) => val || '-',
     },
     {
-      title: '项目ID',
+      title: t('memory:columns.projectId'),
       dataIndex: 'projectId',
       key: 'projectId',
       render: (val: string) => val || '-',
     },
     {
-      title: '用户画像Schema',
+      title: t('memory:columns.profileSchema'),
       dataIndex: 'profileSchema',
       key: 'profileSchema',
       ellipsis: true,
       render: (val: string) => val || '-',
     },
     {
-      title: '已关联Agents',
+      title: t('memory:columns.relatedAgents'),
       key: 'relatedAgents',
       render: (_, record: LongTermMemoryConfig) => {
         const relatedAgents = getRelatedAgents(record.id);
         return (
           <Tooltip
             title={relatedAgents.length > 0 ?
-              `关联的Agents: ${relatedAgents.map(a => a.name).join(', ')}` :
-              '暂无关联的Agents'
+              t('memory:relatedTooltip', { names: relatedAgents.map(a => a.name).join(', ') }) :
+              t('memory:noRelated')
             }
           >
             <Tag icon={<TeamOutlined />} color={relatedAgents.length > 0 ? 'blue' : 'default'}>
@@ -85,7 +87,7 @@ const MemoryPage: React.FC = () => {
       },
     },
     {
-      title: '状态',
+      title: t('memory:columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record: LongTermMemoryConfig) => (
@@ -96,7 +98,7 @@ const MemoryPage: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('memory:columns.action'),
       key: 'action',
       render: (_, record: LongTermMemoryConfig) => (
         <Space size="middle">
@@ -106,12 +108,12 @@ const MemoryPage: React.FC = () => {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            编辑
+            {t('memory:edit')}
           </Button>
           <Tooltip
             title={getRelatedAgents(record.id).length > 0 ?
-              `该记忆配置已被 ${getRelatedAgents(record.id).length} 个Agent关联，无法删除` :
-              '删除记忆配置'
+              t('memory:deleteDisabled', { count: getRelatedAgents(record.id).length }) :
+              t('memory:deleteEnabled')
             }
           >
             <Button
@@ -121,7 +123,7 @@ const MemoryPage: React.FC = () => {
               onClick={() => handleDelete(record.id)}
               disabled={getRelatedAgents(record.id).length > 0}
             >
-              删除
+              {t('memory:delete')}
             </Button>
           </Tooltip>
         </Space>
@@ -135,8 +137,8 @@ const MemoryPage: React.FC = () => {
       const response = await getAllMemories();
       setMemories(response.data || []);
     } catch (error) {
-      console.error('加载长期记忆配置列表失败:', error);
-      message.error('加载长期记忆配置列表失败，请重试');
+      console.error('Failed to load memory configs:', error);
+      message.error(t('memory:loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -147,7 +149,7 @@ const MemoryPage: React.FC = () => {
       const agentsData = await getAllAgents() as any;
       setAgents(agentsData.data || []);
     } catch (error) {
-      console.error('加载Agents列表失败:', error);
+      console.error('Failed to load agents:', error);
     }
   };
 
@@ -158,16 +160,17 @@ const MemoryPage: React.FC = () => {
   useEffect(() => {
     loadMemories();
     loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleEnabled = async (id: string, enabled: boolean) => {
     try {
       await updateMemory(id, { enabled });
       setMemories(prev => prev.map(m => m.id === id ? { ...m, enabled } : m));
-      message.success(`记忆配置已${enabled ? '启用' : '禁用'}`);
+      message.success(enabled ? t('memory:enableSuccess') : t('memory:disableSuccess'));
     } catch (error) {
-      console.error('状态更新失败:', error);
-      message.error('状态更新失败，请重试');
+      console.error('Status update failed:', error);
+      message.error(t('memory:toggleFailed'));
     }
   };
 
@@ -190,18 +193,18 @@ const MemoryPage: React.FC = () => {
 
       if (editingMemory) {
         await updateMemory(editingMemory.id, { ...values, type: editingMemory.type ?? 1 });
-        message.success('记忆配置更新成功');
+        message.success(t('memory:updateSuccess'));
       } else {
         await createMemory({ ...values, type: 1 });
-        message.success('记忆配置创建成功');
+        message.success(t('memory:createSuccess'));
       }
 
       setModalVisible(false);
       loadMemories();
     } catch (error) {
-      console.error('保存失败:', error);
+      console.error('Save failed:', error);
       if (error instanceof Error) {
-        message.error(error.message || '保存失败，请重试');
+        message.error(error.message || t('memory:saveFailed'));
       }
     } finally {
       setSubmitting(false);
@@ -211,31 +214,31 @@ const MemoryPage: React.FC = () => {
   const handleDelete = (id: string) => {
     const memory = memories.find(m => m.id === id);
     Modal.confirm({
-      title: '确认删除长期记忆配置',
+      title: t('memory:confirmDelete.title'),
       content: (
         <div>
-          <p>您即将删除以下长期记忆配置：</p>
+          <p>{t('memory:confirmDelete.intro')}</p>
           <div style={{ ...commonStyles.confirmBox }}>
-            <p><strong>名称：</strong>{memory?.name}</p>
-            <p><strong>标识：</strong>{memory?.id}</p>
+            <p><strong>{t('memory:confirmDelete.name')}</strong>{memory?.name}</p>
+            <p><strong>{t('memory:confirmDelete.id')}</strong>{memory?.id}</p>
           </div>
           <p style={commonStyles.confirmWarning}>
-            ⚠️ 此操作不可撤销，请确认是否继续？
+            {t('memory:confirmDelete.warning')}
           </p>
         </div>
       ),
-      okText: '确认删除',
-      cancelText: '取消',
+      okText: t('memory:confirmDelete.ok'),
+      cancelText: t('common:cancel'),
       okType: 'danger',
       width: 500,
       onOk: async () => {
         try {
           await deleteMemory(id);
           setMemories(prev => prev.filter(m => m.id !== id));
-          message.success('记忆配置删除成功');
+          message.success(t('memory:deleteSuccess'));
         } catch (error) {
-          console.error('删除失败:', error);
-          message.error('删除失败，请重试');
+          console.error('Delete failed:', error);
+          message.error(t('memory:deleteFailed'));
         }
       },
     });
@@ -243,13 +246,13 @@ const MemoryPage: React.FC = () => {
 
   return (
     <div className={memoryStyles.container}>
-      <Card title="长期记忆管理" extra={
+      <Card title={t('memory:title')} extra={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadMemories} loading={loading}>
-            刷新
+            {t('common:refresh')}
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新增配置
+            {t('memory:addButton')}
           </Button>
         </Space>
       }>
@@ -262,7 +265,7 @@ const MemoryPage: React.FC = () => {
       </Card>
 
       <Modal
-        title={editingMemory ? '编辑长期记忆配置' : '新增长期记忆配置'}
+        title={editingMemory ? t('memory:modal.editTitle') : t('memory:modal.addTitle')}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -272,44 +275,44 @@ const MemoryPage: React.FC = () => {
         }}
         confirmLoading={submitting}
         width={600}
-        okText="保存"
-        cancelText="取消"
+        okText={t('common:save')}
+        cancelText={t('common:cancel')}
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item
             name="name"
-            label="名称"
-            rules={[{ required: true, message: '请输入名称' }]}
+            label={t('memory:modal.name')}
+            rules={[{ required: true, message: t('memory:modal.nameRequired') }]}
           >
-            <Input placeholder="请输入记忆配置名称" />
+            <Input placeholder={t('memory:modal.namePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="memoryLibraryId"
-            label="记忆库ID"
+            label={t('memory:modal.memoryLibraryId')}
           >
-            <Input placeholder="请输入记忆库ID" />
+            <Input placeholder={t('memory:modal.memoryLibraryIdPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="projectId"
-            label="项目ID"
+            label={t('memory:modal.projectId')}
           >
-            <Input placeholder="请输入项目ID" />
+            <Input placeholder={t('memory:modal.projectIdPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="profileSchema"
-            label="用户画像Schema"
+            label={t('memory:modal.profileSchema')}
           >
-            <Input placeholder="请输入用户画像Schema" />
+            <Input placeholder={t('memory:modal.profileSchemaPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="apiKey"
-            label="API Key"
+            label={t('memory:modal.apiKey')}
           >
-            <Input.Password placeholder="请输入API Key（可选）" />
+            <Input.Password placeholder={t('memory:modal.apiKeyPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

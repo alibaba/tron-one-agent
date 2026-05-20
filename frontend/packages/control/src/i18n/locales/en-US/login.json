@@ -1,0 +1,11 @@
+{
+  "title": "Tron OneAgent",
+  "subtitle": "Admin Login",
+  "usernamePlaceholder": "Username",
+  "passwordPlaceholder": "Password",
+  "usernameRequired": "Please input username",
+  "passwordRequired": "Please input password",
+  "submit": "Login",
+  "loginSuccess": "Login successful",
+  "loginFailed": "Login failed, please check username and password"
+}

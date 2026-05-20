@@ -29,6 +29,7 @@ import {
   SessionMessageStatus,
 } from "../../types/enums";
 import { useTTS } from "../../hooks/useTTS";
+import { t } from "../../locale";
 
 /**
  * Extract plain text from markdown, excluding HTML tags and their content
@@ -290,7 +291,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         return (
           <details className={styles.thinkingContent}>
             <summary className={styles.thinkingSummary}>
-              <span>深度思考</span>
+              <span>{t('deepThinking')}</span>
             </summary>
             <div className={styles.thinkingBody}>
               <TextContentRender
@@ -344,21 +345,21 @@ const MessageItem: React.FC<MessageItemProps> = ({
           return (
             <div className={styles.messageStatus}>
               <i className="fas fa-spinner fa-spin"></i>
-              <span>发送中</span>
+              <span>{t('msgStatusSending')}</span>
             </div>
           );
         case SessionMessageStatus.SUCCEED:
           return (
             <div className={styles.messageStatus}>
               <i className="fas fa-check-circle"></i>
-              <span>已完成</span>
+              <span>{t('msgStatusCompleted')}</span>
             </div>
           );
         case SessionMessageStatus.FAILED:
           return (
             <div className={styles.messageStatus} style={{ color: "#ff4d4f" }}>
               <i className="fas fa-exclamation-triangle"></i>
-              <span>{"消息发送失败，请稍后重试"}</span>
+              <span>{t('messageSendFailed')}</span>
             </div>
           );
         default:
@@ -370,28 +371,28 @@ const MessageItem: React.FC<MessageItemProps> = ({
           return (
             <div className={styles.messageStatus}>
               <i className="fas fa-spinner fa-spin"></i>
-              <span>处理中</span>
+              <span>{t('msgStatusProcessing')}</span>
             </div>
           );
         case SessionMessageStatus.SUCCEED:
           return (
             <div className={styles.messageStatus}>
               <i className="fas fa-check-circle"></i>
-              <span>已完成</span>
+              <span>{t('msgStatusCompleted')}</span>
             </div>
           );
         case SessionMessageStatus.FAILED:
           return (
             <div className={styles.messageStatus} style={{ color: "#ff4d4f" }}>
               <i className="fas fa-exclamation-triangle"></i>
-              <span>{agentMessage?.errorMessage || "消息获取失败，请稍后重试或者刷新页面尝试获取消息"}</span>
+              <span>{agentMessage?.errorMessage || t('messageGetFailed')}</span>
             </div>
           );
         case SessionMessageStatus.CANCELLED:
           return (
             <div className={styles.messageStatus} style={{ color: "#faad14" }}>
               <i className="fas fa-ban"></i>
-              <span>已取消</span>
+              <span>{t('msgStatusCancelled')}</span>
               {agentMessage?.errorMessage && (
                 <span className={styles.errorMessage}>{agentMessage.errorMessage}</span>
               )}
@@ -424,7 +425,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <button
         className={`${styles.ttsIconBtn}${isPlaying ? ` ${styles.ttsPlaying}` : ''}`}
         onClick={handleTTSClick}
-        title={isPlaying ? '停止播放' : '语音播放'}
+        title={isPlaying ? t('stopVoice') : t('playVoice')}
       >
         {isPlaying ? (
           <i className="fas fa-stop-circle"></i>
@@ -450,7 +451,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className={styles.messageContent}>
         <div className={styles.messageHeader}>
           <span className={styles.messageSender}>
-            {isUser ? userName || "用户" : agentName ? agentName : "AI Agent"}
+            {isUser ? userName || t('userFallback') : agentName ? agentName : t('aiAgentFallback')}
           </span>
           <span className={styles.messageTime}>
             {formatTime(message.gmtCreate)}

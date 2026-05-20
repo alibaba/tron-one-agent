@@ -18,6 +18,7 @@
 import React, { useState } from 'react';
 import { Button, Modal, Form, Input, message } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from '../../../types/agent.interface';
 import { updateAgent } from '../../../services/agent';
 
@@ -30,6 +31,7 @@ interface RenameButtonProps {
 }
 
 const RenameButton: React.FC<RenameButtonProps> = ({ agent, onRename, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
@@ -51,7 +53,7 @@ const RenameButton: React.FC<RenameButtonProps> = ({ agent, onRename, onSuccess,
         // 内置处理逻辑：调用API更新agent名称
         if (agent.id) {
           await updateAgent(agent.id, { name: values.name });
-          message.success('重命名成功');
+          message.success(t('agents:rename.success'));
         } else {
           throw new Error('Agent ID不存在');
         }
@@ -64,13 +66,13 @@ const RenameButton: React.FC<RenameButtonProps> = ({ agent, onRename, onSuccess,
       
       setIsModalVisible(false);
     } catch (error) {
-      console.error('重命名操作失败:', error);
+      console.error('Rename failed:', error);
       
       // 调用错误回调
       if (onError) {
         onError(error);
       } else {
-        message.error('重命名失败，请重试');
+        message.error(t('agents:rename.failed'));
       }
     } finally {
       setLoading(false);
@@ -89,26 +91,26 @@ const RenameButton: React.FC<RenameButtonProps> = ({ agent, onRename, onSuccess,
         icon={<EditOutlined />}
         onClick={handleClick}
       >
-        {children || '更名'}
+        {children || t('agents:rename.button')}
       </Button>
 
         <Modal
-          title="重命名Agent"
+          title={t('agents:rename.modalTitle')}
           open={isModalVisible}
           onOk={handleSubmit}
           onCancel={handleModalClose}
           width={400}
-          okText="确认更名"
-          cancelText="取消"
+          okText={t('agents:rename.confirm')}
+          cancelText={t('common:cancel')}
           confirmLoading={loading}
         >
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Agent名称"
-            rules={[{ required: true, message: '请输入Agent名称' }]}
+            label={t('agents:rename.label')}
+            rules={[{ required: true, message: t('agents:rename.required') }]}
           >
-            <Input placeholder="请输入Agent名称" />
+            <Input placeholder={t('agents:rename.placeholder')} />
           </Form.Item>
         </Form>
       </Modal>

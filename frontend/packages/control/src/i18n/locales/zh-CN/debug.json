@@ -1,0 +1,103 @@
+{
+  "agent": {
+    "title": "Agent调试",
+    "panel": "调试面板",
+    "protocol": "协议",
+    "autoTts": "自动TTS",
+    "wsConnected": "已连接",
+    "wsDisconnected": "未连接",
+    "selectAgent": "选择Agent",
+    "selectAgentPlaceholder": "请选择Agent",
+    "eventsTab": "事件 ({{count}})",
+    "sessionsTab": "会话历史",
+    "current": "当前",
+    "viewDetail": "查看",
+    "eventDetail": "事件详情 (ID: {{id}})",
+    "columnId": "ID",
+    "columnType": "类型",
+    "columnContent": "内容",
+    "unknownType": "未知({{type}})",
+    "newSession": "新会话",
+    "errors": {
+      "wsNotReady": "WebSocket 未连接，请等待连接建立后再发送",
+      "wsNotReadyHitl": "WebSocket 未连接，请等待连接建立后再提交",
+      "createSessionFailed": "创建会话失败",
+      "createSessionFailedRetry": "创建会话失败，请重试",
+      "chatFailed": "对话失败",
+      "chatCreateFailed": "对话创建失败",
+      "submitFailed": "提交失败",
+      "loadSessionFailed": "加载会话失败"
+    },
+    "events": {
+      "sessionNameChanged": "会话名变更",
+      "newUserInput": "用户输入",
+      "newAgentMessage": "Agent消息",
+      "agentMessageAppendContent": "Agent追加内容",
+      "agentMessageStatusChanged": "Agent消息状态变更",
+      "taskAppendContent": "Task追加内容",
+      "taskStatusChanged": "Task状态变更",
+      "actionAppendContent": "Action追加内容",
+      "actionStatusChanged": "Action状态变更"
+    }
+  },
+  "tool": {
+    "title": "Tool调试",
+    "schemaTitle": "工具 Schema",
+    "panel": "调试面板",
+    "selectTool": "选择工具",
+    "selectToolPlaceholder": "请选择要调试的工具",
+    "selectToolEmpty": "请先选择具体需要调试的工具",
+    "debugParams": "调试参数",
+    "executeDebug": "执行调试",
+    "debugResult": "调试结果",
+    "waitingResult": "等待调试结果...",
+    "errors": {
+      "fetchToolsFailed": "获取工具列表失败",
+      "fetchSchemaFailed": "获取工具Schema失败",
+      "debugFailed": "调试工具失败"
+    }
+  },
+  "mcp": {
+    "title": "Mcp调试",
+    "schemaTitle": "Mcp Tool Schema",
+    "panel": "调试面板",
+    "selectMcp": "选择MCP",
+    "selectMcpPlaceholder": "请选择要调试的MCP",
+    "selectTool": "选择工具",
+    "selectToolPlaceholder": "请选择要调试的工具",
+    "selectToolEmpty": "请先选择具体需要调试的工具",
+    "debugParams": "调试参数",
+    "executeDebug": "执行调试",
+    "debugResult": "调试结果",
+    "waitingResult": "等待调试结果...",
+    "errors": {
+      "fetchMcpsFailed": "获取MCP列表失败",
+      "fetchToolsFailed": "获取工具Schema失败",
+      "debugFailed": "调试工具失败"
+    }
+  },
+  "kb": {
+    "title": "知识库调试",
+    "panel": "调试面板",
+    "info": "知识库信息",
+    "idLabel": "知识库ID:",
+    "nameLabel": "知识库名称:",
+    "selectKb": "选择知识库",
+    "selectKbPlaceholder": "请选择要调试的知识库",
+    "selectKbEmpty": "请先选择具体需要调试的知识库",
+    "debugParams": "调试参数",
+    "debugResult": "调试结果",
+    "waitingResult": "等待调试结果...",
+    "queryLabel": "检索内容",
+    "queryPlaceholder": "请输入检索内容",
+    "limitLabel": "限制数量",
+    "scoreLabel": "相似度阈值",
+    "searchBtn": "检索",
+    "debugSuccess": "调试成功",
+    "errors": {
+      "kbRequired": "请先选择知识库",
+      "fetchKbsFailed": "获取知识库列表失败",
+      "debugFailed": "调试知识库失败"
+    }
+  }
+}

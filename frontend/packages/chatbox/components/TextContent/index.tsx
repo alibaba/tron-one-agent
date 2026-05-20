@@ -24,6 +24,7 @@ import rehypeRaw from "rehype-raw";
 import "github-markdown-css/github-markdown-light.css";
 import "katex/dist/katex.min.css";
 import styles from "./index.module.less";
+import { t } from "../../locale";
 
 export interface TextContentProps {
   text: string;
@@ -82,7 +83,7 @@ const TextContentRender: React.FC<TextContentProps> = ({
       return (
         <span>
           <i className="fas fa-spinner fa-spin"></i>
-          <span>{placeholder || "正在加载..."}</span>
+          <span>{placeholder || t('loading')}</span>
         </span>
       );
     }
@@ -110,7 +111,7 @@ const TextContentRender: React.FC<TextContentProps> = ({
         ) : (
           <div className={styles.parseError}>
             <div className={styles.errorMessage}>
-              解析错误: {String(parseState.error)}
+              {t('parseError')}: {String(parseState.error)}
             </div>
             <div className={styles.rawContent}>{children}</div>
           </div>

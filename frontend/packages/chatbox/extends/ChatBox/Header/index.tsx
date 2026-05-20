@@ -16,6 +16,7 @@
 
 
 import styles from "./index.module.less";
+import { t } from "../../../locale";
 
 export interface ChatBoxHeaderProps {
   sessionName?: string;
@@ -27,7 +28,7 @@ export default function ChatBoxHeader({
 }: ChatBoxHeaderProps) {
   return (
     <div className={styles.chatHeader}>
-      <div>{sessionName || "新会话"}</div>
+      <div>{sessionName || t('newSession')}</div>
       <div
         onClick={onCreateSessionClick}
         style={{
@@ -41,7 +42,7 @@ export default function ChatBoxHeader({
         }}
       >
         <i className="fas fa-plus"></i>
-        新建会话
+        {t('newSessionBtn')}
       </div>
     </div>
   );

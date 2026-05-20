@@ -1,0 +1,11 @@
+{
+  "tool": {
+    "loadSkill": "加载技能",
+    "webSearch": "网络搜索",
+    "knowledgeRetrieval": "知识检索",
+    "executeCommand": "执行命令",
+    "updateFile": "更新文件",
+    "readFile": "读取文件",
+    "readDirectory": "读取目录"
+  }
+}

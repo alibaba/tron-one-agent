@@ -21,6 +21,7 @@ import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useInputComposition } from './hooks/useInputComposition';
 import { useASR } from './hooks/useASR';
 import styles from './index.module.less';
+import { t } from '../../../locale';
 
 export interface NormalMessageInputProps extends BaseMessageInputProps {}
 
@@ -109,7 +110,7 @@ export function NormalMessageInput({
             className={`${styles.voiceButton} ${isRecording ? styles.recording : ''}`}
             onClick={handleVoiceClick}
             disabled={disabled}
-            title={isRecording ? '停止录音' : '语音输入'}
+            title={isRecording ? t('stopRecording') : t('voiceInput')}
           >
             <i className={`fas ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
           </button>
@@ -121,7 +122,7 @@ export function NormalMessageInput({
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          placeholder={isRecording ? '正在录音...' : (placeholder || '输入消息... (Enter发送，Shift+Enter换行)')}
+          placeholder={isRecording ? t('recording') : (placeholder || t('chatPlaceholder'))}
           className={styles.messageTextarea}
           rows={2}
           disabled={disabled || isRecording}

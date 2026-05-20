@@ -18,6 +18,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
 import { getToken, clearAuth } from '@/utils/auth';
+import i18n from '@/i18n';
 
 // 获取baseURL，优先使用环境变量，否则使用默认值
 const getBaseURL = () => {
@@ -43,7 +44,7 @@ request.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("请求拦截器错误:", error);
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -55,8 +56,8 @@ request.interceptors.response.use(
 
     // 根据业务需要处理响应数据
     if (data.code !== undefined && data.code !== 200) {
-      message.error(data.message || "请求失败");
-      return Promise.reject(new Error(data.message || "请求失败"));
+      message.error(data.message || i18n.t('common:requestFailed'));
+      return Promise.reject(new Error(data.message || i18n.t('common:requestFailed')));
     }
 
     console.log(".interceptors.response: ", data);
@@ -64,7 +65,7 @@ request.interceptors.response.use(
     return data;
   },
   (error) => {
-    console.error("响应拦截器错误:", error);
+    console.error("Response interceptor error:", error);
 
     // 处理HTTP错误状态码
     if (error.response) {
@@ -72,29 +73,29 @@ request.interceptors.response.use(
 
       switch (status) {
         case 400:
-          message.error(data?.message || "请求参数错误");
+          message.error(data?.message || i18n.t('common:requestParamError'));
           break;
         case 401:
-          message.error("未授权，请重新登录");
+          message.error(i18n.t('common:unauthorized'));
           clearAuth();
           window.location.hash = '#/login';
           break;
         case 403:
-          message.error("拒绝访问");
+          message.error(i18n.t('common:forbidden'));
           break;
         case 404:
-          message.error("请求的资源不存在");
+          message.error(i18n.t('common:notFoundResource'));
           break;
         case 500:
-          message.error("服务器内部错误");
+          message.error(i18n.t('common:serverError'));
           break;
         default:
-          message.error(data?.message || `请求失败 (${status})`);
+          message.error(data?.message || i18n.t('common:requestFailedWithStatus', { status }));
       }
     } else if (error.request) {
-      message.error("网络错误，请检查网络连接");
+      message.error(i18n.t('common:networkError'));
     } else {
-      message.error("请求配置错误");
+      message.error(i18n.t('common:requestConfigError'));
     }
 
     return Promise.reject(error);

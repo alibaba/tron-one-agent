@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   Select,
@@ -43,6 +44,7 @@ interface KnowledgeBase {
 }
 
 const KbDebugger: React.FC = () => {
+  const { t } = useTranslation(["debug", "common"]);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedKb, setSelectedKb] = useState<string>("");
@@ -57,7 +59,7 @@ const KbDebugger: React.FC = () => {
       setKnowledgeBases(result.data || []);
     } catch (error) {
       console.error("获取知识库列表失败:", error);
-      message.error("获取知识库列表失败");
+      message.error(t("debug:kb.errors.fetchKbsFailed"));
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ const KbDebugger: React.FC = () => {
 
   const debugKb = async () => {
     if (!selectedKb) {
-      message.warning("请先选择知识库");
+      message.warning(t("debug:kb.errors.kbRequired"));
       return;
     }
 
@@ -78,10 +80,10 @@ const KbDebugger: React.FC = () => {
         form.getFieldsValue()
       );
       setDebugResult(result);
-      message.success("调试成功");
+      message.success(t("debug:kb.debugSuccess"));
     } catch (error: any) {
-      message.error("调试知识库失败");
-      setDebugResult({ error: error.message || "调试知识库失败" });
+      message.error(t("debug:kb.errors.debugFailed"));
+      setDebugResult({ error: error.message || t("debug:kb.errors.debugFailed") });
     } finally {
       setDebugLoading(false);
     }
@@ -94,12 +96,13 @@ const KbDebugger: React.FC = () => {
 
   useEffect(() => {
     fetchAllKbs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className={styles.container}>
       <Card
-        title="知识库调试"
+        title={t("debug:kb.title")}
         className={styles.pageCard}
         classNames={{
           body: styles.pageCardBody,
@@ -108,14 +111,14 @@ const KbDebugger: React.FC = () => {
       >
         <Row gutter={16} style={{ width: "100%" }}>
           <Col span={12}>
-            <Card title="知识库信息">
+            <Card title={t("debug:kb.info")}>
               {selectedKb ? (
                 <Card size="small" className={styles.schemaCard}>
                   <div style={{ padding: "16px" }}>
-                    <Text strong>知识库ID: </Text>
+                    <Text strong>{t("debug:kb.idLabel")} </Text>
                     <Text>{selectedKb}</Text>
                     <br />
-                    <Text strong>知识库名称: </Text>
+                    <Text strong>{t("debug:kb.nameLabel")} </Text>
                     <Text>
                       {knowledgeBases.find((kb) => kb.id === selectedKb)
                         ?.name || "-"}
@@ -124,19 +127,19 @@ const KbDebugger: React.FC = () => {
                 </Card>
               ) : (
                 <div style={{ textAlign: "center", padding: "24px" }}>
-                  <Text type="secondary">请先选择具体需要调试的知识库</Text>
+                  <Text type="secondary">{t("debug:kb.selectKbEmpty")}</Text>
                 </div>
               )}
 
               {(debugResult || debugLoading) && (
                 <div className={styles.section} style={{ marginTop: 24 }}>
-                  <Title level={5}>调试结果</Title>
+                  <Title level={5}>{t("debug:kb.debugResult")}</Title>
                   <Spin spinning={debugLoading}>
                     <Card size="small" className={styles.resultCard}>
                       <pre className={styles.jsonDisplay}>
                         {debugResult
                           ? JSON.stringify(debugResult, null, 2)
-                          : "等待调试结果..."}
+                          : t("debug:kb.waitingResult")}
                       </pre>
                     </Card>
                   </Spin>
@@ -147,12 +150,12 @@ const KbDebugger: React.FC = () => {
 
           {/* 右侧卡片：选择知识库、调试面板等 */}
           <Col span={12}>
-            <Card title="调试面板">
+            <Card title={t("debug:kb.panel")}>
               <div className={styles.section}>
-                <Title level={5}>选择知识库</Title>
+                <Title level={5}>{t("debug:kb.selectKb")}</Title>
                 <Select
                   showSearch
-                  placeholder="请选择要调试的知识库"
+                  placeholder={t("debug:kb.selectKbPlaceholder")}
                   optionFilterProp="children"
                   onChange={handleKbChange}
                   value={selectedKb}
@@ -177,23 +180,16 @@ const KbDebugger: React.FC = () => {
               {selectedKb && (
                 <div className={styles.parametersWrap}>
                   <div className={styles.parameters}>
-                    {/* <TextArea
-                      placeholder='输入调试参数（JSON格式），例如: {"query": "检索内容"}'
-                      value={paramsInput}
-                      onChange={(e) => setParamsInput(e.target.value)}
-                      rows={10}
-                      style={{ marginBottom: 16, fontFamily: "monospace" }}
-                    /> */}
-                    <Form form={form} layout="vertical" title="调试参数" onFinish={debugKb}>
+                    <Form form={form} layout="vertical" title={t("debug:kb.debugParams")} onFinish={debugKb}>
                       <Form.Item
-                        label="检索内容"
+                        label={t("debug:kb.queryLabel")}
                         name="query"
-                        rules={[{ required: true, message: "请输入检索内容" }]}
+                        rules={[{ required: true, message: t("debug:kb.queryPlaceholder") }]}
                       >
                         <Input placeholder="query" />
                       </Form.Item>
 
-                      <Form.Item label="限制数量" name="limit" initialValue={5}>
+                      <Form.Item label={t("debug:kb.limitLabel")} name="limit" initialValue={5}>
                         <InputNumber
                           placeholder="limit"
                           min={1}
@@ -202,7 +198,7 @@ const KbDebugger: React.FC = () => {
                         />
                       </Form.Item>
 
-                      <Form.Item label="相似度阈值" name="scoreThreshold" initialValue={0.2}>
+                      <Form.Item label={t("debug:kb.scoreLabel")} name="scoreThreshold" initialValue={0.2}>
                         <InputNumber
                           placeholder="scoreThreshold"
                           min={0.05}
@@ -216,7 +212,7 @@ const KbDebugger: React.FC = () => {
                         block
                         htmlType="submit"
                       >
-                        检索
+                        {t("debug:kb.searchBtn")}
                       </Button>
                     </Form>
                   </div>

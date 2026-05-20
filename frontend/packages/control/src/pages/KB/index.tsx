@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip } from 'antd';
 import { DeleteOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -29,24 +30,25 @@ import { commonStyles } from '../../styles/tokens';
 import kbStyles from './index.module.less';
 
 const KBPage: React.FC = () => {
+  const { t } = useTranslation(['kb', 'common']);
   const [knowledgeBases, setKnowledgeBases] = useState<AnyKnowledgeBaseConfig[]>([]);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);
 
   const columns: ColumnsType<AnyKnowledgeBaseConfig> = [
     {
-      title: 'ID',
+      title: t('common:id'),
       dataIndex: 'id',
       key: 'id',
       width: 80,
     },
     {
-      title: '名称',
+      title: t('kb:columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '类型',
+      title: t('kb:columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: KnowledgeBaseType) => (
@@ -58,15 +60,15 @@ const KBPage: React.FC = () => {
       ),
     },
     {
-      title: '关键配置',
+      title: t('kb:columns.config'),
       key: 'config',
       render: (_, record: AnyKnowledgeBaseConfig) => {
         if (record.type === KnowledgeBaseType.BAILIAN) {
           const bailian = record as any;
           return (
             <Space size="small" wrap>
-              <span>工作空间: {bailian.workspaceId}</span>
-              <span>索引: {bailian.indexId}</span>
+              <span>{t('kb:workspace')}: {bailian.workspaceId}</span>
+              <span>{t('kb:index')}: {bailian.indexId}</span>
             </Space>
           );
         }
@@ -74,8 +76,8 @@ const KBPage: React.FC = () => {
           const es = record as ElasticSearchKnowledgeBaseConfig;
           return (
             <Space size="small" wrap>
-              <span>地址: {es.url}</span>
-              <span>索引: {es.indexName}</span>
+              <span>{t('kb:address')}: {es.url}</span>
+              <span>{t('kb:index')}: {es.indexName}</span>
             </Space>
           );
         }
@@ -83,15 +85,15 @@ const KBPage: React.FC = () => {
       },
     },
     {
-      title: '已关联Agents',
+      title: t('kb:columns.relatedAgents'),
       key: 'relatedAgents',
       render: (_, record: AnyKnowledgeBaseConfig) => {
         const relatedAgents = getRelatedAgents(record.id);
         return (
           <Tooltip 
             title={relatedAgents.length > 0 ? 
-              `关联的Agents: ${relatedAgents.map(agent => agent.name).join(', ')}` : 
-              '暂无关联的Agents'
+              t('kb:relatedTooltip', { names: relatedAgents.map(agent => agent.name).join(', ') }) : 
+              t('kb:noRelated')
             }
             placement="topLeft"
           >
@@ -103,7 +105,7 @@ const KBPage: React.FC = () => {
       },
     },
     {
-      title: '状态',
+      title: t('kb:columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record: AnyKnowledgeBaseConfig) => (
@@ -114,33 +116,33 @@ const KBPage: React.FC = () => {
       ),
     },
     {
-      title: '重写',
+      title: t('kb:columns.rewrite'),
       key: 'enableRewrite',
       render: (_, record: AnyKnowledgeBaseConfig) => {
         if (record.type !== KnowledgeBaseType.BAILIAN) return <span>-</span>;
         const bailian = record as any;
         return (
           <Tag color={bailian.enableRewrite ? 'green' : 'red'}>
-            {bailian.enableRewrite ? '启用' : '禁用'}
+            {bailian.enableRewrite ? t('kb:enabled') : t('kb:disabled')}
           </Tag>
         );
       },
     },
     {
-      title: '重排',
+      title: t('kb:columns.rerank'),
       key: 'enableRerank',
       render: (_, record: AnyKnowledgeBaseConfig) => {
         if (record.type !== KnowledgeBaseType.BAILIAN) return <span>-</span>;
         const bailian = record as any;
         return (
           <Tag color={bailian.enableRerank ? 'green' : 'red'}>
-            {bailian.enableRerank ? '启用' : '禁用'}
+            {bailian.enableRerank ? t('kb:enabled') : t('kb:disabled')}
           </Tag>
         );
       },
     },
     {
-      title: '操作',
+      title: t('kb:columns.action'),
       key: 'action',
       render: (_, record: AnyKnowledgeBaseConfig) => (
         <Space size="middle">
@@ -151,12 +153,12 @@ const KBPage: React.FC = () => {
             buttonType="link"
             size="small"
           >
-            编辑
+            {t('kb:edit')}
           </KbManageButton>
           <Tooltip 
             title={getRelatedAgents(record.id).length > 0 ? 
-              `该知识库已被 ${getRelatedAgents(record.id).length} 个Agent关联，无法删除` : 
-              '删除知识库'
+              t('kb:deleteDisabled', { count: getRelatedAgents(record.id).length }) : 
+              t('kb:deleteEnabled')
             }
           >
             <Button
@@ -166,7 +168,7 @@ const KBPage: React.FC = () => {
               onClick={() => handleDelete(record.id)}
               disabled={getRelatedAgents(record.id).length > 0}
             >
-              删除
+              {t('kb:delete')}
             </Button>
           </Tooltip>
         </Space>
@@ -181,7 +183,7 @@ const KBPage: React.FC = () => {
       setKnowledgeBases(response.data || []);
     } catch (error) {
       console.error('加载知识库列表失败:', error);
-      message.error('加载知识库列表失败，请重试');
+      message.error(t('kb:loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -193,7 +195,7 @@ const KBPage: React.FC = () => {
       setAgents(agentsData.data || []);
     } catch (error) {
       console.error('加载Agents列表失败:', error);
-      message.error('加载Agents列表失败，请重试');
+      message.error(t('kb:loadAgentsFailed'));
     }
   };
 
@@ -206,6 +208,7 @@ const KBPage: React.FC = () => {
   useEffect(() => {
     loadKnowledgeBases();
     loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleEnabled = async (id: string, enabled: boolean) => {
@@ -214,10 +217,10 @@ const KBPage: React.FC = () => {
       setKnowledgeBases(prev => prev.map(kb => 
         kb.id === id ? { ...kb, enabled } : kb
       ));
-      message.success(`知识库已${enabled ? '启用' : '禁用'}`);
+      message.success(enabled ? t('kb:enableSuccess') : t('kb:disableSuccess'));
     } catch (error) {
       console.error('状态更新失败:', error);
-      message.error('状态更新失败，请重试');
+      message.error(t('kb:toggleFailed'));
     }
   };
 
@@ -227,40 +230,40 @@ const KBPage: React.FC = () => {
     // 根据类型获取配置摘要
     const configSummary = knowledgeBase
       ? knowledgeBase.type === KnowledgeBaseType.BAILIAN
-        ? `工作空间: ${(knowledgeBase as any).workspaceId}`
+        ? `${t('kb:workspace')}: ${(knowledgeBase as any).workspaceId}`
         : knowledgeBase.type === KnowledgeBaseType.ELASTIC_SEARCH
-          ? `地址: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).url} | 索引: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).indexName}`
+          ? `${t('kb:address')}: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).url} | ${t('kb:index')}: ${(knowledgeBase as ElasticSearchKnowledgeBaseConfig).indexName}`
           : '-'
       : '';
     
     Modal.confirm({
-      title: '确认删除知识库',
+      title: t('kb:confirmDelete.title'),
       content: (
         <div>
-          <p>您即将删除以下知识库：</p>
+          <p>{t('kb:confirmDelete.intro')}</p>
           <div style={commonStyles.confirmBox}>
-            <p><strong>名称：</strong>{knowledgeBase?.name}</p>
-            <p><strong>ID：</strong>{knowledgeBase?.id}</p>
-            <p><strong>类型：</strong>{knowledgeBase?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ElasticSearch'}</p>
-            <p><strong>配置：</strong>{configSummary}</p>
+            <p><strong>{t('kb:confirmDelete.name')}</strong>{knowledgeBase?.name}</p>
+            <p><strong>{t('kb:confirmDelete.id')}</strong>{knowledgeBase?.id}</p>
+            <p><strong>{t('kb:confirmDelete.type')}</strong>{knowledgeBase?.type === KnowledgeBaseType.BAILIAN ? 'Bailian' : 'ElasticSearch'}</p>
+            <p><strong>{t('kb:confirmDelete.config')}</strong>{configSummary}</p>
           </div>
           <p style={commonStyles.confirmWarning}>
-            ⚠️ 此操作不可撤销，请确认是否继续？
+            {t('kb:confirmDelete.warning')}
           </p>
         </div>
       ),
-      okText: '确认删除',
-      cancelText: '取消',
+      okText: t('kb:confirmDelete.ok'),
+      cancelText: t('common:cancel'),
       okType: 'danger',
       width: 500,
       onOk: async () => {
         try {
           await deleteKb(id);
           setKnowledgeBases(prev => prev.filter(kb => kb.id !== id));
-          message.success('知识库删除成功');
+          message.success(t('kb:deleteSuccess'));
         } catch (error) {
           console.error('删除失败:', error);
-          message.error('删除失败，请重试');
+          message.error(t('kb:deleteFailed'));
         }
       },
     });
@@ -277,14 +280,14 @@ const KBPage: React.FC = () => {
 
   return (
     <div className={kbStyles.container}>
-      <Card title="知识库管理" extra={
+      <Card title={t('kb:title')} extra={
         <Space>
           <Button 
             icon={<ReloadOutlined />} 
             onClick={loadKnowledgeBases}
             loading={loading}
           >
-            刷新
+            {t('common:refresh')}
           </Button>
           <KbManageButton onSuccess={handleSuccess} onError={handleError} />
         </Space>

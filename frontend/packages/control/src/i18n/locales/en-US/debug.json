@@ -1,0 +1,103 @@
+{
+  "agent": {
+    "title": "Agent Debugger",
+    "panel": "Debug Panel",
+    "protocol": "Protocol",
+    "autoTts": "Auto TTS",
+    "wsConnected": "Connected",
+    "wsDisconnected": "Disconnected",
+    "selectAgent": "Select Agent",
+    "selectAgentPlaceholder": "Please select an agent",
+    "eventsTab": "Events ({{count}})",
+    "sessionsTab": "Session History",
+    "current": "Current",
+    "viewDetail": "View",
+    "eventDetail": "Event Detail (ID: {{id}})",
+    "columnId": "ID",
+    "columnType": "Type",
+    "columnContent": "Content",
+    "unknownType": "Unknown({{type}})",
+    "newSession": "New Session",
+    "errors": {
+      "wsNotReady": "WebSocket is not connected. Please wait for the connection to be established before sending.",
+      "wsNotReadyHitl": "WebSocket is not connected. Please wait for the connection to be established before submitting.",
+      "createSessionFailed": "Failed to create session",
+      "createSessionFailedRetry": "Failed to create session, please retry",
+      "chatFailed": "Chat failed",
+      "chatCreateFailed": "Failed to start chat",
+      "submitFailed": "Submit failed",
+      "loadSessionFailed": "Failed to load session"
+    },
+    "events": {
+      "sessionNameChanged": "Session Renamed",
+      "newUserInput": "User Input",
+      "newAgentMessage": "Agent Message",
+      "agentMessageAppendContent": "Agent Message Append",
+      "agentMessageStatusChanged": "Agent Message Status Changed",
+      "taskAppendContent": "Task Content Append",
+      "taskStatusChanged": "Task Status Changed",
+      "actionAppendContent": "Action Content Append",
+      "actionStatusChanged": "Action Status Changed"
+    }
+  },
+  "tool": {
+    "title": "Tool Debugger",
+    "schemaTitle": "Tool Schema",
+    "panel": "Debug Panel",
+    "selectTool": "Select Tool",
+    "selectToolPlaceholder": "Please select a tool to debug",
+    "selectToolEmpty": "Please select a tool to debug first",
+    "debugParams": "Debug Parameters",
+    "executeDebug": "Run Debug",
+    "debugResult": "Debug Result",
+    "waitingResult": "Waiting for debug result...",
+    "errors": {
+      "fetchToolsFailed": "Failed to fetch tool list",
+      "fetchSchemaFailed": "Failed to fetch tool schema",
+      "debugFailed": "Failed to debug tool"
+    }
+  },
+  "mcp": {
+    "title": "MCP Debugger",
+    "schemaTitle": "MCP Tool Schema",
+    "panel": "Debug Panel",
+    "selectMcp": "Select MCP",
+    "selectMcpPlaceholder": "Please select an MCP to debug",
+    "selectTool": "Select Tool",
+    "selectToolPlaceholder": "Please select a tool to debug",
+    "selectToolEmpty": "Please select a tool to debug first",
+    "debugParams": "Debug Parameters",
+    "executeDebug": "Run Debug",
+    "debugResult": "Debug Result",
+    "waitingResult": "Waiting for debug result...",
+    "errors": {
+      "fetchMcpsFailed": "Failed to fetch MCP list",
+      "fetchToolsFailed": "Failed to fetch tool schema",
+      "debugFailed": "Failed to debug tool"
+    }
+  },
+  "kb": {
+    "title": "Knowledge Base Debugger",
+    "panel": "Debug Panel",
+    "info": "Knowledge Base Info",
+    "idLabel": "KB ID:",
+    "nameLabel": "KB Name:",
+    "selectKb": "Select Knowledge Base",
+    "selectKbPlaceholder": "Please select a knowledge base to debug",
+    "selectKbEmpty": "Please select a knowledge base to debug first",
+    "debugParams": "Debug Parameters",
+    "debugResult": "Debug Result",
+    "waitingResult": "Waiting for debug result...",
+    "queryLabel": "Query",
+    "queryPlaceholder": "Please input the query",
+    "limitLabel": "Limit",
+    "scoreLabel": "Score Threshold",
+    "searchBtn": "Search",
+    "debugSuccess": "Debug succeeded",
+    "errors": {
+      "kbRequired": "Please select a knowledge base first",
+      "fetchKbsFailed": "Failed to fetch knowledge base list",
+      "debugFailed": "Failed to debug knowledge base"
+    }
+  }
+}

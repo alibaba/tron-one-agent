@@ -34,6 +34,7 @@ import {
   DeleteOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from "../../../types/agent.interface";
 import { McpClientConfig } from "../../../types/mcp.interface";
 import { updateAgent } from "../../../services/agent";
@@ -57,6 +58,7 @@ const McpButton: React.FC<McpButtonProps> = ({
   onError,
   children,
 }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [availableMcps, setAvailableMcps] = useState<McpClientConfig[]>([]);
@@ -71,8 +73,8 @@ const McpButton: React.FC<McpButtonProps> = ({
       const mcpsData = await getAllMcps();
       setAvailableMcps(mcpsData.data || []);
     } catch (error) {
-      console.error("加载MCP客户端列表失败:", error);
-      message.error("加载MCP客户端列表失败");
+      console.error("Load MCP client list failed:", error);
+      message.error(t('agents:mcp.loadFailed'));
     } finally {
       setMcpsLoading(false);
     }
@@ -113,12 +115,12 @@ const McpButton: React.FC<McpButtonProps> = ({
 
   const handleAddMcp = () => {
     if (!selectedMcp) {
-      message.warning("请选择要添加的MCP客户端");
+      message.warning(t('agents:mcp.selectPlaceholder'));
       return;
     }
 
     if (pendingMcps?.some((mcp) => mcp.id === selectedMcp)) {
-      message.warning("该MCP客户端已存在");
+      message.warning(t('agents:mcp.duplicate'));
       return;
     }
 
@@ -188,7 +190,7 @@ const McpButton: React.FC<McpButtonProps> = ({
         });
 
         await updateAgent(agent.id, { mcpClients: mcpConfigs });
-        message.success("MCP客户端配置保存成功");
+        message.success(t('agents:mcp.saveSuccess'));
 
         // 调用成功回调
         if (onSuccess) {
@@ -200,13 +202,13 @@ const McpButton: React.FC<McpButtonProps> = ({
         throw new Error("Agent ID不存在");
       }
     } catch (error) {
-      console.error("MCP客户端配置保存失败:", error);
+      console.error("MCP config save failed:", error);
 
       // 调用错误回调
       if (onError) {
         onError(error);
       } else {
-        message.error("MCP客户端配置保存失败，请重试");
+        message.error(t('agents:mcp.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -274,17 +276,17 @@ const McpButton: React.FC<McpButtonProps> = ({
         icon={<ApiOutlined />}
         onClick={handleClick}
       >
-        {children || "MCP"}
+        {children || t('agents:mcp.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - MCP管理`}
+        title={`${agent.name} - ${t('agents:mcp.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSaveChanges}
         onCancel={handleModalClose}
         width={700}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         okButtonProps={{
           icon: <CheckOutlined />,
@@ -297,7 +299,7 @@ const McpButton: React.FC<McpButtonProps> = ({
             <Space style={{ width: "100%" }}>
               <Select
                 style={{ flex: 1, minWidth: 250 }}
-                placeholder="选择要添加的MCP客户端"
+                placeholder={t('agents:mcp.selectPlaceholder')}
                 value={selectedMcp}
                 onChange={setSelectedMcp}
                 allowClear
@@ -323,7 +325,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                           {mcp.transport?.toUpperCase() || "UNKNOWN"}
                         </Tag>
                         <Tag color={mcp.enabled ? "green" : "red"}>
-                          {mcp.enabled ? "在线" : "离线"}
+                          {mcp.enabled ? t('common:online') : t('common:offline')}
                         </Tag>
                       </Space>
                     </div>
@@ -336,7 +338,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                 onClick={handleAddMcp}
                 disabled={!selectedMcp}
               >
-                添加
+                {t('common:add')}
               </Button>
             </Space>
           </div>
@@ -344,7 +346,7 @@ const McpButton: React.FC<McpButtonProps> = ({
           {/* MCP客户端列表区域 */}
           <div style={{ marginTop: "20px" }}>
             <Text strong style={{ marginBottom: 8, display: "block" }}>
-              MCP ({pendingMcps?.length}个)：
+              {t('agents:mcp.listTitle', { count: pendingMcps?.length })}
             </Text>
             <div
               style={{
@@ -384,7 +386,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                               handleToggleMcp(mcp.id, e.target.checked)
                             }
                           >
-                            启用
+                            {t('agents:mcp.enabled')}
                           </Checkbox>,
                           <Button
                             key="remove"
@@ -394,7 +396,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                             icon={<DeleteOutlined />}
                             onClick={() => handleRemoveMcp(mcp.id)}
                           >
-                            移除
+                            {t('agents:mcp.remove')}
                           </Button>,
                         ]}
                       >
@@ -409,7 +411,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                               <Tag
                                 color={mcpOnlineStatus ? "green" : "red"}
                               >
-                                {mcpOnlineStatus ? "在线" : "离线"}
+                                {mcpOnlineStatus ? t('common:online') : t('common:offline')}
                               </Tag>
                             </Space>
                           }
@@ -443,11 +445,11 @@ const McpButton: React.FC<McpButtonProps> = ({
                                         display: "block",
                                       }}
                                     >
-                                      启用函数 <span style={{ fontSize: "12px", color: colors.bodyMuted }}>(不填写默认启用所有函数)</span>
+                                      {t('agents:mcp.enableFuncsTitle')} <span style={{ fontSize: "12px", color: colors.bodyMuted }}>({t('agents:mcp.enableFuncsHint')})</span>
                                     </Text>
                                     <Input
                                       size="small"
-                                      placeholder="输入启用的函数名，用英文逗号分隔"
+                                      placeholder={t('agents:mcp.enableFuncsPlaceholder')}
                                       value={
                                         typeof (mcp as any).enableFuncs ===
                                         "string"
@@ -478,11 +480,11 @@ const McpButton: React.FC<McpButtonProps> = ({
                                         display: "block",
                                       }}
                                     >
-                                      禁用函数:
+                                      {t('agents:mcp.disableFuncsTitle')}
                                     </Text>
                                     <Input
                                       size="small"
-                                      placeholder="输入禁用的函数名，用英文逗号分隔"
+                                      placeholder={t('agents:mcp.disableFuncsPlaceholder')}
                                       value={
                                         typeof (mcp as any).disableFuncs ===
                                         "string"
@@ -521,7 +523,7 @@ const McpButton: React.FC<McpButtonProps> = ({
                     padding: "40px 0",
                   }}
                 >
-                  暂无配置MCP客户端
+                  {t('agents:mcp.empty')}
                 </div>
               )}
             </div>
@@ -533,7 +535,7 @@ const McpButton: React.FC<McpButtonProps> = ({
               style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
-                ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改
+                {t('common:changeDetected')}
               </Text>
             </div>
           )}

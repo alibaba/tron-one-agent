@@ -1,0 +1,52 @@
+{
+  "title": "MCP Management",
+  "loadFailed": "Failed to load MCP clients, please retry",
+  "loadAgentsFailed": "Failed to load agents, please retry",
+  "columns": {
+    "name": "Name",
+    "description": "Description",
+    "transport": "Transport",
+    "url": "URL",
+    "relatedAgents": "Related Agents",
+    "status": "Status",
+    "action": "Action"
+  },
+  "relatedTooltip": "Related agents: {{names}}",
+  "noRelated": "No related agents",
+  "deleteDisabled": "This MCP client is referenced by {{count}} agent(s) and cannot be deleted",
+  "deleteEnabled": "Delete MCP client",
+  "toggleSuccess": "MCP client {{status}}",
+  "enableSuccess": "MCP client enabled",
+  "disableSuccess": "MCP client disabled",
+  "toggleFailed": "Status update failed, please retry",
+  "deleteSuccess": "MCP client deleted",
+  "deleteFailed": "Delete failed, please retry",
+  "confirmDelete": {
+    "title": "Confirm delete MCP client",
+    "intro": "You are about to delete the following MCP client:",
+    "name": "Name: ",
+    "id": "ID: ",
+    "url": "URL: ",
+    "warning": "⚠️ This action is irreversible. Continue?",
+    "ok": "Confirm delete"
+  },
+  "edit": "Edit",
+  "delete": "Delete",
+  "manage": {
+    "addTitle": "Create MCP client",
+    "editTitle": "Edit MCP client",
+    "addButton": "Add MCP",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "transport": "Transport",
+      "url": "URL",
+      "headers": "Headers",
+      "enabled": "Enabled",
+      "nameRequired": "Please input name",
+      "urlRequired": "Please input URL"
+    },
+    "submitSuccess": "Saved successfully",
+    "submitFailed": "Save failed, please retry"
+  }
+}

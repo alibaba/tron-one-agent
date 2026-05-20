@@ -1,0 +1,9 @@
+{
+  "title": "Tools Management",
+  "loadFailed": "Failed to load tools, please retry",
+  "columns": {
+    "name": "Tool Name",
+    "description": "Tool Description"
+  },
+  "emptyTools": "No tools available"
+}

@@ -18,6 +18,7 @@
 import React, { useState } from 'react';
 import { Button, Modal, Typography, Form, Input, message, Row, Col } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AgentConfig } from '../../../types/agent.interface';
@@ -37,6 +38,7 @@ interface SystemPromptButtonProps {
 }
 
 const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManageSystemPrompt, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
@@ -61,7 +63,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
       
       if (agent.id) {
         await updateAgent(agent.id, { systemPrompt: values.systemPrompt });
-        message.success('提示词更新成功');
+        message.success(t('agents:systemPrompt.saveSuccess'));
         
         // 调用成功回调
         if (onSuccess) {
@@ -74,13 +76,12 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
         throw new Error('Agent ID不存在');
       }
     } catch (error) {
-      console.error('提示词更新失败:', error);
+      console.error('Prompt update failed:', error);
       
-      // 调用错误回调
       if (onError) {
         onError(error);
       } else {
-        message.error('提示词更新失败，请重试');
+        message.error(t('agents:systemPrompt.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
         icon={<FileTextOutlined />}
         onClick={handleClick}
       >
-        {children || '提示词'}
+        {children || t('agents:systemPrompt.button')}
       </Button>
 
       <Modal
@@ -116,23 +117,23 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
         onCancel={handleModalClose}
         width={1200}
         style={{ top: 20 }}
-        okText="保存"
-        cancelText="关闭"
+        okText={t('common:save')}
+        cancelText={t('common:close')}
         confirmLoading={loading}
       >
         <Row gutter={24} style={{ marginTop: 16 }}>
           <Col span={12}>
             <div style={{ marginBottom: 12 }}>
-              <Text strong style={{ fontSize: '16px', color: colors.ink }}>编辑器</Text>
+              <Text strong style={{ fontSize: '16px', color: colors.ink }}>{t('agents:systemPrompt.editor')}</Text>
             </div>
             <Form form={form}>
               <Form.Item
                 name="systemPrompt"
-                rules={[{ required: true, message: '请输入提示词内容' }]}
+                rules={[{ required: true, message: t('agents:systemPrompt.required') }]}
               >
                 <TextArea
                   rows={22}
-                  placeholder="请输入提示词内容，支持Markdown格式..."
+                  placeholder={t('agents:systemPrompt.placeholder')}
                   style={{ 
                     fontFamily: '"JetBrains Mono", "Fira Code", Monaco, Menlo, "Ubuntu Mono", monospace', 
                     fontSize: '14px',
@@ -148,7 +149,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
           </Col>
           <Col span={12}>
             <div style={{ marginBottom: 12 }}>
-              <Text strong style={{ fontSize: '16px', color: colors.ink }}>预览</Text>
+              <Text strong style={{ fontSize: '16px', color: colors.ink }}>{t('agents:systemPrompt.preview')}</Text>
             </div>
             <div
               className={agentsStyles.markdownPreview}
@@ -174,7 +175,7 @@ const SystemPromptButton: React.FC<SystemPromptButtonProps> = ({ agent, onManage
                   height: '100%',
                   color: colors.bodyMuted
                 }}>
-                  <Text type="secondary">在左侧编辑器中输入内容，这里将显示预览效果</Text>
+                  <Text type="secondary">{t('agents:systemPrompt.previewHint')}</Text>
                 </div>
               )}
             </div>

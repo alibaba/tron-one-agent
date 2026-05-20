@@ -1,0 +1,10 @@
+{
+  "agents": "Agents",
+  "tools": "Tools",
+  "mcp": "MCP",
+  "kb": "知识库",
+  "skills": "Skills",
+  "memory": "长期记忆",
+  "manage": "管理",
+  "debug": "调试"
+}

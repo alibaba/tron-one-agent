@@ -19,6 +19,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import type { HitlContent as HitlContentType, HitlQuestion } from "../../types";
 import { ContentType, SessionMessageStatus } from "../../types/enums";
 import styles from "./index.module.less";
+import { t } from "../../locale";
 
 export interface HitlSubmitPayload {
   type: ContentType.HITL;
@@ -147,7 +148,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
           <div className={styles.tabHeaderLeft}>
             <span className={styles.approvedBadge}>
               <i className="fas fa-check-circle"></i>
-              已完成
+              {t('hitl.completed')}
             </span>
           </div>
         </div>
@@ -191,7 +192,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
           <div className={styles.tabHeaderLeft}>
             <span className={styles.rejectedBadge}>
               <i className="fas fa-times-circle"></i>
-              用户拒绝
+              {t('hitl.userRejected')}
             </span>
           </div>
         </div>
@@ -229,7 +230,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
           )}
           <span className={styles.headerDot}>·</span>
           <span className={styles.headerType}>
-            {q.multiSelect ? "多选" : "单选"}
+            {q.multiSelect ? t('hitl.multiSelect') : t('hitl.singleSelect')}
           </span>
         </div>
         <div className={styles.tabHeaderRight}>
@@ -238,7 +239,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
             disabled={currentIndex === 0}
             onClick={goPrev}
             type="button"
-            title="上一题"
+            title={t('hitl.prevQuestion')}
           >
             <i className="fas fa-chevron-up"></i>
           </button>
@@ -250,7 +251,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
             disabled={isLast}
             onClick={goNext}
             type="button"
-            title="下一题"
+            title={t('hitl.nextQuestion')}
           >
             <i className="fas fa-chevron-down"></i>
           </button>
@@ -337,7 +338,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
                     <input
                       className={styles.otherInput}
                       type="text"
-                      placeholder="请输入..."
+                      placeholder={t('hitl.inputPlaceholder')}
                       value={otherTexts[currentIndex] || ""}
                       onClick={(e) => e.stopPropagation()}
                       onChange={(e) => {
@@ -358,7 +359,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
         {!messageCompleted ? (
           <div className={styles.footerWaiting}>
             <i className="fas fa-spinner fa-spin"></i>
-            <span>等待消息完成后可作答</span>
+            <span>{t('hitl.waitingMessage')}</span>
           </div>
         ) : (
         <div className={styles.footerRight}>
@@ -368,12 +369,12 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
               onClick={handleSkip}
               type="button"
             >
-              跳过
+              {t('hitl.skip')}
             </button>
           )}
           {isLast && allAnswered ? (
             <button className={styles.submitBtn} type="button" onClick={handleSubmit}>
-              提交
+              {t('hitl.submit')}
               <i className="fas fa-level-down-alt fa-rotate-90"></i>
             </button>
           ) : (
@@ -383,7 +384,7 @@ const HitlContentRender: React.FC<HitlContentRenderProps> = ({ content, agentMes
               onClick={goNext}
               type="button"
             >
-              继续
+              {t('hitl.continue')}
               <i className="fas fa-level-down-alt fa-rotate-90"></i>
             </button>
           )}

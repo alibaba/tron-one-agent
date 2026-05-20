@@ -1,0 +1,63 @@
+{
+  "title": "知识库管理",
+  "loadFailed": "加载知识库列表失败，请重试",
+  "loadAgentsFailed": "加载Agents列表失败，请重试",
+  "columns": {
+    "name": "名称",
+    "type": "类型",
+    "config": "关键配置",
+    "relatedAgents": "已关联Agents",
+    "status": "状态",
+    "rewrite": "重写",
+    "rerank": "重排",
+    "action": "操作"
+  },
+  "workspace": "工作空间",
+  "index": "索引",
+  "address": "地址",
+  "enabled": "启用",
+  "disabled": "禁用",
+  "relatedTooltip": "关联的Agents: {{names}}",
+  "noRelated": "暂无关联的Agents",
+  "deleteDisabled": "该知识库已被 {{count}} 个Agent关联，无法删除",
+  "deleteEnabled": "删除知识库",
+  "toggleSuccess": "知识库已{{status}}",
+  "enableSuccess": "知识库已启用",
+  "disableSuccess": "知识库已禁用",
+  "toggleFailed": "状态更新失败，请重试",
+  "deleteSuccess": "知识库删除成功",
+  "deleteFailed": "删除失败，请重试",
+  "edit": "编辑",
+  "delete": "删除",
+  "confirmDelete": {
+    "title": "确认删除知识库",
+    "intro": "您即将删除以下知识库：",
+    "name": "名称：",
+    "id": "ID：",
+    "type": "类型：",
+    "config": "配置：",
+    "warning": "⚠️ 此操作不可撤销，请确认是否继续？",
+    "ok": "确认删除"
+  },
+  "manage": {
+    "addTitle": "新增知识库",
+    "editTitle": "编辑知识库",
+    "addButton": "新增知识库",
+    "fields": {
+      "name": "名称",
+      "type": "类型",
+      "workspaceId": "工作空间ID",
+      "indexId": "索引ID",
+      "apiKey": "API Key",
+      "url": "URL",
+      "indexName": "索引名",
+      "topK": "TopK",
+      "enableRewrite": "启用重写",
+      "enableRerank": "启用重排",
+      "enabled": "启用",
+      "nameRequired": "请输入名称"
+    },
+    "submitSuccess": "保存成功",
+    "submitFailed": "保存失败，请重试"
+  }
+}

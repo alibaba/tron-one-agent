@@ -17,6 +17,7 @@
 import React, { useState } from 'react';
 import { Button, Modal, Form, Select, message } from 'antd';
 import { BulbOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from '../../../types/agent.interface';
 import { LongTermMemoryConfig } from '../../../types/memory.interface';
 import { updateAgent } from '../../../services/agent';
@@ -30,6 +31,7 @@ interface MemoryButtonProps {
 }
 
 const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, children }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
@@ -61,7 +63,7 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
         await updateAgent(agent.id, {
           longTermMemoryId: values.longTermMemoryId || '',
         });
-        message.success('长期记忆配置保存成功');
+        message.success(t('agents:memory.saveSuccess'));
 
         if (onSuccess) {
           onSuccess(agent);
@@ -70,11 +72,11 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
         setIsModalVisible(false);
       }
     } catch (error) {
-      console.error('保存失败:', error);
+      console.error('Save failed:', error);
       if (onError) {
         onError(error);
       } else {
-        message.error('保存失败，请重试');
+        message.error(t('agents:memory.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -89,28 +91,28 @@ const MemoryButton: React.FC<MemoryButtonProps> = ({ agent, onSuccess, onError, 
         icon={<BulbOutlined />}
         onClick={handleClick}
       >
-        {children || '长期记忆'}
+        {children || t('agents:memory.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - 长期记忆配置`}
+        title={`${agent.name} - ${t('agents:memory.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSave}
         onCancel={() => setIsModalVisible(false)}
         confirmLoading={loading}
         width={500}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="longTermMemoryId"
-            label="关联记忆配置"
-            tooltip="选择要关联的长期记忆配置，不选则自动使用第一个可用配置"
+            label={t('agents:memory.selectLabel')}
+            tooltip={t('agents:memory.selectTooltip')}
           >
             <Select
               allowClear
-              placeholder="请选择记忆配置（可选）"
+              placeholder={t('agents:memory.selectPlaceholder')}
               options={memories.map(m => ({
                 label: `${m.name} (${m.id})`,
                 value: m.id,

@@ -38,6 +38,7 @@ import {
   ApiOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from 'react-i18next';
 import {
   AgentConfig,
   SubAgent,
@@ -93,6 +94,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
   onError,
   children,
 }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<AgentConfig[]>([]);
@@ -116,8 +118,8 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
       );
       setAvailableAgents(filteredAgents || []);
     } catch (error) {
-      console.error("加载Agents列表失败:", error);
-      message.error("加载Agents列表失败");
+      console.error("Load agents list failed:", error);
+      message.error(t('agents:subAgent.loadFailed'));
     }
   };
 
@@ -154,7 +156,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
           sa.agentId !== editingLocalAgent.agentId
       );
       if (existingAgent) {
-        message.warning("该Agent已存在");
+        message.warning(t('agents:subAgent.duplicate'));
         return;
       }
     } else {
@@ -163,7 +165,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         (sa) => sa.agentId === values.agentId
       );
       if (existingAgent) {
-        message.warning("该Agent已存在");
+        message.warning(t('agents:subAgent.duplicate'));
         return;
       }
     }
@@ -202,7 +204,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
           sa.agentId !== editingA2AAgent.agentId
       );
       if (existingAgent) {
-        message.warning("该Agent ID已存在");
+        message.warning(t('agents:subAgent.duplicateId'));
         return;
       }
     } else {
@@ -211,7 +213,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         (sa) => sa.agentId === values.agentId
       );
       if (existingAgent) {
-        message.warning("该Agent已存在");
+        message.warning(t('agents:subAgent.duplicate'));
         return;
       }
     }
@@ -219,7 +221,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
     // 验证至少需要一个技能
     const skills = values.skills || [];
     if (skills.length === 0) {
-      message.warning("请至少添加一个技能");
+      message.warning(t('agents:subAgent.atLeastOneSkill'));
       return;
     }
 
@@ -272,7 +274,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
       setLoading(true);
       if (agent.id) {
         await updateAgent(agent.id, { subAgents: pendingSubAgents });
-        message.success("子Agent配置保存成功");
+        message.success(t('agents:subAgent.saveSuccess'));
 
         // 调用成功回调
         if (onSuccess) {
@@ -284,13 +286,13 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         throw new Error("Agent ID不存在");
       }
     } catch (error) {
-      console.error("子Agent配置保存失败:", error);
+      console.error("SubAgent config save failed:", error);
 
       // 调用错误回调
       if (onError) {
         onError(error);
       } else {
-        message.error("子Agent配置保存失败，请重试");
+        message.error(t('agents:subAgent.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -435,19 +437,19 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         icon={<TeamOutlined />}
         onClick={handleClick}
       >
-        {children || "子Agent"}
+        {children || t('agents:subAgent.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - 子Agent管理`}
+        title={`${agent.name} - ${t('agents:subAgent.modalTitle')}`}
         open={isDrawerVisible}
         onOk={handleSaveChanges}
         onCancel={handleDrawerClose}
         width="80vw"
         style={{ maxWidth: 1200 }}
         destroyOnClose={true}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         zIndex={1000}
         okButtonProps={{
@@ -464,14 +466,14 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                 icon={<LinkOutlined />}
                 onClick={() => setIsAddLocalModalVisible(true)}
               >
-                关联 Local Agent
+                {t('agents:subAgent.addLocal')}
               </Button>
               <Button
                 type="primary"
                 icon={<ApiOutlined />}
                 onClick={handleOpenAddA2AModal}
               >
-                添加 A2A Agent
+                {t('agents:subAgent.addA2A')}
               </Button>
             </Space>
           </div>
@@ -479,7 +481,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
           {/* 子Agent列表区域 */}
           <div>
             <Text strong style={{ marginBottom: 12, display: "block" }}>
-              子Agent ({pendingSubAgents.length}个)：
+              {t('agents:subAgent.listTitle', { count: pendingSubAgents.length })}
             </Text>
             <div
               style={{
@@ -512,17 +514,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             size="small"
                             onClick={() => handleEditA2AAgent(subAgent)}
                           >
-                            编辑
-                          </Button>
-                        ),
-                        subAgent.type === SubAgentType.LOCAL && (
-                          <Button
-                            key="edit"
-                            type="link"
-                            size="small"
-                            onClick={() => handleEditLocalAgent(subAgent)}
-                          >
-                            编辑
+                            {t('agents:subAgent.edit')}
                           </Button>
                         ),
                         <Button
@@ -539,7 +531,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             color: subAgent.enabled ? colors.statusDanger : colors.statusSuccess,
                           }}
                         >
-                          {subAgent.enabled ? "禁用" : "启用"}
+                          {subAgent.enabled ? t('agents:subAgent.disabled') : t('agents:subAgent.enabled')}
                         </Button>,
                         <Button
                           key="remove"
@@ -549,7 +541,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                           icon={<DeleteOutlined />}
                           onClick={() => handleRemoveSubAgent(subAgent.agentId)}
                         >
-                          移除
+                          {t('agents:subAgent.remove')}
                         </Button>,
                       ].filter(Boolean)}
                     >
@@ -603,7 +595,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                 {SubAgentTypeNameMap[subAgent.type]}
                               </Tag>
                               <Tag color={subAgent.enabled ? "green" : "red"}>
-                                {subAgent.enabled ? "启用" : "禁用"}
+                                {subAgent.enabled ? t('agents:subAgent.enabled') : t('agents:subAgent.disabled')}
                               </Tag>
                             </div>
                           </div>
@@ -624,8 +616,8 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                             >
                               <strong>
                                 {subAgent.type === SubAgentType.A2A
-                                  ? "描述"
-                                  : "能力描述"}
+                                  ? t('agents:subAgent.descriptionLabel')
+                                  : t('agents:subAgent.capacitiesDescLabel')}
                                 ：
                               </strong>
                               {subAgent.type === SubAgentType.A2A
@@ -646,7 +638,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                 {(subAgent as A2aSubAgentConfig).agentCard
                                   .name && (
                                   <div style={{ marginTop: "2px" }}>
-                                    <strong>Agent名称：</strong>
+                                    <strong>{t('agents:subAgent.agentNameInfo')}</strong>
                                     {
                                       (subAgent as A2aSubAgentConfig).agentCard
                                         .name
@@ -654,14 +646,14 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                   </div>
                                 )}
                                 <div>
-                                  <strong>URL：</strong>
+                                  <strong>{t('agents:subAgent.urlInfo')}</strong>
                                   {
                                     (subAgent as A2aSubAgentConfig).agentCard
                                       .url
                                   }
                                 </div>
                                 <div style={{ marginTop: "2px" }}>
-                                  <strong>版本：</strong>
+                                  <strong>{t('agents:subAgent.versionInfo')}</strong>
                                   {
                                     (subAgent as A2aSubAgentConfig).agentCard
                                       .version
@@ -672,7 +664,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                   (subAgent as A2aSubAgentConfig).agentCard
                                     .skills.length > 0 && (
                                     <div style={{ marginTop: "6px" }}>
-                                      <strong>技能列表：</strong>
+                                      <strong>{t('agents:subAgent.skillsListInfo')}</strong>
                                       <div
                                         style={{
                                           marginTop: "6px",
@@ -726,7 +718,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                                                             fontSize: "11px",
                                                           }}
                                                         >
-                                                          示例：
+                                                          {t('agents:subAgent.examplesInfo')}
                                                         </Text>
                                                         <div
                                                           style={{
@@ -780,7 +772,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                     padding: "40px 0",
                   }}
                 >
-                  暂无配置子Agent
+                  {t('agents:subAgent.empty')}
                 </div>
               )}
             </div>
@@ -792,7 +784,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
               style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
-                ⚠️ 检测到配置变更，点击"保存配置"按钮应用更改
+                ⚠️ {t('common:changeDetected')}
               </Text>
             </div>
           )}
@@ -801,13 +793,13 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
 
       {/* 关联本地Agent弹窗 */}
       <Modal
-        title={editingLocalAgent ? "编辑本地Agent" : "关联本地Agent"}
+        title={editingLocalAgent ? t('agents:subAgent.editLocalTitle') : t('agents:subAgent.linkLocalTitle')}
         open={isAddLocalModalVisible}
         onOk={() => localForm.submit()}
         onCancel={handleAddLocalModalClose}
         width={600}
-        okText={editingLocalAgent ? "更新" : "添加"}
-        cancelText="取消"
+        okText={editingLocalAgent ? t('agents:subAgent.update') : t('common:add')}
+        cancelText={t('common:cancel')}
         zIndex={1001}
       >
         <Form
@@ -818,11 +810,11 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         >
           <Form.Item
             name="agentId"
-            label="选择Agent"
-            rules={[{ required: true, message: "请选择要关联的Agent" }]}
+            label={t('agents:subAgent.selectAgentLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.selectAgentRequired') }]}
           >
             <Select
-              placeholder="请选择要关联的Agent"
+              placeholder={t('agents:subAgent.selectAgentPlaceholder')}
               showSearch
               optionFilterProp="children"
               disabled={!!editingLocalAgent}
@@ -835,7 +827,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                   <Space>
                     <span>{availableAgent.name}</span>
                     <Tag color={availableAgent.enabled ? "green" : "red"}>
-                      {availableAgent.enabled ? "在线" : "离线"}
+                      {availableAgent.enabled ? t('common:online') : t('common:offline')}
                     </Tag>
                   </Space>
                 </Select.Option>
@@ -845,18 +837,18 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
 
           <Form.Item
             name="capacities"
-            label="能力描述"
-            rules={[{ required: true, message: "请输入能力描述" }]}
+            label={t('agents:subAgent.capacities')}
+            rules={[{ required: true, message: t('agents:subAgent.capacitiesRequired') }]}
           >
             <Input.TextArea
               rows={3}
-              placeholder="请描述该子Agent的能力和用途"
+              placeholder={t('agents:subAgent.capacitiesPlaceholder')}
             />
           </Form.Item>
 
           <Form.Item
             name="enabled"
-            label="启用状态"
+            label={t('agents:subAgent.enabledStatus')}
             valuePropName="checked"
             initialValue={true}
           >
@@ -867,13 +859,13 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
 
       {/* 添加A2A Agent弹窗 */}
       <Modal
-        title={editingA2AAgent ? "编辑A2A Agent" : "添加A2A Agent"}
+        title={editingA2AAgent ? t('agents:subAgent.editA2ATitle') : t('agents:subAgent.addA2ATitle')}
         open={isAddA2AModalVisible}
         onOk={() => a2aForm.submit()}
         onCancel={handleAddA2AModalClose}
         width={800}
-        okText={editingA2AAgent ? "更新" : "添加"}
-        cancelText="取消"
+        okText={editingA2AAgent ? t('agents:subAgent.update') : t('common:add')}
+        cancelText={t('common:cancel')}
         zIndex={1001}
       >
         <Form
@@ -884,43 +876,43 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
         >
           <Form.Item
             name="agentId"
-            label="Agent ID"
-            rules={[{ required: true, message: "请输入A2A Agent ID" }]}
+            label={t('agents:subAgent.agentIdLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.agentIdRequired') }]}
           >
             <Input
-              placeholder="请输入A2A Agent的唯一标识"
+              placeholder={t('agents:subAgent.agentIdPlaceholder')}
               disabled={!!editingA2AAgent}
             />
           </Form.Item>
 
           <Form.Item
             name="name"
-            label="Agent名称"
-            rules={[{ required: true, message: "请输入Agent名称" }]}
+            label={t('agents:subAgent.agentNameLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.agentNameRequired') }]}
           >
-            <Input placeholder="请输入Agent名称" />
+            <Input placeholder={t('agents:subAgent.agentNamePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="description"
-            label="Agent描述"
-            rules={[{ required: true, message: "请输入Agent描述" }]}
+            label={t('agents:subAgent.agentDescLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.agentDescRequired') }]}
           >
-            <Input.TextArea rows={2} placeholder="请描述该A2A Agent的功能" />
+            <Input.TextArea rows={2} placeholder={t('agents:subAgent.agentDescPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="url"
-            label="URL地址"
-            rules={[{ required: true, message: "请输入URL地址" }]}
+            label={t('agents:subAgent.urlLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.urlRequired') }]}
           >
             <Input placeholder="http://localhost:8080/a2a/simple_agent/" />
           </Form.Item>
 
           <Form.Item
             name="version"
-            label="版本"
-            rules={[{ required: true, message: "请输入版本" }]}
+            label={t('agents:subAgent.versionLabel')}
+            rules={[{ required: true, message: t('agents:subAgent.versionRequired') }]}
             initialValue="1.0.0"
           >
             <Input placeholder="1.0.0" />
@@ -929,21 +921,21 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
           <Form.List name="skills">
             {(fields, { add, remove }) => (
               <>
-                <Form.Item label="技能列表">
+                <Form.Item label={t('agents:subAgent.skillsListLabel')}>
                   <Button
                     type="dashed"
                     onClick={() => add()}
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加技能
+                    {t('agents:subAgent.addSkillBtn')}
                   </Button>
                 </Form.Item>
                 {fields.map((field, index) => (
                   <Card
                     key={field.key}
                     size="small"
-                    title={`技能 ${index + 1}`}
+                    title={t('agents:subAgent.skillN', { n: index + 1 })}
                     extra={
                       <Button
                         type="text"
@@ -952,7 +944,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                         icon={<DeleteOutlined />}
                         onClick={() => remove(field.name)}
                       >
-                        删除
+                        {t('agents:subAgent.deleteSkill')}
                       </Button>
                     }
                     style={{ marginBottom: 16 }}
@@ -960,8 +952,8 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                     <Form.Item
                       {...field}
                       name={[field.name, "id"]}
-                      label="技能ID"
-                      rules={[{ required: true, message: "请输入技能ID" }]}
+                      label={t('agents:subAgent.skillId')}
+                      rules={[{ required: true, message: t('agents:subAgent.skillIdRequired') }]}
                     >
                       <Input placeholder="skill_id" />
                     </Form.Item>
@@ -969,29 +961,29 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                     <Form.Item
                       {...field}
                       name={[field.name, "name"]}
-                      label="技能名称"
-                      rules={[{ required: true, message: "请输入技能名称" }]}
+                      label={t('agents:subAgent.skillName')}
+                      rules={[{ required: true, message: t('agents:subAgent.skillNameRequired') }]}
                     >
-                      <Input placeholder="技能名称" />
+                      <Input placeholder={t('agents:subAgent.skillNamePlaceholder')} />
                     </Form.Item>
 
                     <Form.Item
                       {...field}
                       name={[field.name, "description"]}
-                      label="技能描述"
-                      rules={[{ required: true, message: "请输入技能描述" }]}
+                      label={t('agents:subAgent.skillDesc')}
+                      rules={[{ required: true, message: t('agents:subAgent.skillDescRequired') }]}
                     >
-                      <Input.TextArea rows={2} placeholder="描述该技能的功能" />
+                      <Input.TextArea rows={2} placeholder={t('agents:subAgent.skillDescPlaceholder')} />
                     </Form.Item>
 
                     <Form.Item
                       {...field}
                       name={[field.name, "tags"]}
-                      label="标签"
+                      label={t('agents:subAgent.tagsLabel')}
                     >
                       <Select
                         mode="tags"
-                        placeholder="输入标签后按回车"
+                        placeholder={t('agents:subAgent.tagsPlaceholder')}
                         style={{ width: "100%" }}
                       />
                     </Form.Item>
@@ -999,11 +991,11 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
                     <Form.Item
                       {...field}
                       name={[field.name, "examples"]}
-                      label="示例"
+                      label={t('agents:subAgent.examplesLabel')}
                     >
                       <Select
                         mode="tags"
-                        placeholder="输入示例后按回车"
+                        placeholder={t('agents:subAgent.examplesPlaceholder')}
                         style={{ width: "100%" }}
                       />
                     </Form.Item>
@@ -1015,7 +1007,7 @@ const SubAgentButton: React.FC<SubAgentButtonProps> = ({
 
           <Form.Item
             name="enabled"
-            label="启用状态"
+            label={t('agents:subAgent.enabledStatus')}
             valuePropName="checked"
             initialValue={true}
           >

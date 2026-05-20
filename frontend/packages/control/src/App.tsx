@@ -15,11 +15,14 @@
  */
 
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import enUS from 'antd/locale/en_US';
+import { useTranslation } from 'react-i18next';
 import { router } from './router';
+import { syncChatboxLocale } from './i18n/chatboxBridge';
 import './styles/global.less';
 
 const themeConfig = {
@@ -38,8 +41,25 @@ const themeConfig = {
 };
 
 const App: React.FC = () => {
+  const { i18n } = useTranslation();
+  const isEn = (i18n.language || '').toLowerCase().startsWith('en');
+  const antdLocale = isEn ? enUS : zhCN;
+
+  useEffect(() => {
+    document.documentElement.lang = isEn ? 'en' : 'zh-CN';
+    syncChatboxLocale(i18n);
+  }, [isEn, i18n]);
+
+  useEffect(() => {
+    const handler = () => syncChatboxLocale(i18n);
+    i18n.on('languageChanged', handler);
+    return () => {
+      i18n.off('languageChanged', handler);
+    };
+  }, [i18n]);
+
   return (
-    <ConfigProvider locale={zhCN} theme={themeConfig}>
+    <ConfigProvider locale={antdLocale} theme={themeConfig}>
       <RouterProvider router={router} />
     </ConfigProvider>
   );

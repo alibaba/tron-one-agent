@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Table, Button, Space, Tag, Switch, Modal, Card, message, Tooltip } from 'antd';
 import { DeleteOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -28,24 +29,25 @@ import { commonStyles } from '../../styles/tokens';
 import mcpStyles from './index.module.less';
 
 const MCPPage: React.FC = () => {
+  const { t } = useTranslation(['mcp', 'common']);
   const [mcpClients, setMcpClients] = useState<McpClientConfig[]>([]);
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);
 
   const columns: ColumnsType<McpClientConfig> = [
     {
-      title: 'ID',
+      title: t('common:id'),
       dataIndex: 'id',
       key: 'id',
       width: 80,
     },
     {
-      title: '名称',
+      title: t('mcp:columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '描述',
+      title: t('mcp:columns.description'),
       dataIndex: 'description',
       key: 'description',
       render: (description: string) => (
@@ -63,7 +65,7 @@ const MCPPage: React.FC = () => {
       ),
     },
     {
-      title: '传输方式',
+      title: t('mcp:columns.transport'),
       dataIndex: 'transport',
       key: 'transport',
       render: (transport: string) => (
@@ -73,7 +75,7 @@ const MCPPage: React.FC = () => {
       ),
     },
     {
-      title: 'URL',
+      title: t('mcp:columns.url'),
       dataIndex: 'url',
       key: 'url',
       render: (url: string) => (
@@ -91,15 +93,15 @@ const MCPPage: React.FC = () => {
       ),
     },
     {
-      title: '已关联Agents',
+      title: t('mcp:columns.relatedAgents'),
       key: 'relatedAgents',
       render: (_, record: McpClientConfig) => {
         const relatedAgents = getRelatedAgents(record.id);
         return (
           <Tooltip 
             title={relatedAgents.length > 0 ? 
-              `关联的Agents: ${relatedAgents.map(agent => agent.name).join(', ')}` : 
-              '暂无关联的Agents'
+              t('mcp:relatedTooltip', { names: relatedAgents.map(agent => agent.name).join(', ') }) : 
+              t('mcp:noRelated')
             }
             placement="topLeft"
           >
@@ -111,7 +113,7 @@ const MCPPage: React.FC = () => {
       },
     },
     {
-      title: '状态',
+      title: t('mcp:columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record: McpClientConfig) => (
@@ -122,7 +124,7 @@ const MCPPage: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('mcp:columns.action'),
       key: 'action',
       render: (_, record: McpClientConfig) => (
         <Space size="middle">
@@ -133,12 +135,12 @@ const MCPPage: React.FC = () => {
             buttonType="link"
             size="small"
           >
-            编辑
+            {t('mcp:edit')}
           </McpManageButton>
           <Tooltip 
             title={getRelatedAgents(record.id).length > 0 ? 
-              `该MCP客户端已被 ${getRelatedAgents(record.id).length} 个Agent关联，无法删除` : 
-              '删除MCP客户端'
+              t('mcp:deleteDisabled', { count: getRelatedAgents(record.id).length }) : 
+              t('mcp:deleteEnabled')
             }
           >
             <Button
@@ -148,7 +150,7 @@ const MCPPage: React.FC = () => {
               onClick={() => handleDelete(record.id)}
               disabled={getRelatedAgents(record.id).length > 0}
             >
-              删除
+              {t('mcp:delete')}
             </Button>
           </Tooltip>
         </Space>
@@ -164,7 +166,7 @@ const MCPPage: React.FC = () => {
       setMcpClients(response.data || []);
     } catch (error) {
       console.error('加载MCP客户端列表失败:', error);
-      message.error('加载MCP客户端列表失败，请重试');
+      message.error(t('mcp:loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -177,7 +179,7 @@ const MCPPage: React.FC = () => {
       setAgents(agentsData.data || []);
     } catch (error) {
       console.error('加载Agents列表失败:', error);
-      message.error('加载Agents列表失败，请重试');
+      message.error(t('mcp:loadAgentsFailed'));
     }
   };
 
@@ -192,6 +194,7 @@ const MCPPage: React.FC = () => {
   useEffect(() => {
     loadMcpClients();
     loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleEnabled = async (id: string, enabled: boolean) => {
@@ -200,10 +203,10 @@ const MCPPage: React.FC = () => {
       setMcpClients(prev => prev.map(mcp => 
         mcp.id === id ? { ...mcp, enabled } : mcp
       ));
-      message.success(`MCP客户端已${enabled ? '启用' : '禁用'}`);
+      message.success(enabled ? t('mcp:enableSuccess') : t('mcp:disableSuccess'));
     } catch (error) {
       console.error('状态更新失败:', error);
-      message.error('状态更新失败，请重试');
+      message.error(t('mcp:toggleFailed'));
     }
   };
 
@@ -211,32 +214,32 @@ const MCPPage: React.FC = () => {
     const mcpClient = mcpClients.find(mcp => mcp.id === id);
     
     Modal.confirm({
-      title: '确认删除MCP客户端',
+      title: t('mcp:confirmDelete.title'),
       content: (
         <div>
-          <p>您即将删除以下MCP客户端：</p>
+          <p>{t('mcp:confirmDelete.intro')}</p>
           <div style={commonStyles.confirmBox}>
-            <p><strong>名称：</strong>{mcpClient?.name}</p>
-            <p><strong>标识：</strong>{mcpClient?.id}</p>
-            <p><strong>URL：</strong>{mcpClient?.url}</p>
+            <p><strong>{t('mcp:confirmDelete.name')}</strong>{mcpClient?.name}</p>
+            <p><strong>{t('mcp:confirmDelete.id')}</strong>{mcpClient?.id}</p>
+            <p><strong>{t('mcp:confirmDelete.url')}</strong>{mcpClient?.url}</p>
           </div>
           <p style={commonStyles.confirmWarning}>
-            ⚠️ 此操作不可撤销，请确认是否继续？
+            {t('mcp:confirmDelete.warning')}
           </p>
         </div>
       ),
-      okText: '确认删除',
-      cancelText: '取消',
+      okText: t('mcp:confirmDelete.ok'),
+      cancelText: t('common:cancel'),
       okType: 'danger',
       width: 500,
       onOk: async () => {
         try {
           await deleteMcp(id);
           setMcpClients(prev => prev.filter(mcp => mcp.id !== id));
-          message.success('MCP客户端删除成功');
+          message.success(t('mcp:deleteSuccess'));
         } catch (error) {
           console.error('删除失败:', error);
-          message.error('删除失败，请重试');
+          message.error(t('mcp:deleteFailed'));
         }
       },
     });
@@ -254,14 +257,14 @@ const MCPPage: React.FC = () => {
 
   return (
     <div className={mcpStyles.container}>
-      <Card title="MCP管理" extra={
+      <Card title={t('mcp:title')} extra={
         <Space>
           <Button 
             icon={<ReloadOutlined />} 
             onClick={loadMcpClients}
             loading={loading}
           >
-            刷新
+            {t('common:refresh')}
           </Button>
           <McpManageButton onSuccess={handleSuccess} onError={handleError} />
         </Space>

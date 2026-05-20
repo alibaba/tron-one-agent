@@ -20,6 +20,7 @@ import TextContentRender from "../TextContent";
 import type { ActionContent, TextContent } from "../../types";
 import { ActionStatus } from "../../types/enums";
 import styles from "./index.module.less";
+import { t, mapLabel } from "../../locale";
 
 export interface ActionContentProps {
   action: ActionContent;
@@ -91,10 +92,10 @@ const ActionContentRender: React.FC<ActionContentProps> = ({ action, onToggleExp
             }`}
             style={{ color: getStatusColor(action.status) }}
           />
-          <span className={styles.actionTitle}>{action.title}</span>
+          <span className={styles.actionTitle}>{mapLabel(action.title)}</span>
           {action.gmtFinished && (
             <span className={styles.actionTime}>
-              完成于 {formatTime(action.gmtFinished)}
+              {t('task.finishedAt', { time: formatTime(action.gmtFinished) })}
             </span>
           )}
         </div>

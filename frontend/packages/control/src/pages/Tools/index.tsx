@@ -19,6 +19,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Card, Tag, message, Spin } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import { AgentToolConfig } from '../../types/tool.interface';
 import { getAllTools } from '../../services/tools';
 import { colors } from '../../styles/tokens';
@@ -27,6 +28,7 @@ import toolsStyles from './index.module.less';
 const ToolsPage: React.FC = () => {
   const [tools, setTools] = useState<AgentToolConfig[]>([]);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation(['tools', 'common']);
 
   const loadTools = async () => {
     try {
@@ -34,8 +36,8 @@ const ToolsPage: React.FC = () => {
       const toolsData = await getAllTools();
       setTools(toolsData.data || []);
     } catch (error) {
-      console.error('加载工具列表失败:', error);
-      message.error('加载工具列表失败，请重试');
+      console.error('Failed to load tools:', error);
+      message.error(t('tools:loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -43,11 +45,12 @@ const ToolsPage: React.FC = () => {
 
   useEffect(() => {
     loadTools();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const columns: ColumnsType<AgentToolConfig & { id: string }> = [
     {
-      title: '工具名称',
+      title: t('tools:columns.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name: string) => {
@@ -55,7 +58,7 @@ const ToolsPage: React.FC = () => {
       },
     },
     {
-      title: '工具描述',
+      title: t('tools:columns.description'),
 			dataIndex: 'description',
       key: 'description',
       render: (description: string) => {
@@ -72,7 +75,7 @@ const ToolsPage: React.FC = () => {
   return (
     <div className={toolsStyles.container}>
       <Card 
-        title="Tools管理"
+        title={t('tools:title')}
         extra={
           <ReloadOutlined 
             onClick={loadTools}
@@ -86,7 +89,7 @@ const ToolsPage: React.FC = () => {
             columns={columns}
             dataSource={dataSource}
             rowKey="id"
-            locale={{ emptyText: loading ? '加载中...' : '暂无工具数据' }}
+            locale={{ emptyText: loading ? t('common:loading') : t('tools:emptyTools') }}
           />
         </Spin>
       </Card>

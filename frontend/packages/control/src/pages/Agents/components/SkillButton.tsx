@@ -37,6 +37,7 @@ import { AgentConfig, AgentSkillConfig } from "../../../types/agent.interface";
 import { SkillConfig } from "../../../types/skill.interface";
 import { updateAgent } from "../../../services/agent";
 import { getAllSkills } from "../../../services/skill";
+import { useTranslation } from 'react-i18next';
 import { colors, commonStyles } from "../../../styles/tokens";
 
 const { Text } = Typography;
@@ -62,6 +63,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
   onError,
   children,
 }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<SkillConfig[]>([]);
@@ -76,8 +78,8 @@ const SkillButton: React.FC<SkillButtonProps> = ({
       const response = await getAllSkills();
       setAvailableSkills(response.data || []);
     } catch (error) {
-      console.error("加载Skill列表失败:", error);
-      message.error("加载Skill列表失败");
+      console.error("Load skill list failed:", error);
+      message.error(t('agents:skill.loadFailed'));
     } finally {
       setSkillsLoading(false);
     }
@@ -114,12 +116,12 @@ const SkillButton: React.FC<SkillButtonProps> = ({
 
   const handleAddSkill = () => {
     if (!selectedSkill) {
-      message.warning("请选择要添加的Skill");
+      message.warning(t('agents:skill.selectPlaceholder'));
       return;
     }
 
     if (pendingSkills?.some((s) => s.name === selectedSkill)) {
-      message.warning("该Skill已存在");
+      message.warning(t('agents:skill.duplicate'));
       return;
     }
 
@@ -157,7 +159,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
         }));
 
         await updateAgent(agent.id, { skills: skillConfigs });
-        message.success("Skills配置保存成功");
+        message.success(t('agents:skill.saveSuccess'));
 
         if (onSuccess) {
           onSuccess(agent);
@@ -168,12 +170,12 @@ const SkillButton: React.FC<SkillButtonProps> = ({
         throw new Error("Agent ID不存在");
       }
     } catch (error) {
-      console.error("Skills配置保存失败:", error);
+      console.error("Skills config save failed:", error);
 
       if (onError) {
         onError(error);
       } else {
-        message.error("Skills配置保存失败，请重试");
+        message.error(t('agents:skill.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -219,17 +221,17 @@ const SkillButton: React.FC<SkillButtonProps> = ({
         icon={<ThunderboltOutlined />}
         onClick={handleClick}
       >
-        {children || "Skills"}
+        {children || t('agents:skill.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - Skills管理`}
+        title={`${agent.name} - ${t('agents:skill.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSaveChanges}
         onCancel={handleModalClose}
         width={700}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         okButtonProps={{
           icon: <CheckOutlined />,
@@ -242,7 +244,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
             <Space style={{ width: "100%" }}>
               <Select
                 style={{ flex: 1, minWidth: 250 }}
-                placeholder="选择要添加的Skill"
+                placeholder={t('agents:skill.selectPlaceholder')}
                 value={selectedSkill}
                 onChange={setSelectedSkill}
                 allowClear
@@ -273,7 +275,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                         <Tag
                           color={skill.enabled ? "green" : "red"}
                         >
-                          {skill.enabled ? "启用" : "禁用"}
+                          {skill.enabled ? t('agents:skill.enabled') : t('agents:skill.disabled')}
                         </Tag>
                       </Space>
                     </div>
@@ -286,7 +288,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                 onClick={handleAddSkill}
                 disabled={!selectedSkill}
               >
-                添加
+                {t('common:add')}
               </Button>
             </Space>
           </div>
@@ -294,7 +296,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
           {/* Skill列表区域 */}
           <div style={{ marginTop: "20px" }}>
             <Text strong style={{ marginBottom: 8, display: "block" }}>
-              Skills ({pendingSkills.length}个)：
+              {t('agents:skill.listTitle', { count: pendingSkills.length })}
             </Text>
             <div
               style={{
@@ -333,7 +335,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                               handleToggleSkill(skill.name, e.target.checked)
                             }
                           >
-                            启用
+                            {t('agents:skill.enabled')}
                           </Checkbox>,
                           <Button
                             key="remove"
@@ -343,7 +345,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                             icon={<DeleteOutlined />}
                             onClick={() => handleRemoveSkill(skill.name)}
                           >
-                            移除
+                            {t('agents:skill.remove')}
                           </Button>,
                         ]}
                       >
@@ -359,7 +361,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                               <Tag
                                 color={skillEnabled ? "green" : "red"}
                               >
-                                {skillEnabled ? "可用" : "不可用"}
+                                {skillEnabled ? t('agents:skill.available') : t('agents:skill.unavailable')}
                               </Tag>
                             </Space>
                           }
@@ -389,7 +391,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
                     padding: "40px 0",
                   }}
                 >
-                  暂无配置Skills
+                  {t('agents:skill.empty')}
                 </div>
               )}
             </div>
@@ -401,7 +403,7 @@ const SkillButton: React.FC<SkillButtonProps> = ({
               style={commonStyles.infoBox}
             >
               <Text type="secondary" style={{ fontSize: 12 }}>
-                检测到配置变更，点击"保存配置"按钮应用更改
+                {t('common:changeDetected')}
               </Text>
             </div>
           )}

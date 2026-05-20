@@ -1,0 +1,52 @@
+{
+  "title": "Long-term Memory",
+  "loadFailed": "Failed to load memory configs, please retry",
+  "addButton": "Add Config",
+  "columns": {
+    "name": "Name",
+    "memoryLibraryId": "Memory Library ID",
+    "projectId": "Project ID",
+    "profileSchema": "Profile Schema",
+    "relatedAgents": "Related Agents",
+    "status": "Status",
+    "action": "Action"
+  },
+  "relatedTooltip": "Related agents: {{names}}",
+  "noRelated": "No related agents",
+  "deleteDisabled": "This memory config is used by {{count}} agent(s) and cannot be deleted",
+  "deleteEnabled": "Delete memory config",
+  "toggleSuccess": "Memory config {{status}}",
+  "enableSuccess": "Memory config enabled",
+  "disableSuccess": "Memory config disabled",
+  "toggleFailed": "Status update failed, please retry",
+  "updateSuccess": "Memory config updated",
+  "createSuccess": "Memory config created",
+  "saveFailed": "Save failed, please retry",
+  "deleteSuccess": "Memory config deleted",
+  "deleteFailed": "Delete failed, please retry",
+  "edit": "Edit",
+  "delete": "Delete",
+  "modal": {
+    "editTitle": "Edit Long-term Memory Config",
+    "addTitle": "Create Long-term Memory Config",
+    "name": "Name",
+    "namePlaceholder": "Please input memory config name",
+    "nameRequired": "Please input name",
+    "memoryLibraryId": "Memory Library ID",
+    "memoryLibraryIdPlaceholder": "Please input memory library ID",
+    "projectId": "Project ID",
+    "projectIdPlaceholder": "Please input project ID",
+    "profileSchema": "Profile Schema",
+    "profileSchemaPlaceholder": "Please input profile schema",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Please input API Key (optional)"
+  },
+  "confirmDelete": {
+    "title": "Confirm delete memory config",
+    "intro": "You are about to delete the following memory config:",
+    "name": "Name: ",
+    "id": "ID: ",
+    "warning": "⚠️ This action is irreversible. Continue?",
+    "ok": "Confirm delete"
+  }
+}

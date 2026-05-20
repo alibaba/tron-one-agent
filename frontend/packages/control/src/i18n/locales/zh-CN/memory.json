@@ -1,0 +1,52 @@
+{
+  "title": "长期记忆管理",
+  "loadFailed": "加载长期记忆配置列表失败，请重试",
+  "addButton": "新增配置",
+  "columns": {
+    "name": "名称",
+    "memoryLibraryId": "记忆库ID",
+    "projectId": "项目ID",
+    "profileSchema": "用户画像Schema",
+    "relatedAgents": "已关联Agents",
+    "status": "状态",
+    "action": "操作"
+  },
+  "relatedTooltip": "关联的Agents: {{names}}",
+  "noRelated": "暂无关联的Agents",
+  "deleteDisabled": "该记忆配置已被 {{count}} 个Agent关联，无法删除",
+  "deleteEnabled": "删除记忆配置",
+  "toggleSuccess": "记忆配置已{{status}}",
+  "enableSuccess": "记忆配置已启用",
+  "disableSuccess": "记忆配置已禁用",
+  "toggleFailed": "状态更新失败，请重试",
+  "updateSuccess": "记忆配置更新成功",
+  "createSuccess": "记忆配置创建成功",
+  "saveFailed": "保存失败，请重试",
+  "deleteSuccess": "记忆配置删除成功",
+  "deleteFailed": "删除失败，请重试",
+  "edit": "编辑",
+  "delete": "删除",
+  "modal": {
+    "editTitle": "编辑长期记忆配置",
+    "addTitle": "新增长期记忆配置",
+    "name": "名称",
+    "namePlaceholder": "请输入记忆配置名称",
+    "nameRequired": "请输入名称",
+    "memoryLibraryId": "记忆库ID",
+    "memoryLibraryIdPlaceholder": "请输入记忆库ID",
+    "projectId": "项目ID",
+    "projectIdPlaceholder": "请输入项目ID",
+    "profileSchema": "用户画像Schema",
+    "profileSchemaPlaceholder": "请输入用户画像Schema",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "请输入API Key（可选）"
+  },
+  "confirmDelete": {
+    "title": "确认删除长期记忆配置",
+    "intro": "您即将删除以下长期记忆配置：",
+    "name": "名称：",
+    "id": "标识：",
+    "warning": "⚠️ 此操作不可撤销，请确认是否继续？",
+    "ok": "确认删除"
+  }
+}

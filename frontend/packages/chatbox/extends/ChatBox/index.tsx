@@ -27,6 +27,7 @@ import Header from "./Header";
 import { NormalMessageInput, MultiModeMessageInput } from "./MessageInput";
 import type { AttachmentItem, VoiceInputConfig } from "./MessageInput";
 import styles from "./index.module.less";
+import { t } from "../../locale";
 import {
   UserSessionMessage,
   AgentSessionMessage,
@@ -150,7 +151,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
         await handleSendMessage(text, attachments);
         setInputValue("");
       } catch (error) {
-        console.error("发送消息失败:", error);
+        console.error("Failed to send message:", error);
       } finally {
         setSending(false);
       }
@@ -300,7 +301,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               running={running}
               onStop={props.onStop}
               placeholder={
-                hasPendingHitl ? "请先完成问卷后再发送消息" : sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
+                hasPendingHitl ? t('hitlPendingPlaceholder') : sending ? t('sending') : t('chatPlaceholder')
               }
               supportInputTypes={supportInputTypes}
               voiceInput={voiceInput}
@@ -315,7 +316,7 @@ const ChatBox: React.FC<ChatBoxProps> = (props) => {
               onStop={props.onStop}
               voiceInput={voiceInput}
               placeholder={
-                hasPendingHitl ? "请先完成问卷后再发送消息" : sending ? "发送中..." : "输入消息... (Enter发送，Shift+Enter换行)"
+                hasPendingHitl ? t('hitlPendingPlaceholder') : sending ? t('sending') : t('chatPlaceholder')
               }
             />
           )}

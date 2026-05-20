@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   Select,
@@ -47,6 +48,7 @@ interface Mcp {
 }
 
 const ToolDebugger: React.FC = () => {
+  const { t } = useTranslation(["debug", "common"]);
   const [mcpList, setMcpList] = useState<Mcp[]>([]);
   const [toolList, setToolList] = useState<Tool[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -64,7 +66,7 @@ const ToolDebugger: React.FC = () => {
       setMcpList(result.data || []);
     } catch (error) {
       console.error("获取MCP列表失败:", error);
-      message.error("获取MCP列表失败");
+      message.error(t("debug:mcp.errors.fetchMcpsFailed"));
     } finally {
       setLoading(false);
     }
@@ -82,7 +84,7 @@ const ToolDebugger: React.FC = () => {
       setToolList(result || []);
     } catch (error) {
       console.error("获取工具Schema失败:", error);
-      message.error("获取工具Schema失败");
+      message.error(t("debug:mcp.errors.fetchToolsFailed"));
     } finally {
       setSchemaLoading(false);
     }
@@ -101,8 +103,8 @@ const ToolDebugger: React.FC = () => {
       );
       setDebugResult(result);
     } catch (error) {
-      message.error("调试工具失败");
-      setDebugResult({ error: (error as Error).message || "调试工具失败" });
+      message.error(t("debug:mcp.errors.debugFailed"));
+      setDebugResult({ error: (error as Error).message || t("debug:mcp.errors.debugFailed") });
     } finally {
       setDebugLoading(false);
     }
@@ -126,12 +128,13 @@ const ToolDebugger: React.FC = () => {
 
   useEffect(() => {
     fetchAllMcpList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className={styles.container}>
       <Card
-        title="Mcp调试"
+        title={t("debug:mcp.title")}
         className={styles.pageCard}
         classNames={{
           body: styles.pageCardBody,
@@ -141,7 +144,7 @@ const ToolDebugger: React.FC = () => {
         <Row gutter={16} style={{ width: "100%" }}>
           {/* 左侧卡片：工具Schema和提示结果 */}
           <Col span={12}>
-            <Card title="Mcp Tool Schema">
+            <Card title={t("debug:mcp.schemaTitle")}>
               <Spin spinning={schemaLoading}>
                 {schema ? (
                   <Card size="small" className={styles.schemaCard}>
@@ -151,20 +154,20 @@ const ToolDebugger: React.FC = () => {
                   </Card>
                 ) : (
                   <div style={{ textAlign: "center", padding: "24px" }}>
-                    <Text type="secondary">请先选择具体需要调试的工具</Text>
+                    <Text type="secondary">{t("debug:mcp.selectToolEmpty")}</Text>
                   </div>
                 )}
               </Spin>
 
               {(debugResult || debugLoading) && (
                 <div className={styles.section} style={{ marginTop: 24 }}>
-                  <Title level={5}>调试结果</Title>
+                  <Title level={5}>{t("debug:mcp.debugResult")}</Title>
                   <Spin spinning={debugLoading}>
                     <Card size="small" className={styles.resultCard}>
                       <pre className={styles.jsonDisplay}>
                         {debugResult
                           ? JSON.stringify(debugResult, null, 2)
-                          : "等待调试结果..."}
+                          : t("debug:mcp.waitingResult")}
                       </pre>
                     </Card>
                   </Spin>
@@ -175,12 +178,12 @@ const ToolDebugger: React.FC = () => {
 
           {/* 右侧卡片：选择工具、调试面板等 */}
           <Col span={12}>
-            <Card title="调试面板">
+            <Card title={t("debug:mcp.panel")}>
               <div className={styles.section}>
-                <Title level={5}>选择MCP</Title>
+                <Title level={5}>{t("debug:mcp.selectMcp")}</Title>
                 <Select
                   showSearch
-                  placeholder="请选择要调试的MCP"
+                  placeholder={t("debug:mcp.selectMcpPlaceholder")}
                   onChange={handleMcpChange}
                   value={selectedMcp}
                   disabled={loading}
@@ -194,10 +197,10 @@ const ToolDebugger: React.FC = () => {
                 </Select>
               </div>
               <div className={styles.section}>
-                <Title level={5}>选择工具</Title>
+                <Title level={5}>{t("debug:mcp.selectTool")}</Title>
                 <Select
                   showSearch
-                  placeholder="请选择要调试的工具"
+                  placeholder={t("debug:mcp.selectToolPlaceholder")}
                   onChange={handleToolChange}
                   value={selectedTool}
                   style={{ width: "100%" }}
@@ -214,7 +217,7 @@ const ToolDebugger: React.FC = () => {
               </div>
               {schema && (
                 <div className={styles.parametersWrap}>
-                  <Title level={5}>调试参数</Title>
+                  <Title level={5}>{t("debug:mcp.debugParams")}</Title>
                   <div className={styles.parameters}>
                     <Form
                       schema={schema}
@@ -228,7 +231,7 @@ const ToolDebugger: React.FC = () => {
                         htmlType="submit"
                         loading={debugLoading}
                       >
-                        执行调试
+                        {t("debug:mcp.executeDebug")}
                       </Button>
                     </Form>
                   </div>

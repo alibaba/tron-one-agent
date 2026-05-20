@@ -1,0 +1,10 @@
+{
+  "agents": "Agents",
+  "tools": "Tools",
+  "mcp": "MCP",
+  "kb": "Knowledge Base",
+  "skills": "Skills",
+  "memory": "Long-term Memory",
+  "manage": "Manage",
+  "debug": "Debug"
+}

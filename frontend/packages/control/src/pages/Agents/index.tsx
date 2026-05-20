@@ -16,6 +16,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   Button,
@@ -54,6 +55,7 @@ import MemoryButton from "./components/MemoryButton";
 import agentsStyles from "./index.module.less";
 
 const AgentsPage: React.FC = () => {
+  const { t } = useTranslation(["agents", "common"]);
   const navigate = useNavigate();
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,26 +65,26 @@ const AgentsPage: React.FC = () => {
 
   const reactColumns: ColumnsType<AgentConfig> = [
     {
-      title: "ID",
+      title: t("common:id"),
       dataIndex: "id",
       key: "id",
       width: 80,
     },
     {
-      title: "名称",
+      title: t("agents:columns.name"),
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "状态",
+      title: t("agents:columns.status"),
       dataIndex: "enabled",
       key: "enabled",
       render: (enabled: boolean) => (
-        <Tag color={enabled ? "green" : "red"}>{enabled ? "在线" : "离线"}</Tag>
+        <Tag color={enabled ? "green" : "red"}>{enabled ? t("agents:online") : t("agents:offline")}</Tag>
       ),
     },
     {
-      title: "工具",
+      title: t("agents:columns.tools"),
       key: "toolsCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ToolOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
@@ -91,7 +93,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "MCP",
+      title: t("agents:columns.mcp"),
       key: "mcpCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ApiOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
@@ -100,7 +102,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "知识库",
+      title: t("agents:columns.kb"),
       key: "kbCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<DatabaseOutlined />} style={{ background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink }}>
@@ -109,7 +111,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "Skills",
+      title: t("agents:columns.skills"),
       key: "skillsCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ThunderboltOutlined />} style={{ background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink }}>
@@ -118,7 +120,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "操作",
+      title: t("agents:columns.action"),
       key: "action",
       width: 400,
       fixed: "right",
@@ -131,7 +133,7 @@ const AgentsPage: React.FC = () => {
               icon={<EyeOutlined />}
               onClick={() => handleView(record)}
             >
-              详情
+              {t("agents:viewDetail")}
             </Button>
             <RenameButton agent={record} onSuccess={handleSuccess} />
             <StatusToggleButton agent={record} onSuccess={handleSuccess} />
@@ -152,26 +154,26 @@ const AgentsPage: React.FC = () => {
 
   const oneColumns: ColumnsType<AgentConfig> = [
     {
-      title: "ID",
+      title: t("common:id"),
       dataIndex: "id",
       key: "id",
       width: 80,
     },
     {
-      title: "名称",
+      title: t("agents:columns.name"),
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "状态",
+      title: t("agents:columns.status"),
       dataIndex: "enabled",
       key: "enabled",
       render: (enabled: boolean) => (
-        <Tag color={enabled ? "green" : "red"}>{enabled ? "在线" : "离线"}</Tag>
+        <Tag color={enabled ? "green" : "red"}>{enabled ? t("agents:online") : t("agents:offline")}</Tag>
       ),
     },
     {
-      title: "子Agent",
+      title: t("agents:columns.subAgent"),
       key: "subAgentCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<TeamOutlined />} style={{ background: colors.gradientCardDark, borderColor: colors.gradientCardDark, color: colors.onDark }}>
@@ -180,7 +182,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "工具",
+      title: t("agents:columns.tools"),
       key: "toolsCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ToolOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
@@ -189,7 +191,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "MCP",
+      title: t("agents:columns.mcp"),
       key: "mcpCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ApiOutlined />} style={{ background: colors.gradientCardBlue, borderColor: colors.gradientCardBlue, color: colors.ink }}>
@@ -198,7 +200,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "知识库",
+      title: t("agents:columns.kb"),
       key: "kbCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<DatabaseOutlined />} style={{ background: colors.gradientCardTeal, borderColor: colors.gradientCardTeal, color: colors.ink }}>
@@ -207,7 +209,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "Skills",
+      title: t("agents:columns.skills"),
       key: "skillsCount",
       render: (_, record: AgentConfig) => (
         <Tag icon={<ThunderboltOutlined />} style={{ background: colors.gradientCardPurple, borderColor: colors.gradientCardPurple, color: colors.ink }}>
@@ -216,7 +218,7 @@ const AgentsPage: React.FC = () => {
       ),
     },
     {
-      title: "操作",
+      title: t("agents:columns.action"),
       key: "action",
       width: 400,
       fixed: "right",
@@ -229,7 +231,7 @@ const AgentsPage: React.FC = () => {
               icon={<EyeOutlined />}
               onClick={() => handleView(record)}
             >
-              详情
+              {t("agents:viewDetail")}
             </Button>
             <RenameButton agent={record} onSuccess={handleSuccess} />
             <StatusToggleButton agent={record} onSuccess={handleSuccess} />
@@ -257,7 +259,7 @@ const AgentsPage: React.FC = () => {
       setAgents(agentsData.data || []);
     } catch (error) {
       console.error("加载Agents失败:", error);
-      message.error("加载Agents失败，请重试");
+      message.error(t("agents:loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -266,6 +268,7 @@ const AgentsPage: React.FC = () => {
   // 组件挂载时加载数据
   useEffect(() => {
     loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleView = (agent: AgentConfig) => {
@@ -280,19 +283,19 @@ const AgentsPage: React.FC = () => {
   return (
     <div className={agentsStyles.container}>
       <Card
-        title="Agents管理"
+        title={t("agents:title")}
         extra={
           <Button
             icon={<ReloadOutlined />}
             onClick={loadAgents}
             loading={loading}
           >
-            刷新
+            {t("common:refresh")}
           </Button>
         }
       >
         <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 0 }}>OneAgent</Typography.Title>
-        <Typography.Text type="secondary">Multi Agents in One</Typography.Text>
+        <Typography.Text type="secondary">{t("agents:subtitleOne")}</Typography.Text>
         <Table
           columns={oneColumns}
           dataSource={oneAgents}
@@ -302,7 +305,7 @@ const AgentsPage: React.FC = () => {
         />
         <Divider />
         <Typography.Title level={5} style={{ marginBottom: 0 }}>ReAct Agent</Typography.Title>
-        <Typography.Text type="secondary">Reasoning, Acting, Observing Loop Agent(Single)</Typography.Text>
+        <Typography.Text type="secondary">{t("agents:subtitleReact")}</Typography.Text>
         <Table
           columns={reactColumns}
           dataSource={reactAgents}

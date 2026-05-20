@@ -18,6 +18,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button, Modal, Typography, message, Space, Tabs, Form, Select, Input, Switch, Divider } from 'antd';
 import { MessageOutlined, CheckOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { AgentConfig } from '../../../types/agent.interface';
 import { ChatModelConfig } from '../../../types/chat-model.interface';
 import { ChatModelType } from '../../../types/common.interface';
@@ -53,7 +54,8 @@ interface ChatConfigButtonProps {
 const ModelConfigForm: React.FC<{
   config: ChatModelConfig;
   onChange: (config: ChatModelConfig) => void;
-}> = ({ config, onChange }) => {
+  t: (key: string) => string;
+}> = ({ config, onChange, t }) => {
   const [kwargsJson, setKwargsJson] = useState(
     config.generateKwargs ? JSON.stringify(config.generateKwargs, null, 2) : '{}'
   );
@@ -82,14 +84,14 @@ const ModelConfigForm: React.FC<{
       isInternalEditRef.current = true;
       onChange({ ...config, generateKwargs: parsed });
     } catch {
-      setKwargsError('JSON 格式错误');
+      setKwargsError(t('agents:chatConfig.jsonError'));
     }
-  }, [config, onChange]);
+  }, [config, onChange, t]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Form layout="vertical" size="small">
-        <Form.Item label="模型类型" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.modelType')} style={{ marginBottom: 12 }}>
           <Select
             value={config.type}
             onChange={(v) => updateField('type', v)}
@@ -97,38 +99,38 @@ const ModelConfigForm: React.FC<{
           />
         </Form.Item>
 
-        <Form.Item label="API Key" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.apiKey')} style={{ marginBottom: 12 }}>
           <Input.Password
             value={config.apiKey || ''}
             onChange={(e) => updateField('apiKey', e.target.value)}
-            placeholder="输入 API Key"
+            placeholder={t('agents:chatConfig.apiKeyPlaceholder')}
           />
         </Form.Item>
 
-        <Form.Item label="模型名称" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.modelName')} style={{ marginBottom: 12 }}>
           <Input
             value={config.modelName || ''}
             onChange={(e) => updateField('modelName', e.target.value)}
-            placeholder="例如 qwen3-max, gpt-4"
+            placeholder={t('agents:chatConfig.modelNamePlaceholder')}
           />
         </Form.Item>
 
-        <Form.Item label="Base URL" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.baseUrl')} style={{ marginBottom: 12 }}>
           <Input
             value={config.baseUrl || ''}
             onChange={(e) => updateField('baseUrl', e.target.value)}
-            placeholder="OpenAI Compatible 类型必填"
+            placeholder={t('agents:chatConfig.baseUrlPlaceholder')}
           />
         </Form.Item>
 
-        <Form.Item label="流式输出" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.stream')} style={{ marginBottom: 12 }}>
           <Switch
             checked={config.stream !== false}
             onChange={(v) => updateField('stream', v)}
           />
         </Form.Item>
 
-        <Form.Item label="深度思考" style={{ marginBottom: 12 }}>
+        <Form.Item label={t('agents:chatConfig.thinking')} style={{ marginBottom: 12 }}>
           <Switch
             checked={config.thinking === true}
             onChange={(v) => updateField('thinking', v)}
@@ -214,6 +216,7 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
   onError,
   children
 }) => {
+  const { t } = useTranslation(['agents', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
@@ -240,7 +243,7 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
           chatModel: chatConfig,
           fastChatModel: fastChatConfig
         });
-        message.success('模型配置保存成功');
+        message.success(t('agents:chatConfig.saveSuccess'));
 
         if (onSuccess) {
           onSuccess(agent);
@@ -251,12 +254,12 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
         throw new Error('Agent ID不存在');
       }
     } catch (error) {
-      console.error('模型配置保存失败:', error);
+      console.error('Model config save failed:', error);
 
       if (onError) {
         onError(error);
       } else {
-        message.error('模型配置保存失败，请重试');
+        message.error(t('agents:chatConfig.saveFailed'));
       }
     } finally {
       setLoading(false);
@@ -276,18 +279,18 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
         icon={<MessageOutlined />}
         onClick={handleClick}
       >
-        {children || 'ChatModel配置'}
+        {children || t('agents:chatConfig.button')}
       </Button>
 
       <Modal
-        title={`${agent.name} - 模型配置`}
+        title={`${agent.name} - ${t('agents:chatConfig.modalTitle')}`}
         open={isModalVisible}
         onOk={handleSave}
         onCancel={() => setIsModalVisible(false)}
         width={700}
         style={{ top: 20 }}
-        okText="保存配置"
-        cancelText="取消"
+        okText={t('common:saveConfig')}
+        cancelText={t('common:cancel')}
         confirmLoading={loading}
         okButtonProps={{
           icon: <CheckOutlined />,
@@ -304,7 +307,7 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
             }
             key="chat"
           >
-            <ModelConfigForm config={chatConfig} onChange={setChatConfig} />
+            <ModelConfigForm config={chatConfig} onChange={setChatConfig} t={t} />
           </TabPane>
           <TabPane
             tab={
@@ -315,7 +318,7 @@ const ChatConfigButton: React.FC<ChatConfigButtonProps> = ({
             }
             key="fast"
           >
-            <ModelConfigForm config={fastChatConfig} onChange={setFastChatConfig} />
+            <ModelConfigForm config={fastChatConfig} onChange={setFastChatConfig} t={t} />
           </TabPane>
         </Tabs>
       </Modal>
