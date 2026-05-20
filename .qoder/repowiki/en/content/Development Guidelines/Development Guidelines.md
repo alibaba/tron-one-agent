@@ -3,20 +3,16 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
+- [docs/zh/develop_guide.md](file://docs/zh/develop_guide.md)
+- [docs/zh/depoly_guide.md](file://docs/zh/depoly_guide.md)
 - [backend_java/pom.xml](file://backend_java/pom.xml)
 - [backend_java/checkstyle.xml](file://backend_java/checkstyle.xml)
 - [backend_java_api.yaml](file://backend_java_api.yaml)
 - [backend_java/bootstrap/src/main/resources/application.yaml](file://backend_java/bootstrap/src/main/resources/application.yaml)
 - [backend_java/bootstrap/src/main/resources/logback.xml](file://backend_java/bootstrap/src/main/resources/logback.xml)
 - [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java)
-- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java)
-- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
-- [backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java)
-- [backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json](file://backend_java/bootstrap/src/test/resources/datasets/test-one-agent-v1.json)
 - [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/A2AController.java)
 - [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java)
-- [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtUtils.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtUtils.java)
-- [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AuthController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AuthController.java)
 - [backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AdminController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AdminController.java)
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java)
 - [backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlSessionRepository.java)
@@ -28,12 +24,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive JWT authentication system with interceptor and utility components
-- Integrated admin management workflows with CRUD operations and security enforcement
-- Implemented API contract-first development using OpenAPI 3.0 specification
-- Enhanced testing infrastructure with 15+ new test classes covering authentication, admin management, and API endpoints
-- Added Checkstyle integration for code quality enforcement with Google Java Style configuration
-- Expanded development workflow documentation to cover the complete enhanced system
+- Updated to reflect the removal of Guidelines.md file which contained 842 lines of procedural documentation content
+- Maintained comprehensive coverage of existing system architecture, components, and development practices
+- Preserved all technical documentation including API specifications, testing strategies, and security implementations
+- Updated references to point to available documentation files (develop_guide.md and depoly_guide.md)
+- Kept all code examples, architectural diagrams, and implementation details intact
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -50,10 +45,13 @@
 12. [Performance Considerations](#performance-considerations)
 13. [Troubleshooting Guide](#troubleshooting-guide)
 14. [Contribution Workflow and Community Guidelines](#contribution-workflow-and-community-guidelines)
-15. [Appendices](#appendices)
+15. [Documentation References](#documentation-references)
+16. [Appendices](#appendices)
 
 ## Introduction
 This document provides comprehensive development guidelines for contributing to Tron OneAgent. It covers code standards and conventions for Java backend, TypeScript/React frontend, and Python skill implementation; testing strategies (unit, integration, and functional testing); debugging techniques and local development workflows; encryption utilities and security best practices; performance optimization and profiling; and the contribution workflow and community guidelines. The system now includes a robust JWT authentication framework, admin management capabilities, contract-first API development using OpenAPI specifications, and comprehensive testing infrastructure with over 15 new test classes.
+
+**Updated** Removed reference to Guidelines.md which was removed from the repository, replacing it with references to available documentation files.
 
 ## Project Structure
 Tron OneAgent follows a multi-module Maven layout for the Java backend and a monorepo-style Yarn workspaces layout for the frontend. The backend is organized into modules for API, core business logic, infrastructure, utilities, and bootstrapping. The frontend uses a workspace with multiple packages (e.g., control, chatbox, client). The project now includes comprehensive authentication, admin management, and API contract development capabilities.
@@ -605,6 +603,35 @@ Local development quickstart:
 
 **Section sources**
 - [README.md:109-156](file://README.md#L109-L156)
+
+## Documentation References
+
+**Updated** Removed references to Guidelines.md and replaced with available documentation files.
+
+### Available Documentation
+The project maintains comprehensive documentation in the docs directory:
+
+- **Development Guide** (`docs/zh/develop_guide.md`): Detailed technical documentation covering core flows, API specifications, database schemas, and integration guides for tools, knowledge bases, long-term memory, MCP servers, and skills.
+- **Deployment Guide** (`docs/zh/depoly_guide.md`): Complete Kubernetes deployment guide with environment preparation, configuration management, image building, and production deployment procedures.
+
+### Documentation Structure
+The development guide covers:
+- Core workflow patterns (ReAct Agent Loop, Agent initialization, asynchronous event flows)
+- Complete API documentation with request/response schemas
+- Database table structures and event sourcing data flows
+- Model configuration options and integration patterns
+- Tool development and registration processes
+- Knowledge base integration (Bailian,百炼)
+- Long-term memory integration (Bailian,百炼)
+- MCP Server integration and configuration
+- Skill development and deployment
+- Multi-modal integration (images, ASR, TTS)
+- Observability (tracing, metrics, logging)
+- Evaluation frameworks and testing methodologies
+
+**Section sources**
+- [docs/zh/develop_guide.md:1-800](file://docs/zh/develop_guide.md#L1-L800)
+- [docs/zh/depoly_guide.md:1-465](file://docs/zh/depoly_guide.md#L1-L465)
 
 ## Appendices
 

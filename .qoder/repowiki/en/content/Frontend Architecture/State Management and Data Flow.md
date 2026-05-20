@@ -9,25 +9,47 @@
 - [updateMessagesByEvents.ts](file://frontend/packages/chatbox/utils/updateMessagesByEvents.ts)
 - [EventSource.ts](file://frontend/packages/chatbox/eventSource/EventSource.ts)
 - [SseEventSource.ts](file://frontend/packages/chatbox/eventSource/SseEventSource.ts)
+- [locale.ts](file://frontend/packages/chatbox/locale.ts)
+- [TextContent/index.tsx](file://frontend/packages/chatbox/components/TextContent/index.tsx)
+- [ActionContent/index.tsx](file://frontend/packages/chatbox/components/ActionContent/index.tsx)
+- [TaskContent/index.tsx](file://frontend/packages/chatbox/components/TaskContent/index.tsx)
+- [HitlContent/index.tsx](file://frontend/packages/chatbox/components/HitlContent/index.tsx)
+- [MessageItem/index.tsx](file://frontend/packages/chatbox/components/MessageItem/index.tsx)
+- [MessageList/index.tsx](file://frontend/packages/chatbox/components/MessageList/index.tsx)
+- [ChatBox/index.tsx](file://frontend/packages/chatbox/extends/ChatBox/index.tsx)
+- [App.tsx](file://frontend/packages/control/src/App.tsx)
+- [chatboxBridge.ts](file://frontend/packages/control/src/i18n/chatboxBridge.ts)
+- [backendMap.ts](file://frontend/packages/control/src/i18n/backendMap.ts)
+- [index.ts](file://frontend/packages/control/src/i18n/index.ts)
 - [package.json](file://frontend/package.json)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive internationalization system integration documentation
+- Documented the lightweight locale registry and translation system
+- Added sections covering chatbox locale configuration and backend label mapping
+- Updated component integration examples to show t() function usage
+- Added internationalization bridge between control package and chatbox package
+- Documented backend label translation for tool names and actions
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+5. [Internationalization System](#internationalization-system)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the state management and data flow architecture for the Tron OneAgent frontend chat experience. It focuses on the store-like pattern implemented via React hooks and reducers, the event-driven chat state updates, and the real-time streaming pipeline. It also documents TypeScript types for sessions, messages, and user input states, and provides guidance on optimistic updates, streaming handling, and performance optimization for large conversation histories.
+This document explains the state management and data flow architecture for the Tron OneAgent frontend chat experience. It focuses on the store-like pattern implemented via React hooks and reducers, the event-driven chat state updates, and the real-time streaming pipeline. The system now includes a comprehensive internationalization framework that supports dynamic UI text rendering across all message types including text, actions, tasks, and HITL interactions. It also documents TypeScript types for sessions, messages, and user input states, and provides guidance on optimistic updates, streaming handling, and performance optimization for large conversation histories.
 
 ## Project Structure
-The frontend is organized as a monorepo workspace with multiple packages. The chat state management and real-time updates live primarily in the chatbox package, while the control package orchestrates routing and page composition.
+The frontend is organized as a monorepo workspace with multiple packages. The chat state management and real-time updates live primarily in the chatbox package, while the control package orchestrates routing and page composition. The internationalization system spans both packages with a lightweight locale registry in the chatbox and a full i18n bridge in the control package.
 
 ```mermaid
 graph TB
@@ -35,15 +57,21 @@ subgraph "Workspace"
 WS["frontend/package.json<br/>Workspaces: packages/*"]
 end
 subgraph "Packages"
-CB["chatbox/<br/>State + Events + Utils"]
-CTRL["control/<br/>Pages + Routing"]
+CB["chatbox/<br/>State + Events + Utils + i18n"]
+CTRL["control/<br/>Pages + Routing + i18n Bridge"]
 end
 WS --> CB
 WS --> CTRL
+subgraph "Internationalization Flow"
+CTRL --> |syncChatboxLocale| CB
+CB --> |t() function| Components
+end
 ```
 
 **Diagram sources**
 - [package.json:1-12](file://frontend/package.json#L1-L12)
+- [App.tsx:48-60](file://frontend/packages/control/src/App.tsx#L48-L60)
+- [chatboxBridge.ts:20-30](file://frontend/packages/control/src/i18n/chatboxBridge.ts#L20-L30)
 
 **Section sources**
 - [package.json:1-12](file://frontend/package.json#L1-L12)
@@ -52,6 +80,7 @@ WS --> CTRL
 - Chat state container and reducer: Implements a reducer-based store for conversation state, with actions to patch state, append user messages, and update message lists from events.
 - Event buffering: Batch and deduplicate real-time events to reduce re-renders and stabilize UI updates.
 - Event source abstractions: Pluggable event sources (SSE) that emit typed events consumed by the chat model.
+- Internationalization system: Lightweight locale registry with translation functions and backend label mapping.
 - Utilities: Event-to-state transformer that merges incremental content and status changes into the message list.
 
 Key responsibilities:
@@ -59,14 +88,17 @@ Key responsibilities:
 - Local component state: UI flags (running) and transient inputs remain in component scope.
 - Real-time updates: Events are buffered and applied in batches to maintain responsiveness.
 - Type safety: Strongly typed session, message, content, and event models.
+- Dynamic localization: Components use translation functions for all UI text rendering.
+- Backend integration: Tool names and actions are automatically translated through label mapping.
 
 **Section sources**
 - [useChatModel.ts:89-231](file://frontend/packages/chatbox/hooks/useChatModel.ts#L89-L231)
 - [chat.ts:79-136](file://frontend/packages/chatbox/types/chat.ts#L79-L136)
 - [base.ts:26-125](file://frontend/packages/chatbox/types/base.ts#L26-L125)
+- [locale.ts:147-206](file://frontend/packages/chatbox/locale.ts#L147-L206)
 
 ## Architecture Overview
-The chat state lifecycle integrates user actions, event sources, buffering, and reducer-driven updates.
+The chat state lifecycle integrates user actions, event sources, buffering, and reducer-driven updates, now enhanced with internationalization support.
 
 ```mermaid
 sequenceDiagram
@@ -75,6 +107,7 @@ participant Model as "useChatModel"
 participant Buffer as "EventBuff"
 participant ES as "SseEventSource"
 participant Reducer as "chatReducer"
+participant I18n as "Locale System"
 UI->>Model : "sendUserMessageShawde(content)"
 Model->>Reducer : "ADD_USER_MESSAGE_SHAWDE"
 Reducer-->>Model : "Updated ChatState (messages)"
@@ -85,6 +118,8 @@ Buffer->>Buffer : "batch + dedupe + flush"
 Buffer->>Reducer : "UPDATE_CHAT_MESAGE_LIST_BY_EVENTS"
 Reducer-->>Model : "Updated ChatState (merged)"
 Model-->>UI : "data updated"
+UI->>I18n : "t('key', vars)"
+I18n-->>UI : "localized string"
 ```
 
 **Diagram sources**
@@ -92,6 +127,93 @@ Model-->>UI : "data updated"
 - [eventbuffer.ts:43-113](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts#L43-L113)
 - [updateMessagesByEvents.ts:331-352](file://frontend/packages/chatbox/utils/updateMessagesByEvents.ts#L331-L352)
 - [SseEventSource.ts:72-95](file://frontend/packages/chatbox/eventSource/SseEventSource.ts#L72-L95)
+- [locale.ts:184-205](file://frontend/packages/chatbox/locale.ts#L184-L205)
+
+## Internationalization System
+
+### Locale Registry and Translation Functions
+The chatbox package implements a lightweight, zero-dependency internationalization system that doesn't rely on external i18n libraries. The system consists of:
+
+- **ChatboxLocale interface**: Defines the complete structure for all translatable UI strings
+- **Default Chinese locale**: Built-in fallback with comprehensive translations
+- **Translation function (t)**: Dot-path key lookup with variable interpolation
+- **Locale synchronization**: Bridge between control package i18n and chatbox locale registry
+
+```mermaid
+classDiagram
+class ChatboxLocale {
++string newSession
++string newSessionBtn
++string send
++string sending
++string interrupt
++ChatboxHitlLocale hitl
++ChatboxTaskLocale task
+}
+class LocaleSystem {
++setChatboxLocale(patch)
++getChatboxLocale()
++t(key, vars)
++subscribeChatboxLocale(fn)
++setBackendLabelMapper(fn)
++mapLabel(raw)
+}
+class TranslationFunction {
++t(key : string, vars? : Record) string
+}
+ChatboxLocale --> LocaleSystem : "configured by"
+LocaleSystem --> TranslationFunction : "provides"
+```
+
+**Diagram sources**
+- [locale.ts:40-119](file://frontend/packages/chatbox/locale.ts#L40-L119)
+- [locale.ts:147-205](file://frontend/packages/chatbox/locale.ts#L147-L205)
+
+### Control Package Integration
+The control package manages the full i18n ecosystem and synchronizes translations with the chatbox:
+
+- **i18n initialization**: Full i18next setup with namespaces for common, agents, tools, etc.
+- **Chatbox namespace**: Dedicated translations for chatbox-specific UI strings
+- **Bridge synchronization**: Automatic locale updates on language changes
+- **Backend label mapping**: Translates tool names and actions from backend responses
+
+```mermaid
+sequenceDiagram
+participant Control as "Control App"
+participant I18n as "i18next"
+participant Bridge as "chatboxBridge"
+participant Chatbox as "Chatbox Locale"
+Control->>I18n : "useTranslation()"
+I18n-->>Control : "i18n instance"
+Control->>Bridge : "syncChatboxLocale(i18n)"
+Bridge->>I18n : "getResourceBundle('chatbox')"
+I18n-->>Bridge : "Partial<ChatboxLocale>"
+Bridge->>Chatbox : "setChatboxLocale(dict)"
+Chatbox-->>Components : "t('key') ready"
+```
+
+**Diagram sources**
+- [App.tsx:48-60](file://frontend/packages/control/src/App.tsx#L48-L60)
+- [chatboxBridge.ts:20-30](file://frontend/packages/control/src/i18n/chatboxBridge.ts#L20-L30)
+
+### Component Integration Examples
+All chatbox components now use the internationalization system for dynamic UI text rendering:
+
+- **TextContent**: Uses `t('loading')` and `t('parseError')` for status messages
+- **ActionContent**: Uses `t('task.finishedAt', { time: formattedTime })` for completion timestamps
+- **TaskContent**: Uses `t('task.finishedAt', { time: formattedTime })` for task completion
+- **HitlContent**: Comprehensive translation support for all interaction elements
+- **MessageItem**: Uses `t('msgStatusSending')`, `t('msgStatusProcessing')`, etc.
+- **ChatBox**: Uses `t('hitlPendingPlaceholder')`, `t('sending')`, `t('chatPlaceholder')`
+
+**Section sources**
+- [locale.ts:147-206](file://frontend/packages/chatbox/locale.ts#L147-L206)
+- [TextContent/index.tsx:86-117](file://frontend/packages/chatbox/components/TextContent/index.tsx#L86-L117)
+- [ActionContent/index.tsx:98](file://frontend/packages/chatbox/components/ActionContent/index.tsx#L98)
+- [TaskContent/index.tsx:117](file://frontend/packages/chatbox/components/TaskContent/index.tsx#L117)
+- [HitlContent/index.tsx:151-398](file://frontend/packages/chatbox/components/HitlContent/index.tsx#L151-L398)
+- [MessageItem/index.tsx:294-406](file://frontend/packages/chatbox/components/MessageItem/index.tsx#L294-L406)
+- [ChatBox/index.tsx:304-321](file://frontend/packages/chatbox/extends/ChatBox/index.tsx#L304-L321)
 
 ## Detailed Component Analysis
 
@@ -318,7 +440,7 @@ end
 - [useChatModel.ts:151-166](file://frontend/packages/chatbox/hooks/useChatModel.ts#L151-L166)
 
 ### Optimistic Updates and User Input Shadows
-Optimistic updates improve perceived latency by immediately appending a user message shadow with EXECUTING status. The shadow’s status can be updated later when the backend confirms receipt or when the final status arrives.
+Optimistic updates improve perceived latency by immediately appending a user message shadow with EXECUTING status. The shadow's status can be updated later when the backend confirms receipt or when the final status arrives.
 
 ```mermaid
 flowchart TD
@@ -339,11 +461,12 @@ UpdateShadow --> End(["Stable state"])
 - [useChatModel.ts:204-219](file://frontend/packages/chatbox/hooks/useChatModel.ts#L204-L219)
 
 ## Dependency Analysis
-The chatbox package composes several modules:
-- Hooks depend on types and utilities.
-- Event buffering depends on event processors.
+The chatbox package composes several modules with enhanced internationalization support:
+- Hooks depend on types, utilities, and locale system.
+- Event buffering depends on event processors and locale-aware components.
 - Event sources depend on the event service abstraction.
-- The reducer consumes event transformers and message types.
+- The reducer consumes event transformers, message types, and translation functions.
+- Components integrate translation functions for all UI text rendering.
 
 ```mermaid
 graph LR
@@ -352,7 +475,8 @@ Utils["utils/updateMessagesByEvents.ts"] --> Hook
 Buffer["eventBuffer/eventbuffer.ts"] --> Hook
 ESAbst["eventSource/EventSource.ts"] --> Hook
 ESImpl["eventSource/SseEventSource.ts"] --> ESAbst
-Hook --> UI["Components consume data/running"]
+Locale["locale.ts"] --> Components["Chatbox Components"]
+Components --> UI["Components consume data/running + t()"]
 subgraph "Types"
 TChat["types/chat.ts"]
 TBase["types/base.ts"]
@@ -369,6 +493,7 @@ Types --> TBase
 - [eventbuffer.ts:18-26](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts#L18-L26)
 - [EventSource.ts:18-26](file://frontend/packages/chatbox/eventSource/EventSource.ts#L18-L26)
 - [SseEventSource.ts:19-26](file://frontend/packages/chatbox/eventSource/SseEventSource.ts#L19-L26)
+- [locale.ts:18-27](file://frontend/packages/chatbox/locale.ts#L18-L27)
 
 **Section sources**
 - [useChatModel.ts:18-34](file://frontend/packages/chatbox/hooks/useChatModel.ts#L18-L34)
@@ -381,8 +506,8 @@ Types --> TBase
 - Immutable updates: Reducer and utilities clone arrays/objects to preserve referential integrity and enable efficient React updates.
 - Streaming control: The model stops the event source upon finalizing agent message status to conserve resources.
 - Large histories: Prefer paginated retrieval of messages and avoid deep cloning of very large arrays; consider virtualization at the UI layer.
-
-[No sources needed since this section provides general guidance]
+- Locale caching: Translation function caches results for performance; locale changes trigger selective re-renders.
+- Backend label mapping: Efficient string lookup for tool names and actions without repeated translation calls.
 
 ## Troubleshooting Guide
 Common issues and strategies:
@@ -390,11 +515,15 @@ Common issues and strategies:
 - Parsing errors: SSE onmessage parsing failures are forwarded to onerror; verify backend event payload format and content-type.
 - Stuck running state: Ensure the model stops when agent status transitions away from EXECUTING; check that lastEventId is updated and that the buffer flushes.
 - Duplicate events: The buffer deduplicates by event ID; verify IDs are unique and that the buffer is not prematurely destroyed.
+- Missing translations: Verify that the control package i18n bridge is properly configured and that the 'chatbox' namespace contains all required translations.
+- Backend label not translating: Check that the backend label mapper is registered and that the mapping exists in the backendMap configuration.
 
 **Section sources**
 - [SseEventSource.ts:84-100](file://frontend/packages/chatbox/eventSource/SseEventSource.ts#L84-L100)
 - [useChatModel.ts:120-149](file://frontend/packages/chatbox/hooks/useChatModel.ts#L120-L149)
 - [eventbuffer.ts:43-52](file://frontend/packages/chatbox/eventBuffer/eventbuffer.ts#L43-L52)
+- [chatboxBridge.ts:20-30](file://frontend/packages/control/src/i18n/chatboxBridge.ts#L20-L30)
+- [backendMap.ts:20-39](file://frontend/packages/control/src/i18n/backendMap.ts#L20-L39)
 
 ## Conclusion
-The chat state management employs a reducer-based store integrated with an event-driven pipeline. The event buffer and transformer utilities ensure robust, efficient updates during streaming conversations. Strong TypeScript types provide clarity across message hierarchies and event semantics. Optimistic updates and controlled streaming enhance UX, while batching and deduplication mitigate performance overhead for large histories.
+The chat state management employs a reducer-based store integrated with an event-driven pipeline and now includes a comprehensive internationalization system. The lightweight locale registry provides dynamic UI text rendering across all message types including text, actions, tasks, and HITL interactions. The control package manages the full i18n ecosystem with automatic synchronization and backend label mapping. The event buffer and transformer utilities ensure robust, efficient updates during streaming conversations. Strong TypeScript types provide clarity across message hierarchies and event semantics. Optimistic updates and controlled streaming enhance UX, while batching, deduplication, and locale caching mitigate performance overhead for large histories.

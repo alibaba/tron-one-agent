@@ -6,6 +6,8 @@
 - [BaseFuncTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java)
 - [BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
 - [OneAgentTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentTest.java)
+- [OneAgentHandlerTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentHandlerTest.java)
+- [ReActAgentHandlerTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/ReActAgentHandlerTest.java)
 - [A2AApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/A2AApiTest.java)
 - [AdminAuthApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java)
 - [SessionApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/SessionApiTest.java)
@@ -19,23 +21,35 @@
 - [pom.xml](file://backend_java/bootstrap/pom.xml)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Added comprehensive unit tests for OneAgentHandler and ReActAgentHandler
+- Expanded functional testing coverage with extensive scenarios
+- Enhanced multi-turn conversation testing capabilities
+- Added sub-agent delegation testing framework
+- Implemented concurrent processing and edge case testing
+- Integrated advanced agent handler testing infrastructure
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Testing Architecture Overview](#testing-architecture-overview)
 3. [Core Testing Infrastructure](#core-testing-infrastructure)
 4. [Functional Testing Framework](#functional-testing-framework)
-5. [API Testing Suite](#api-testing-suite)
-6. [Agent Evaluation Framework](#agent-evaluation-framework)
-7. [Database Testing Strategy](#database-testing-strategy)
-8. [Test Configuration and Environment](#test-configuration-and-environment)
-9. [Test Execution and Reporting](#test-execution-and-reporting)
-10. [Best Practices and Guidelines](#best-practices-and-guidelines)
+5. [Agent Handler Testing Framework](#agent-handler-testing-framework)
+6. [API Testing Suite](#api-testing-suite)
+7. [Agent Evaluation Framework](#agent-evaluation-framework)
+8. [Database Testing Strategy](#database-testing-strategy)
+9. [Test Configuration and Environment](#test-configuration-and-environment)
+10. [Test Execution and Reporting](#test-execution-and-reporting)
+11. [Best Practices and Guidelines](#best-practices-and-guidelines)
 
 ## Introduction
 
 The Tron One Agent project implements a comprehensive testing framework that ensures reliability, maintainability, and quality assurance across all components. This testing framework encompasses functional testing, API integration testing, agent evaluation, and automated quality assessment using advanced evaluation metrics.
 
 The testing infrastructure leverages modern Java testing technologies including JUnit 5, Spring Boot Test, REST Assured for API testing, and specialized evaluation frameworks for agent performance assessment. The framework supports both unit-level and integration-level testing with sophisticated database management and environment configuration.
+
+**Updated** Added comprehensive unit tests for OneAgentHandler and ReActAgentHandler with extensive scenarios covering agent functionality, multi-turn conversations, sub-agent delegation, concurrent processing, and edge cases.
 
 ## Testing Architecture Overview
 
@@ -47,41 +61,48 @@ subgraph "Test Layering"
 A[TestApplication] --> B[BaseFuncTest]
 B --> C[BaseApiTest]
 B --> D[OneAgentTest]
+B --> E[OneAgentHandlerTest]
+B --> F[ReActAgentHandlerTest]
 end
 subgraph "API Test Classes"
-E[A2AApiTest]
-F[AdminAuthApiTest]
-G[SessionApiTest]
-H[HealthApiTest]
-I[DebugApiTest]
-J[FileApiTest]
+G[A2AApiTest]
+H[AdminAuthApiTest]
+I[SessionApiTest]
+J[HealthApiTest]
+K[DebugApiTest]
+L[FileApiTest]
 end
 subgraph "Supporting Components"
-K[JudgeLMFactory]
-L[Database Schema]
-M[Configuration Files]
+M[JudgeLMFactory]
+N[Database Schema]
+O[Configuration Files]
 end
-C --> E
-C --> F
 C --> G
 C --> H
 C --> I
 C --> J
-D --> K
-B --> L
-B --> M
+C --> K
+C --> L
+D --> M
+E --> M
+F --> M
+B --> N
+B --> O
 ```
 
 **Diagram sources**
 - [TestApplication.java:22-24](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java#L22-L24)
 - [BaseFuncTest.java:53-55](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L53-L55)
 - [BaseApiTest.java:31-31](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L31-L31)
+- [OneAgentHandlerTest.java:47-47](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentHandlerTest.java#L47-L47)
+- [ReActAgentHandlerTest.java:43-43](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/ReActAgentHandlerTest.java#L43-L43)
 
-The architecture consists of three primary layers:
+The architecture consists of four primary layers:
 
 1. **Foundation Layer**: TestApplication and Base classes providing common infrastructure
 2. **Specialized Testing Layer**: API-specific test classes for different endpoint groups
-3. **Evaluation Layer**: Advanced testing capabilities for agent performance assessment
+3. **Agent Handler Testing Layer**: Comprehensive unit tests for agent handlers
+4. **Evaluation Layer**: Advanced testing capabilities for agent performance assessment
 
 ## Core Testing Infrastructure
 
@@ -102,6 +123,7 @@ class BaseFuncTest {
 +Agent registry integration
 +Session management
 +Event handling
++AgentResult validation
 }
 class BaseApiTest {
 +REST Assured configuration
@@ -174,6 +196,133 @@ The callAgent method handles:
 - Agent handler invocation
 - Event sink creation
 - Result validation
+
+**Updated** Enhanced with comprehensive AgentResult validation and metrics tracking for both OneAgentHandler and ReActAgentHandler.
+
+## Agent Handler Testing Framework
+
+### OneAgentHandler Comprehensive Testing
+
+The OneAgentHandlerTest class provides extensive testing coverage for the OneAgentHandler functionality:
+
+```mermaid
+classDiagram
+class OneAgentHandlerTest {
++Basic input/output testing
++Sub-agent delegation testing
++Multi-turn conversation testing
++Cancel flow testing
++Usage tracking testing
++Session isolation testing
++Thinking model testing
++Edge case testing
++Concurrent processing testing
++Multiple iteration testing
+}
+class AgentResult {
++Response validation
++Cost metrics tracking
++Usage statistics
++Task collection
++Action tracking
+}
+OneAgentHandlerTest --> AgentResult : "validates"
+```
+
+**Diagram sources**
+- [OneAgentHandlerTest.java:82-314](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentHandlerTest.java#L82-L314)
+
+**Section sources**
+- [OneAgentHandlerTest.java:82-314](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/OneAgentHandlerTest.java#L82-L314)
+
+The testing framework covers:
+
+#### Basic Input/Output Testing
+- Simple greeting responses validation
+- First token delay and cost metrics tracking
+- Response content validation and length requirements
+
+#### Sub-Agent Delegation Testing
+- Travel sub-agent delegation for travel-related queries
+- Task result collection from sub-agents
+- Delegation decision logic validation
+
+#### Multi-Turn Conversation Testing
+- Same session conversation handling
+- Different topic conversation flow
+- Context preservation across turns
+
+#### Advanced Features Testing
+- Cancel flow handling with and without messages
+- Token usage tracking and validation
+- Session isolation between independent sessions
+- Thinking model output with reasoning traces
+- Edge case handling for various inputs
+
+#### Concurrency and Performance Testing
+- Concurrent requests on different sessions
+- Multiple reasoning iteration support
+- Complex input handling (special characters, mixed languages)
+
+### ReActAgentHandler Comprehensive Testing
+
+The ReActAgentHandlerTest class provides extensive testing coverage for the ReActAgentHandler functionality:
+
+```mermaid
+classDiagram
+class ReActAgentHandlerTest {
++Basic input/output testing
++Tool use testing (calculator)
++Multi-turn conversation testing
++Cancel flow testing
++Usage tracking testing
++Session isolation testing
++Empty and edge case testing
++Follow-up after tool use testing
++Concurrent processing testing
+}
+class AgentResult {
++Response validation
++Action tracking
++Cost metrics tracking
++Usage statistics
+}
+ReActAgentHandlerTest --> AgentResult : "validates"
+```
+
+**Diagram sources**
+- [ReActAgentHandlerTest.java:64-281](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/ReActAgentHandlerTest.java#L64-L281)
+
+**Section sources**
+- [ReActAgentHandlerTest.java:64-281](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/core/ReActAgentHandlerTest.java#L64-L281)
+
+The testing framework covers:
+
+#### Basic Input/Output Testing
+- Simple text input response validation
+- First token delay metrics tracking
+- Response content validation and cost metrics
+
+#### Tool Use Testing
+- Calculator tool invocation and result validation
+- Action metrics recording and validation
+- Tool action identification and tracking
+
+#### Multi-Turn Conversation Testing
+- Same session conversation handling
+- Consecutive turns with tool usage
+- Context preservation and response consistency
+
+#### Advanced Features Testing
+- Cancel flow handling with timing considerations
+- Token usage tracking and validation
+- Session isolation between independent sessions
+- Edge case handling for various input lengths
+
+#### Follow-Up and Concurrency Testing
+- Follow-up conversation after tool use
+- Concurrent requests on different sessions
+- Complex calculation scenarios and validation
 
 ## API Testing Suite
 
@@ -389,15 +538,22 @@ flowchart TD
 A[Test Execution] --> B[Functional Tests]
 A --> C[API Integration Tests]
 A --> D[Agent Evaluation Tests]
-B --> E[BaseFuncTest]
-C --> F[BaseApiTest]
-D --> G[OneAgentTest]
-E --> H[Database Tests]
-F --> I[HTTP Tests]
-G --> J[Evaluation Tests]
-H --> K[Schema Validation]
-I --> L[Endpoint Testing]
-J --> M[Performance Metrics]
+A --> E[Agent Handler Tests]
+B --> F[BaseFuncTest]
+C --> G[BaseApiTest]
+D --> H[OneAgentTest]
+E --> I[OneAgentHandlerTest]
+E --> J[ReActAgentHandlerTest]
+F --> K[Database Tests]
+G --> L[HTTP Tests]
+H --> M[Evaluation Tests]
+I --> N[Handler Validation]
+J --> O[Handler Validation]
+K --> P[Schema Validation]
+L --> Q[Endpoint Testing]
+M --> R[Performance Metrics]
+N --> S[Comprehensive Scenarios]
+O --> S
 ```
 
 ### Reporting and Export
@@ -413,6 +569,8 @@ Report formats include:
 - **Markdown Documents**: Documentation-friendly format
 - **Statistical Analysis**: Pass rates and performance metrics
 
+**Updated** Enhanced reporting capabilities now include detailed metrics for both OneAgentHandler and ReActAgentHandler testing scenarios.
+
 ## Best Practices and Guidelines
 
 ### Test Organization Principles
@@ -423,6 +581,7 @@ The testing framework follows established best practices:
 2. **Shared Infrastructure**: Common base classes for consistency
 3. **Isolated Environments**: Database and environment isolation
 4. **Comprehensive Coverage**: Multi-dimensional testing approach
+5. **Extensive Scenario Testing**: Both basic and edge case coverage
 
 ### Test Design Patterns
 
@@ -446,5 +605,9 @@ The framework maintains high standards for test quality:
 - **Clear Assertions**: Explicit validation criteria
 - **Comprehensive Logging**: Detailed execution traces
 - **Performance Monitoring**: Timing and resource usage tracking
+- **Edge Case Coverage**: Extensive testing of boundary conditions
+- **Concurrency Validation**: Proper handling of concurrent requests
 
-The testing framework represents a mature, enterprise-grade solution that ensures comprehensive quality assurance across all aspects of the Tron One Agent system. Its layered architecture, sophisticated evaluation capabilities, and robust infrastructure provide reliable testing foundations for continuous development and deployment.
+**Updated** The framework now includes comprehensive unit tests for agent handlers with extensive scenario coverage, ensuring robust testing of both OneAgentHandler and ReActAgentHandler functionality.
+
+The testing framework represents a mature, enterprise-grade solution that ensures comprehensive quality assurance across all aspects of the Tron One Agent system. Its layered architecture, sophisticated evaluation capabilities, and robust infrastructure provide reliable testing foundations for continuous development and deployment. The addition of comprehensive unit tests for agent handlers significantly enhances the framework's ability to validate complex agent behaviors and interactions.

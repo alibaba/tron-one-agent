@@ -14,29 +14,44 @@
 - [AuthController.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AuthController.java)
 - [JwtAuthInterceptor.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java)
 - [JwtUtils.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtUtils.java)
+- [LoginRequest.java](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/LoginRequest.java)
 - [EncryptUtils.java](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java)
+- [AdminAuthApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java)
+- [BaseApiTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java)
+- [BaseFuncTest.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java)
+- [TestApplication.java](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/TestApplication.java)
 - [application.yaml](file://backend_java/bootstrap/src/main/resources/application.yaml)
+- [init.sql](file://backend_java/bootstrap/src/main/resources/schema/init.sql)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced API authentication testing with comprehensive JWT token generation and validation
+- Improved database initialization process with embedded MariaDB testing framework
+- Streamlined admin user management workflows with automated setup procedures
+- Added comprehensive test coverage for authentication flows and authorization middleware
+- Implemented structured error handling and validation for authentication endpoints
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [System Architecture](#system-architecture)
 3. [Core Components](#core-components)
 4. [Authentication and Authorization](#authentication-and-authorization)
-5. [Data Model](#data-model)
-6. [API Endpoints](#api-endpoints)
-7. [Security Implementation](#security-implementation)
-8. [Initialization Process](#initialization-process)
-9. [Error Handling](#error-handling)
-10. [Configuration Management](#configuration-management)
-11. [Troubleshooting Guide](#troubleshooting-guide)
-12. [Conclusion](#conclusion)
+5. [Testing Framework](#testing-framework)
+6. [Data Model](#data-model)
+7. [API Endpoints](#api-endpoints)
+8. [Security Implementation](#security-implementation)
+9. [Initialization Process](#initialization-process)
+10. [Error Handling](#error-handling)
+11. [Configuration Management](#configuration-management)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
 
 ## Introduction
 
 The Admin Management System is a comprehensive administrative interface built for the Tron One Agent platform. This system provides centralized management capabilities for administrative users, including user creation, authentication, password management, and system administration functions. The system follows modern Spring Boot architecture patterns with clear separation of concerns across presentation, business logic, and data access layers.
 
-The platform supports secure JWT-based authentication, AES encryption for sensitive data, and provides RESTful APIs for administrative operations. It integrates seamlessly with the broader Tron One Agent ecosystem while maintaining strict security boundaries for administrative functions.
+The platform supports secure JWT-based authentication, AES encryption for sensitive data, and provides RESTful APIs for administrative operations. It integrates seamlessly with the broader Tron One Agent ecosystem while maintaining strict security boundaries for administrative functions. Recent enhancements include comprehensive API authentication testing with JWT token generation and improved database initialization processes.
 
 ## System Architecture
 
@@ -64,6 +79,12 @@ end
 subgraph "Security Layer"
 EU[EncryptUtils]
 end
+subgraph "Testing Framework"
+BAT[AdminAuthApiTest]
+BAP[BaseApiTest]
+BFT[BaseFuncTest]
+TA[TestApplication]
+end
 AC --> AS
 AU --> AS
 AS --> AR
@@ -73,14 +94,20 @@ AUM --> ADO
 AS --> EU
 AU --> JS
 AI --> JS
+BAT --> BAP
+BAP --> BFT
+BFT --> TA
 ```
 
 **Diagram sources**
 - [AdminController.java:34-87](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AdminController.java#L34-L87)
 - [AdminService.java:31-98](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/service/AdminService.java#L31-L98)
 - [MysqlAdminRepository.java:32-77](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/repository/mysql/MysqlAdminRepository.java#L32-L77)
+- [AdminAuthApiTest.java:34-227](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java#L34-L227)
+- [BaseApiTest.java:33-79](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L33-L79)
+- [BaseFuncTest.java:56-226](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L56-L226)
 
-The architecture demonstrates clean separation of concerns with the controller layer handling HTTP requests, the service layer implementing business logic, and the repository layer managing data persistence through MyBatis-Plus.
+The architecture demonstrates clean separation of concerns with the controller layer handling HTTP requests, the service layer implementing business logic, and the repository layer managing data persistence through MyBatis-Plus. The testing framework provides comprehensive coverage for authentication flows and authorization middleware.
 
 **Section sources**
 - [AdminController.java:34-87](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AdminController.java#L34-L87)
@@ -211,6 +238,87 @@ The authentication system includes automatic initialization of default admin cre
 - [JwtUtils.java:35-75](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtUtils.java#L35-L75)
 - [JwtAuthInterceptor.java:35-62](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java#L35-L62)
 
+### Authorization Middleware
+
+The JWT authentication interceptor provides seamless authorization for protected endpoints:
+
+```mermaid
+flowchart TD
+Request[HTTP Request] --> CheckAuthHeader["Check Authorization Header"]
+CheckAuthHeader --> HasToken{"Bearer Token Present?"}
+HasToken --> |No| Return401[Return 401 Unauthorized]
+HasToken --> |Yes| ParseToken["Parse JWT Token"]
+ParseToken --> ValidateToken{"Token Valid?"}
+ValidateToken --> |No| Return401
+ValidateToken --> |Yes| ExtractUsername["Extract Username"]
+ExtractUsername --> SetAttribute["Set Auth Attribute"]
+SetAttribute --> AllowAccess[Allow Request Processing]
+Return401 --> End([End])
+AllowAccess --> End
+```
+
+**Diagram sources**
+- [JwtAuthInterceptor.java:44-61](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java#L44-L61)
+
+**Section sources**
+- [JwtAuthInterceptor.java:35-62](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java#L35-L62)
+
+## Testing Framework
+
+### Comprehensive API Authentication Testing
+
+The system includes a sophisticated testing framework that validates JWT token generation and authentication flows:
+
+```mermaid
+sequenceDiagram
+participant Test as "AdminAuthApiTest"
+participant BaseApi as "BaseApiTest"
+participant JwtUtil as "JwtUtils"
+participant AdminSvc as "AdminService"
+participant AuthCtrl as "AuthController"
+Test->>BaseApi : prepareDbTables()
+BaseApi->>AdminSvc : adminService.init()
+Test->>AuthCtrl : POST /auth/login
+AuthCtrl->>JwtUtil : generateToken("admin")
+JwtUtil-->>AuthCtrl : JWT Token
+AuthCtrl-->>Test : {token, username}
+Test->>Test : Store authToken for subsequent tests
+Note over Test,AuthCtrl : Automated JWT Token Generation
+```
+
+**Diagram sources**
+- [AdminAuthApiTest.java:41-65](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java#L41-L65)
+- [BaseApiTest.java:41-61](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L41-L61)
+- [AdminService.java:41-51](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/service/AdminService.java#L41-L51)
+
+The testing framework provides comprehensive coverage for authentication flows, authorization middleware, and admin user management operations.
+
+**Section sources**
+- [AdminAuthApiTest.java:34-227](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/AdminAuthApiTest.java#L34-L227)
+- [BaseApiTest.java:33-79](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/api/BaseApiTest.java#L33-L79)
+
+### Embedded Database Testing Infrastructure
+
+The testing framework utilizes an embedded MariaDB instance for reliable database initialization:
+
+```mermaid
+flowchart TD
+BeforeAll[BeforeAll Tests] --> LoadEnv["Load .env Configuration"]
+LoadEnv --> StartMariaDB["Start Embedded MariaDB"]
+StartMariaDB --> CreateDB["Create tron_agent_java Database"]
+CreateDB --> SourceSchema["Source init.sql Schema"]
+SourceSchema --> SetDataSource["Set DataSource Properties"]
+SetDataSource --> Ready[Tests Ready]
+```
+
+**Diagram sources**
+- [BaseFuncTest.java:58-86](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L58-L86)
+- [init.sql:207-219](file://backend_java/bootstrap/src/main/resources/schema/init.sql#L207-L219)
+
+**Section sources**
+- [BaseFuncTest.java:56-226](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L56-L226)
+- [init.sql:1-219](file://backend_java/bootstrap/src/main/resources/schema/init.sql#L1-L219)
+
 ## Data Model
 
 ### Admin User Entity
@@ -275,6 +383,7 @@ Success --> End
 **Diagram sources**
 - [CreateAdminRequest.java:25-33](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/CreateAdminRequest.java#L25-L33)
 - [UpdateAdminRequest.java:24-28](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/UpdateAdminRequest.java#L24-L28)
+- [LoginRequest.java:24-31](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/request/LoginRequest.java#L24-L31)
 
 **Section sources**
 - [AdminController.java:52-78](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/AdminController.java#L52-L78)
@@ -358,6 +467,29 @@ The initialization process ensures system readiness and provides fallback mechan
 - [AdminService.java:41-51](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/domain/service/AdminService.java#L41-L51)
 - [application.yaml:9-13](file://backend_java/bootstrap/src/main/resources/application.yaml#L9-L13)
 
+### Test Database Initialization
+
+The testing framework provides streamlined database initialization:
+
+```mermaid
+flowchart TD
+TestStart[Test Execution] --> BeforeAll[BeforeAll Hook]
+BeforeAll --> LoadDotEnv[Load .env Configuration]
+LoadDotEnv --> StartEmbeddedDB[Start Embedded MariaDB]
+StartEmbeddedDB --> CreateTestDB[Create tron_agent_java Database]
+CreateTestDB --> SourceInitSQL[Source init.sql Schema]
+SourceInitSQL --> SetDataSourceProps[Set DataSource Properties]
+SetDataSourceProps --> ReadyForTests[Ready for API Tests]
+```
+
+**Diagram sources**
+- [BaseFuncTest.java:58-86](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L58-L86)
+- [init.sql:207-219](file://backend_java/bootstrap/src/main/resources/schema/init.sql#L207-L219)
+
+**Section sources**
+- [BaseFuncTest.java:56-226](file://backend_java/bootstrap/src/test/java/com/aliyun/tam/x/tron/BaseFuncTest.java#L56-L226)
+- [init.sql:1-219](file://backend_java/bootstrap/src/main/resources/schema/init.sql#L1-L219)
+
 ## Error Handling
 
 ### Comprehensive Error Management
@@ -430,6 +562,11 @@ The system supports flexible configuration through environment variables:
 - Validate request payload structure
 - Check authentication header format
 
+**Test Framework Issues**
+- Verify embedded MariaDB is running on available port
+- Check .env file loading and configuration
+- Ensure init.sql schema is properly sourced
+
 **Section sources**
 - [JwtAuthInterceptor.java:44-61](file://backend_java/api/src/main/java/com/aliyun/tam/x/tron/api/auth/JwtAuthInterceptor.java#L44-L61)
 - [EncryptUtils.java:42-51](file://backend_java/utils/src/main/java/com/aliyun/tam/x/tron/utils/encrypt/EncryptUtils.java#L42-L51)
@@ -438,11 +575,15 @@ The system supports flexible configuration through environment variables:
 
 The Admin Management System provides a robust, secure, and scalable foundation for administrative operations within the Tron One Agent platform. The system's architecture emphasizes security, maintainability, and extensibility while providing comprehensive administrative capabilities.
 
+Recent enhancements include comprehensive API authentication testing with JWT token generation, improved database initialization processes with embedded MariaDB testing infrastructure, and streamlined admin user management workflows with automated setup procedures. These improvements ensure reliable testing, secure authentication, and efficient development workflows.
+
 Key strengths include:
 - **Security-First Design**: AES encryption, JWT authentication, and comprehensive validation
 - **Clean Architecture**: Clear separation of concerns across multiple layers
 - **RESTful API Design**: Consistent and predictable endpoint behavior
 - **Automatic Initialization**: Zero-configuration setup with sensible defaults
 - **Comprehensive Error Handling**: Structured error management across all layers
+- **Robust Testing Framework**: Comprehensive authentication testing with JWT token generation
+- **Embedded Database Testing**: Reliable test environment with automated schema initialization
 
 The system is well-positioned for production deployment and can be extended to support additional administrative features as requirements evolve.

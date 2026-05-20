@@ -214,6 +214,8 @@ docker run -d \
 | Yarn | 1.x/2.x | 包管理器 |
 | React Router | 6.x | 路由管理 |
 | Axios | 1.x | HTTP 客户端 |
+| i18next | 23.x | 国际化框架 |
+| react-i18next | 15.x | React 国际化绑定 |
 | chatbox | * | 自定义聊天组件库 |
 
 ## 常见问题
@@ -269,10 +271,54 @@ module.exports = {
 
 ### 5. 如何进行国际化？
 
-聊天组件库支持国际化，可通过配置实现：
+项目使用 `react-i18next` 实现国际化，支持中文（zh-CN）和英文（en-US）。用户可通过右上角语言切换器切换语言。
+
+**翻译文件位置：**
+
+```
+packages/control/src/i18n/
+├── index.ts                  # i18n 初始化配置
+├── chatboxBridge.ts          # control → chatbox 翻译同步
+├── backendMap.ts             # 后端中文标签映射
+└── locales/
+    ├── zh-CN/                # 中文翻译
+    │   ├── common.json       # 通用文案
+    │   ├── menu.json         # 菜单
+    │   ├── layout.json       # 布局
+    │   ├── login.json        # 登录页
+    │   ├── agents.json       # Agent 管理
+    │   ├── debug.json        # 调试页面
+    │   ├── tools.json        # 工具管理
+    │   ├── mcp.json          # MCP 管理
+    │   ├── kb.json           # 知识库
+    │   ├── skills.json       # 技能管理
+    │   ├── memory.json       # 长期记忆
+    │   ├── backend.json      # 后端标签
+    │   └── chatbox.json      # 聊天组件
+    └── en-US/                # 英文翻译（同结构）
+```
+
+**新增命名空间步骤：**
+
+1. 在 `locales/zh-CN/` 和 `locales/en-US/` 下新建 JSON 文件
+2. 在 `i18n/index.ts` 的 `resources` 对象中导入并注册
+3. 在组件中使用 `useTranslation('namespace')` 引用
+
+**在组件中使用：**
 
 ```typescript
-import { setLocale } from 'chatbox/utils/i18n';
+import { useTranslation } from 'react-i18next';
 
-setLocale('zh-CN'); // 或 'en-US'
+const MyComponent = () => {
+  const { t } = useTranslation('agents');
+  return <h1>{t('title')}</h1>;
+};
 ```
+
+**后端标签映射扩展：**
+
+后端返回的中文工具名（如 "加载技能"、"网络搜索"）通过 `backendMap.ts` 映射为 i18n key。如需添加新映射，在 `backendMap.ts` 的 `BACKEND_LABEL_MAP` 中增加条目即可。
+
+**chatbox 组件国际化：**
+
+chatbox 保持零依赖，翻译文案由 control 端通过 `chatboxBridge.ts` 注入。chatbox 内部通过 `locale.ts` 导出的 `t()` 函数获取翻译。

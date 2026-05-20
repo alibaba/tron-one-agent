@@ -18,22 +18,34 @@
 - [one_agent_system_prompt.md](file://backend_java/core/src/main/resources/prompts/one_agent_system_prompt.md)
 - [SimpleAgentBuilder.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/examples/SimpleAgentBuilder.java)
 - [OneAgentBuilder.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/examples/OneAgentBuilder.java)
+- [McpClientRegistry.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/McpClientRegistry.java)
+- [KnowledgeRegistry.java](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/KnowledgeRegistry.java)
+- [OssStorageProvider.java](file://backend_java/infra/src/main/java/com/aliyun/tam/x/tron/infra/storage/OssStorageProvider.java)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated AgentRegistry section to reflect distributed cache elimination
+- Added new section on distributed cache elimination architecture
+- Updated configuration management section to reflect improved consistency
+- Enhanced troubleshooting guide with distributed system considerations
+- Updated performance considerations to address cluster consistency improvements
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+5. [Distributed Cache Elimination Architecture](#distributed-cache-elimination-architecture)
+6. [Detailed Component Analysis](#detailed-component-analysis)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document explains the Tron OneAgent system’s core agent architecture with a focus on the ReAct (Reasoning-Act) pattern, agent lifecycle management, multi-agent orchestration, configuration and hot-reload mechanisms, and integration with external services. It covers how agents perform reasoning loops followed by action execution, how sessions and memory are managed, and how the OneAgent orchestrates local and remote sub-agents via the A2A protocol. Practical examples and diagrams illustrate agent behavior, tool usage, and debugging techniques.
+This document explains the Tron OneAgent system's core agent architecture with a focus on the ReAct (Reasoning-Act) pattern, agent lifecycle management, multi-agent orchestration, configuration and hot-reload mechanisms, and integration with external services. The system has undergone significant backend architectural improvements with distributed cache elimination from AgentRegistry, McpClientRegistry, KnowledgeRegistry, and OssStorageProvider to address cluster consistency issues. These improvements ensure stronger consistency guarantees across distributed deployments while maintaining performance and reliability.
 
 ## Project Structure
 The agent system resides primarily under backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents and related subpackages. Key areas:
@@ -91,7 +103,7 @@ L --> C
 - [A2ASubAgentHandler.java:1-199](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/A2ASubAgentHandler.java#L1-L199)
 - [BaseAgentBuilder.java:1-414](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L1-L414)
 - [AgentBuilder.java:1-34](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentBuilder.java#L1-L34)
-- [AgentRegistry.java:1-99](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L99)
+- [AgentRegistry.java:1-74](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L74)
 - [AgentConfig.java:1-133](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/config/AgentConfig.java#L1-L133)
 - [AgentInput.java:1-30](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentInput.java#L1-L30)
 - [AgentResult.java:1-84](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentResult.java#L1-L84)
@@ -99,7 +111,7 @@ L --> C
 **Section sources**
 - [AbstractAgentHandler.java:1-431](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AbstractAgentHandler.java#L1-L431)
 - [BaseAgentBuilder.java:1-414](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L1-L414)
-- [AgentRegistry.java:1-99](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L99)
+- [AgentRegistry.java:1-74](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L74)
 - [AgentConfig.java:1-133](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/config/AgentConfig.java#L1-L133)
 - [AgentInput.java:1-30](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentInput.java#L1-L30)
 - [AgentResult.java:1-84](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentResult.java#L1-L84)
@@ -110,7 +122,7 @@ L --> C
 - OneAgentHandler: Orchestrates a main ReAct agent plus sub-agents (local and A2A), aggregates tasks, manages tool distribution, and mirrors ReAct-style streaming behavior.
 - SubAgentHandler family: LocalSubAgentHandler and A2ASubAgentHandler register sub-agent tools into the main toolkit and execute tasks within isolated sessions.
 - BaseAgentBuilder: Builds ReAct or One agent stacks from configuration, wires tools, skills, knowledge bases, RAG mode, long-term memory, and A2A/local sub-agents.
-- AgentRegistry: Resolves and caches agent handlers per agentId/userId/sessionId, with logging wrapper instrumentation.
+- AgentRegistry: **Updated** Resolves agent handlers by iterating through registered builders without distributed caching, ensuring consistency across cluster nodes.
 - AgentInput/AgentResult: Typed inputs and outputs for agent processing, including actions and tasks.
 
 **Section sources**
@@ -120,12 +132,12 @@ L --> C
 - [LocalSubAgentHandler.java:1-236](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/LocalSubAgentHandler.java#L1-L236)
 - [A2ASubAgentHandler.java:1-199](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/A2ASubAgentHandler.java#L1-L199)
 - [BaseAgentBuilder.java:1-414](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L1-L414)
-- [AgentRegistry.java:1-99](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L99)
+- [AgentRegistry.java:1-74](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L1-L74)
 - [AgentInput.java:1-30](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentInput.java#L1-L30)
 - [AgentResult.java:1-84](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentResult.java#L1-L84)
 
 ## Architecture Overview
-The system centers on ReAct reasoning with streaming events. AbstractAgentHandler normalizes inputs and enriches runtime context. ReActAgentHandler streams reasoning and tool-use events, translating them into actionable steps and updating message/action/task statuses. OneAgentHandler augments this with sub-agents: LocalSubAgentHandler executes tasks by delegating to another AgentHandler, while A2ASubAgentHandler invokes remote A2A agents via A2aAgent. BaseAgentBuilder constructs the agent stack from configuration, wiring tools, skills, knowledge, and memory. AgentRegistry resolves and caches handlers per session.
+The system centers on ReAct reasoning with streaming events. AbstractAgentHandler normalizes inputs and enriches runtime context. ReActAgentHandler streams reasoning and tool-use events, translating them into actionable steps and updating message/action/task statuses. OneAgentHandler augments this with sub-agents: LocalSubAgentHandler executes tasks by delegating to another AgentHandler, while A2ASubAgentHandler invokes remote A2A agents via A2aAgent. BaseAgentBuilder constructs the agent stack from configuration, wiring tools, skills, knowledge, and memory. **Updated** AgentRegistry resolves handlers by iterating through registered builders without distributed caching, ensuring consistent configuration across cluster nodes.
 
 ```mermaid
 sequenceDiagram
@@ -137,7 +149,7 @@ participant Main as "ReActAgent"
 participant Sub as "SubAgentHandler"
 participant Remote as "A2aAgent"
 Client->>Registry : Request agent for agentId, userId, sessionId
-Registry->>Builder : Build agent from config
+Registry->>Builder : Build agent from config (no cache)
 Builder-->>Registry : OneAgentHandler
 Registry-->>Client : AgentHandler
 Client->>Handler : handleInput(AgentInput)
@@ -150,11 +162,55 @@ Handler-->>Client : AgentResult (response, actions, tasks)
 ```
 
 **Diagram sources**
-- [AgentRegistry.java:74-93](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L74-L93)
+- [AgentRegistry.java:50-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L50-L68)
 - [BaseAgentBuilder.java:202-302](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L202-L302)
 - [OneAgentHandler.java:74-272](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L74-L272)
 - [A2ASubAgentHandler.java:118-180](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/A2ASubAgentHandler.java#L118-L180)
 - [LocalSubAgentHandler.java:122-220](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/LocalSubAgentHandler.java#L122-L220)
+
+## Distributed Cache Elimination Architecture
+**Updated** The system has eliminated distributed caching from key registries to address cluster consistency issues:
+
+### AgentRegistry Improvements
+- **Before**: Distributed caching of agent handlers across cluster nodes
+- **After**: Direct resolution from registered builders without caching
+- **Benefit**: Ensures consistent agent configuration across all nodes
+- **Trade-off**: Slight performance overhead for first-time agent resolution
+
+### Registry Configuration Management
+- **McpClientRegistry**: Eliminated distributed cache for MCP client configurations
+- **KnowledgeRegistry**: Eliminated distributed cache for knowledge base configurations
+- **OssStorageProvider**: Maintains selective caching for file ID resolution and OSS host
+
+```mermaid
+flowchart TD
+Start(["Agent Request"]) --> CheckCache{"Check Distributed Cache?"}
+CheckCache --> |AgentRegistry| DirectResolve["Direct Resolution<br/>from AgentBuilders"]
+CheckCache --> |McpClientRegistry| DBMerge["DB + Code Config<br/>Merge"]
+CheckCache --> |KnowledgeRegistry| DBMerge2["DB + Code Config<br/>Merge"]
+CheckCache --> |OssStorageProvider| SelectiveCache["Selective Caching<br/>File ID + OSS Host"]
+DirectResolve --> BuildHandler["Build Agent Handler"]
+DBMerge --> GetConfig["Get Config from DB"]
+DBMerge2 --> GetConfig2["Get Config from DB"]
+SelectiveCache --> CacheLookup["Cache Lookup"]
+GetConfig --> MergeConfigs["Merge with Code Config"]
+GetConfig2 --> MergeConfigs2["Merge with Code Config"]
+MergeConfigs --> ReturnConfig["Return Merged Config"]
+MergeConfigs2 --> ReturnConfig2["Return Merged Config"]
+CacheLookup --> ReturnCached["Return Cached Result"]
+```
+
+**Diagram sources**
+- [AgentRegistry.java:50-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L50-L68)
+- [McpClientRegistry.java:77-108](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/McpClientRegistry.java#L77-L108)
+- [KnowledgeRegistry.java:72-103](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/KnowledgeRegistry.java#L72-L103)
+- [OssStorageProvider.java:104-160](file://backend_java/infra/src/main/java/com/aliyun/tam/x/tron/infra/storage/OssStorageProvider.java#L104-L160)
+
+**Section sources**
+- [AgentRegistry.java:50-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L50-L68)
+- [McpClientRegistry.java:77-108](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/mcp/McpClientRegistry.java#L77-L108)
+- [KnowledgeRegistry.java:72-103](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/rag/KnowledgeRegistry.java#L72-L103)
+- [OssStorageProvider.java:104-160](file://backend_java/infra/src/main/java/com/aliyun/tam/x/tron/infra/storage/OssStorageProvider.java#L104-L160)
 
 ## Detailed Component Analysis
 
@@ -265,7 +321,7 @@ SubAgentHandler <|-- A2ASubAgentHandler
 ### Configuration Management and Hot-Reloading
 - AgentConfig encapsulates agent identity, type, model, tools, MCP clients, knowledge bases, skills, RAG mode, long-term memory, and input-type support.
 - BaseAgentBuilder merges runtime-provided config with stored config, enabling hot-reload-like behavior by overriding fields at runtime.
-- AgentRegistry caches handlers per agentId/userId/sessionId and wraps them with a logging wrapper for observability.
+- **Updated** AgentRegistry eliminates distributed caching and resolves handlers directly from registered builders, ensuring consistent configuration across cluster nodes.
 
 ```mermaid
 flowchart TD
@@ -280,12 +336,12 @@ BuildOne --> Done
 **Diagram sources**
 - [AgentConfig.java:39-132](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/config/AgentConfig.java#L39-L132)
 - [BaseAgentBuilder.java:202-302](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L202-L302)
-- [AgentRegistry.java:74-93](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L74-L93)
+- [AgentRegistry.java:50-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L50-L68)
 
 **Section sources**
 - [AgentConfig.java:39-132](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/config/AgentConfig.java#L39-L132)
 - [BaseAgentBuilder.java:202-302](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L202-L302)
-- [AgentRegistry.java:74-93](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L74-L93)
+- [AgentRegistry.java:50-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L50-L68)
 
 ### Relationship Between AbstractAgentHandler, ReActAgentHandler, and OneAgentHandler
 - AbstractAgentHandler provides shared utilities: input normalization, media processing, runtime context, question tool, renaming, suggestions, and fast model access.
@@ -351,7 +407,7 @@ AbstractAgentHandler <|-- OneAgentHandler
 
 ## Dependency Analysis
 - Handler-to-Builder: OneAgentHandler and ReActAgentHandler depend on BaseAgentBuilder for construction and configuration merging.
-- Registry-to-Builders: AgentRegistry selects the appropriate AgentBuilder by agentId and caches the resulting AgentHandler.
+- Registry-to-Builders: **Updated** AgentRegistry selects the appropriate AgentBuilder by iterating through registered builders without distributed caching.
 - Sub-agent orchestration: OneAgentHandler collects tool names from sub-agents and filters out sub-agent tools from main-agent action recording.
 - External integrations: A2ASubAgentHandler integrates with A2aAgent; LocalSubAgentHandler integrates with AgentStateRepository for sub-session persistence.
 
@@ -369,26 +425,26 @@ LocalSubAgentHandler --> AgentStateRepository
 ```
 
 **Diagram sources**
-- [AgentRegistry.java:85-93](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L85-L93)
+- [AgentRegistry.java:60-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L60-L68)
 - [BaseAgentBuilder.java:278-299](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L278-L299)
 - [OneAgentHandler.java:82-88](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L82-L88)
 - [A2ASubAgentHandler.java:84-87](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/A2ASubAgentHandler.java#L84-L87)
 - [LocalSubAgentHandler.java:97-101](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/LocalSubAgentHandler.java#L97-L101)
 
 **Section sources**
-- [AgentRegistry.java:85-93](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L85-L93)
+- [AgentRegistry.java:60-68](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentRegistry.java#L60-L68)
 - [BaseAgentBuilder.java:278-299](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/BaseAgentBuilder.java#L278-L299)
 - [OneAgentHandler.java:82-88](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/OneAgentHandler.java#L82-L88)
 - [A2ASubAgentHandler.java:84-87](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/A2ASubAgentHandler.java#L84-L87)
 - [LocalSubAgentHandler.java:97-101](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/one/LocalSubAgentHandler.java#L97-L101)
 
 ## Performance Considerations
+- **Updated** Distributed cache elimination improves consistency but may introduce slight performance overhead for first-time agent resolution.
 - Streaming latency metrics: The logging wrapper records end-to-end latency and first-token-first-response delays, enabling performance monitoring.
 - Memory and long-term memory: Configure long-term memory mode and RAG mode to balance recall quality and latency.
 - Tool execution: Actions include duration tracking; monitor tool result formatting overhead.
 - Cancellation: Early interruption cleans up pending tool-use messages to avoid stale artifacts.
-
-[No sources needed since this section provides general guidance]
+- **Cluster consistency**: The elimination of distributed caches ensures stronger consistency guarantees across cluster nodes, reducing configuration drift issues.
 
 ## Troubleshooting Guide
 - Observability: Use the logging wrapper spans and metrics to trace agent execution and errors.
@@ -396,6 +452,8 @@ LocalSubAgentHandler --> AgentStateRepository
 - Cancellation: Call cancel to interrupt the agent; pending tool-use messages are pruned and status becomes CANCELLED.
 - Media content: If media URLs are not publicly accessible, ensure storage provider transforms them to public URLs before sending to the model.
 - Question tool: When enabled, the question tool pauses execution for user approval; verify HITL content propagation.
+- **Cluster consistency**: **Updated** Monitor for configuration drift issues that were previously masked by distributed caching; ensure all nodes have consistent configuration.
+- **Performance monitoring**: Watch for increased latency on first agent resolution due to distributed cache elimination.
 
 **Section sources**
 - [AgentHandler.java:85-142](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AgentHandler.java#L85-L142)
@@ -403,9 +461,7 @@ LocalSubAgentHandler --> AgentStateRepository
 - [AbstractAgentHandler.java:304-387](file://backend_java/core/src/main/java/com/aliyun/tam/x/tron/core/agents/AbstractAgentHandler.java#L304-L387)
 
 ## Conclusion
-The Tron OneAgent system implements a robust ReAct-based agent architecture with strong lifecycle management, multi-agent orchestration, and extensible configuration. AbstractAgentHandler centralizes cross-cutting concerns, while ReActAgentHandler and OneAgentHandler deliver precise streaming behavior and task aggregation. Builders and registries enable flexible deployment and hot-reload-like configuration updates. The system supports both local and remote sub-agents via A2A, integrates tools and skills, and provides comprehensive observability and error handling for production-grade agent development.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The Tron OneAgent system implements a robust ReAct-based agent architecture with strong lifecycle management, multi-agent orchestration, and extensible configuration. **Updated** Recent architectural improvements eliminate distributed caching from AgentRegistry, McpClientRegistry, KnowledgeRegistry, and OssStorageProvider to address cluster consistency issues while maintaining performance. AbstractAgentHandler centralizes cross-cutting concerns, while ReActAgentHandler and OneAgentHandler deliver precise streaming behavior and task aggregation. Builders and registries enable flexible deployment and hot-reload-like configuration updates. The system supports both local and remote sub-agents via A2A, integrates tools and skills, and provides comprehensive observability and error handling for production-grade agent development.
 
 ## Appendices
 - Example configurations:
